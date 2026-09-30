@@ -658,7 +658,7 @@ function headerHTML(){
   if (view === 'teacher') right = badge + '<button class="btn primary sm" data-act="to-student">Готово</button>';
   else right = (teacherAllowed() ? '<button class="icon-b edit" data-act="to-teacher" aria-label="Редактирай" title="Редактирай">' + PENCIL + '</button>' : '') +
     (!MINE ? '' : '<button class="cls-btn' + (CLASS !== MINE ? ' peek' : '') + '" data-act="cls-open" aria-label="Друг клас"><small>' + (CLASS !== MINE ? 'Гледаш' : 'Клас') + '</small>' + esc(CLASS) + CHEV + '</button>');
-  return '<header class="top"><div class="brand" data-act="brand"><span class="mark">' + BELL + '</span><div class="brand-txt"><div class="brand-t">Звънец</div><div class="brand-s">' + esc(state.school) + '</div></div></div><div class="top-r">' + right + '</div></header>';
+  return '<header class="top"><div class="brand" data-act="brand"><span class="mark">' + BELL + '</span><div class="brand-txt"><div class="brand-t">Звънец</div><div class="brand-s">Програма</div></div></div><div class="top-r">' + right + '</div></header>';
 }
 
 /* ---------- render: student ---------- */
