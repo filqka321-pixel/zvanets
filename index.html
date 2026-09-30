@@ -1,5 +1,22 @@
-<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<!doctype html>
+<html lang="bg">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Звънец</title>
+<meta name="description" content="Програма, стаи и тестове на 10а и 10е · Пета езикова гимназия „Йоан Екзарх“, Варна">
+<meta name="theme-color" content="#EDF1F6" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0C121A" media="(prefers-color-scheme: dark)">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="icon" href="icon-192.png" type="image/png" sizes="192x192">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Звънец">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="format-detection" content="telephone=no">
+<style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sofia+Sans:wght@400;500;600;700&family=Sofia+Sans+Extra+Condensed:wght@600;700;800&family=Sofia+Sans+Semi+Condensed:wght@500;600;700&display=swap">
 <style id="app-style">
 :root{
@@ -308,100 +325,44 @@ input[type=checkbox]{width:18px;height:18px;padding:0;accent-color:var(--brand);
 .past summary::-webkit-details-marker{display:none}
 .past .up{opacity:.72}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+/* PWA + Supabase */
+html{-webkit-text-size-adjust:100%}
+button,a,.brand{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.brand,.tabbar,.cls-seg{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+.nt{margin-top:14px;background:var(--surface);border:1px solid var(--line);border-radius:22px;padding:16px;display:grid;gap:14px}
+.nt-top{display:grid;grid-template-columns:40px minmax(0,1fr);gap:12px;align-items:start}
+.nt-ic{width:40px;height:40px;border-radius:12px;background:var(--hero-bg);color:var(--hero-accent);display:grid;place-items:center}
+.nt-tx b{font-family:var(--f-display);font-weight:700;font-size:22px;line-height:1.05;display:block;margin-bottom:3px}
+.nt-tx p{font-size:14px;color:var(--ink-2)}
+.nt-acts{display:flex;gap:8px;flex-wrap:wrap}
+.nt-acts .btn{text-decoration:none}
+.nt-acts .btn.primary{flex:1 1 180px}
+.nt-how summary{cursor:pointer;font-family:var(--f-ui);font-weight:600;font-size:14px;color:var(--brand);list-style:none;padding:2px 0}
+.nt-how summary::-webkit-details-marker{display:none}
+.nt-how ol{margin:8px 0 8px;padding-left:20px;display:grid;gap:6px;font-size:14px;color:var(--ink-2)}
+.nt-how p{font-size:13px;color:var(--muted)}
+.ins{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px;padding:10px 10px 10px 14px;border-radius:14px;background:var(--brand-soft);font-family:var(--f-ui);font-size:14px;line-height:1.35}
+.ins svg{width:17px;height:17px;vertical-align:-3px;color:var(--brand)}
+.ins-a{display:flex;gap:6px;align-items:center;flex:none}
+.gh-ok{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:12px;padding:6px 8px 6px 14px;border-radius:12px;background:var(--surface);border:1px solid var(--line);font-family:var(--f-ui);font-size:13.5px;color:var(--muted)}
+.gh-ok b{color:var(--ink)}
+.panel.gh{margin-bottom:14px}
+.gh-p{font-size:14px;color:var(--ink-2)}
+.boot{min-height:70vh;display:grid;place-items:center;font-family:var(--f-ui);font-weight:600;color:var(--muted)}
 </style>
+</head>
+<body>
 <div id="app" lang="bg"></div>
-<script type="application/json" id="app-state"></script>
-<script>
-/* ============ SUPABASE: paste your two values here, keep the quotes ============ */
-var SUPABASE_URL = 'https://atugivlnasrdjnuasuig.supabase.co/rest/v1/';
-var SUPABASE_ANON_KEY = 'sb_publishable_ce_nZZ5LxQAVxkNm5gs9vg_Qrs-2Sum';
-/* =============================================================================== */
-
-var SB_URL = String(SUPABASE_URL).trim().replace(/\/+$/, '').replace(/\/rest\/v1$/, '');
-var SB_KEY = String(SUPABASE_ANON_KEY).trim();
-function sbGet(table, query){
-  var h = { apikey: SB_KEY };
-  if (/^eyJ/.test(SB_KEY)) h.Authorization = 'Bearer ' + SB_KEY;   /* legacy anon key; new sb_publishable_ keys go only in apikey */
-  return fetch(SB_URL + '/rest/v1/' + table + '?' + (query || 'select=*'), { headers: h }).then(function(r){
-    return r.text().then(function(t){
-      var j = null; try { j = JSON.parse(t); } catch (e) {}
-      if (!r.ok){ var err = new Error((j && (j.message || j.error || j.msg)) || t || ('HTTP ' + r.status)); err.status = r.status; err.table = table; err.code = j && j.code; throw err; }
-      return j;
-    });
-  }, function(e){ var err = new Error(String(e && e.message || e)); err.status = 0; err.table = table; throw err; });
-}
-function hhmm(t){ return String(t || '').slice(0, 5); }
-/* Turns the table rows back into the state object the app expects. */
-function buildState(t){
-  var st = t.settings[0] || {};
-  var s = { v:1, rev: st.rev || 'r0', updated: st.updated_at || new Date().toISOString(), school: st.school || '', bells:{ '1':[], '2':[] }, classes:[], tt:{}, events:[], sample:{ classes:[] } };
-  t.classes.forEach(function(c){ s.classes.push({ name:c.name, shift:c.shift }); });
-  t.bells.sort(function(a, b){ return a.shift - b.shift || a.idx - b.idx; }).forEach(function(b){
-    (s.bells[String(b.shift)] = s.bells[String(b.shift)] || [])[b.idx] = { n:b.n, start:hhmm(b.start_time), end:hhmm(b.end_time) };
-  });
-  t.lessons.forEach(function(l){
-    var c = s.tt[l.class_name] = s.tt[l.class_name] || {}, row = c[String(l.weekday)] = c[String(l.weekday)] || [];
-    while (row.length < l.idx) row.push(null);
-    row[l.idx] = { s:l.subject, r:l.room, t:l.teacher };
-  });
-  Object.keys(s.tt).forEach(function(c){ Object.keys(s.tt[c]).forEach(function(d){ var r = s.tt[c][d]; for (var i = 0; i < r.length; i++) if (r[i] === undefined) r[i] = null; }); });
-  t.events.forEach(function(e){
-    var x = { id:e.id, type:e.type, date:e.date, p:e.period, subject:e.subject, note:e.note, cls:e.classes || [] };
-    if (e.all_school) x.all = true; if (e.cancel) x.cancel = true; if (e.room) x.room = e.room; if (e.substitute) x.sub = e.substitute;
-    s.events.push(x);
-  });
-  return s;
-}
-function loadState(){
-  if (/YOUR-PROJECT|YOUR-ANON-KEY/.test(SB_URL + SB_KEY)){ var e0 = new Error('placeholders'); e0.kind = 'config'; return Promise.reject(e0); }
-  if (!/^https:\/\/[^\/]+$/.test(SB_URL)){ var e1 = new Error('URL: ' + SB_URL); e1.kind = 'url'; return Promise.reject(e1); }
-  return Promise.all([
-    sbGet('settings'), sbGet('classes', 'select=*&order=name'), sbGet('bells'),
-    sbGet('lessons'), sbGet('events', 'select=*&order=date,period')
-  ]).then(function(r){
-    if (!r[1].length || !r[2].length || !r[3].length){ var e2 = new Error('classes ' + r[1].length + ', bells ' + r[2].length + ', lessons ' + r[3].length); e2.kind = 'empty'; throw e2; }
-    return buildState({ settings:r[0], classes:r[1], bells:r[2], lessons:r[3], events:r[4] });
-  });
-}
-function explain(err){
-  var m = String(err && err.message || ''), s = err && err.status;
-  if (err.kind === 'config') return 'В index.html още стоят YOUR-PROJECT и YOUR-ANON-KEY. Постави адреса и ключа между кавичките.';
-  if (err.kind === 'url') return 'Адресът не изглежда правилно. Трябва да е точно като https://abcd1234.supabase.co (без нищо след .co).';
-  if (err.kind === 'empty') return 'Връзката работи, но таблиците са празни. Пусни seed.sql в SQL Editor.';
-  if (s === 0) return 'Няма връзка със Supabase. Провери адреса (Project URL), интернета и дали проектът не е на пауза (Paused) в Supabase.';
-  if (/permission denied/i.test(m) || err.code === '42501') return 'Ключът работи, но няма право да чете таблиците. Пусни в SQL Editor поправката с grant select.';
-  if (/api key|apikey|jwt|unregistered/i.test(m) || s === 401) return 'Supabase не приема ключа. Използвай publishable (sb_publishable_…) или legacy anon ключа и провери дали е копиран целият.';
-  if (/does not exist|could not find the table|schema cache/i.test(m) || s === 404 || err.code === 'PGRST205') return 'Таблиците не са намерени. Пусни schema.sql и после seed.sql в SQL Editor.';
-  return 'Supabase върна грешка.';
-}
-function startApp(state){
-  document.getElementById('app-state').textContent = JSON.stringify(state).replace(/</g, '\\u003c');
-  var code = document.getElementById('app-js'), s = document.createElement('script');
-  s.text = code.textContent; document.body.appendChild(s);
-}
-function showError(err){
-  console.error(err);
-  var detail = (err.table ? err.table + ': ' : '') + (err.status ? 'HTTP ' + err.status + ' · ' : '') + String(err.message || err);
-  var box = document.createElement('div');
-  box.style.cssText = 'max-width:560px;margin:40px auto;padding:20px;border-radius:16px;background:#fff;border:1px solid #D6DEE8;font:16px/1.45 system-ui,-apple-system,sans-serif;color:#14213A';
-  var h = document.createElement('b'); h.textContent = 'Програмата не можа да се зареди'; h.style.cssText = 'display:block;font-size:19px;margin-bottom:8px';
-  var p = document.createElement('p'); p.textContent = explain(err); p.style.margin = '0 0 12px';
-  var c = document.createElement('code'); c.textContent = detail; c.style.cssText = 'display:block;padding:10px;border-radius:10px;background:#F5F7FA;font-size:13px;white-space:pre-wrap;word-break:break-word;color:#66748A';
-  box.appendChild(h); box.appendChild(p); box.appendChild(c);
-  var app = document.getElementById('app'); app.innerHTML = ''; app.appendChild(box);
-}
-if (typeof module !== 'undefined') module.exports = { buildState: buildState };
-else loadState().then(startApp, showError);
-</script>
+<script type="application/json" id="app-state">{}</script>
+<script src="config.js"></script>
+<script src="lib.js"></script>
 <script id="app-js" type="text/plain">
 (function(){
 'use strict';
-var SKEL = '<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>';
 var TITLE = 'Звънец';
 var CLASS = '10е';
 var clsFrom = null;
 var PENCIL = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16v4Z"/><path d="M13.5 6.5l4 4"/></svg>';
-var FONTS = '<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sofia+Sans:wght@400;500;600;700&family=Sofia+Sans+Extra+Condensed:wght@600;700;800&family=Sofia+Sans+Semi+Condensed:wght@500;600;700&display=swap">';
 
 var DAYS = ['Неделя','Понеделник','Вторник','Сряда','Четвъртък','Петък','Събота'];
 var DAYS_SHORT = ['Нд','Пн','Вт','Ср','Чт','Пт','Сб'];
@@ -580,13 +541,17 @@ var tSel = { cls:null, day:1 };
 var evForm = null, evErr = '', clsErr = '', showPast = false;
 var newCls = { name:'', shift:2 };
 var art = null, canEdit = null, readOnly = false, saving = false;
+var SB = window.ZvSB, sess = jparse(sGet('localStorage', 'zv-sess')), auForm = { email:'', password:'' }, auErr = '', auBusy = false;
+var editUnlocked = sGet('sessionStorage', 'zv-edit') === '1', taps = 0, tapT = 0;
+var installEvt = null, lastRefresh = 0, refreshing = false, calOK = sGet('localStorage', 'zv-cal') === '1';
+var SHARE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12M8 7l4-4 4 4"/><path d="M7 10H6a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7a2 2 0 0 0-2-2h-1"/></svg>';
 var draft = null, dirty = [], pendingRev = null, banner = null;
 var armed = null, armTimer = 0, lastMin = -1, workTimer = 0;
 
 function defaultClass(){ return CLASS; }
 function todayIdx(){ var d = new Date().getDay(); return (d >= 1 && d <= 5) ? d : 1; }
 function blankEv(){ return { id:null, type:'entry', date:isoDate(nextWeekday(new Date())), p:'', cls: myClass ? [myClass] : [], subject:'', note:'', cancel:false, room:'', sub:'', sample:false }; }
-function teacherAllowed(){ return canEdit === true || (canEdit === null && !!art && location.hash === '#redakcia'); }
+function teacherAllowed(){ return editUnlocked || location.hash === '#redakcia' || !!(sess && sess.access_token); }
 function isDirty(k){ return dirty.indexOf(k) >= 0; }
 function markDirty(k){ if (!isDirty(k)) dirty.push(k); persistWorkSoon(); updateSaveBar(); }
 function uiData(){ return { page:page, view:view, tTab:tTab, tSel:tSel, selDay:selDay, weekOffset:weekOffset, evForm:evForm, showPast:showPast }; }
@@ -653,7 +618,7 @@ function headerHTML(){
   } else badge = '<span class="cls-badge"><small>Клас</small>' + esc(CLASS) + '</span>';
   if (view === 'teacher') right = badge + '<button class="btn primary sm" data-act="to-student">Готово</button>';
   else right = (teacherAllowed() ? '<button class="icon-b edit" data-act="to-teacher" aria-label="Редактирай" title="Редактирай">' + PENCIL + '</button>' : '') + badge;
-  return '<header class="top"><div class="brand"><span class="mark">' + BELL + '</span><div class="brand-txt"><div class="brand-t">Звънец</div><div class="brand-s">' + esc(state.school) + '</div></div></div><div class="top-r">' + right + '</div></header>';
+  return '<header class="top"><div class="brand" data-act="brand"><span class="mark">' + BELL + '</span><div class="brand-txt"><div class="brand-t">Звънец</div><div class="brand-s">' + esc(state.school) + '</div></div></div><div class="top-r">' + right + '</div></header>';
 }
 
 /* ---------- render: student ---------- */
@@ -666,7 +631,7 @@ function studentHTML(now){
     var date = addDays(mon, d - 1), isToday = isoDate(date) === isoDate(now);
     body = weekHTML(now, mon, d) + dayHTML(dayPlan(state, myClass, date), date, isToday, now);
   } else if (page === 'tests') body = testsHTML(now);
-  else body = heroHTML(now);
+  else body = installHTML() + heroHTML(now) + notifHTML();
   return '<div class="page page-' + page + '">' + body + '</div>';
 }
 function soonTests(now){
@@ -834,14 +799,15 @@ var BANNERS = {
   conflict:['warn','Някой друг запази промени, докато запазваше. Твоите промени не са загубени: прегледай ги и натисни „Запази“ отново.'],
   rebased:['info','Програмата беше обновена междувременно. Незапазените ти промени са пренесени върху новата версия.'],
   readonly:['warn','Нямаш права да променяш програмата. Само собственикът на страницата може да я редактира.'],
-  nosave:['warn','Запазването не е достъпно тук. Отвори страницата в Claude, за да запазиш промените.']
+  nosave:['warn','Запазването не е достъпно тук.'],
+  nologin:['warn','За да запазиш, първо влез (по-долу).']
 };
 function armBtn(key, cls, act, l0, l1, extra){ return '<button class="' + cls + '" data-act="' + act + '" data-arm="' + esc(key) + '" data-l0="' + esc(l0) + '" data-l1="' + esc(l1) + '"' + (extra || '') + '>' + esc(l0) + '</button>'; }
 function teacherHTML(now){
   var tabs = [['tt', 'Програма'], ['ev', 'Тестове и събития'], ['set', 'Звънец']];
   var body = tTab === 'ev' ? evHTML(now) : tTab === 'set' ? setHTML() : ttHTML();
   var b = banner && BANNERS[banner] ? '<div class="banner ' + BANNERS[banner][0] + '" role="status"><p>' + esc(BANNERS[banner][1]) + '</p><button class="btn sm" data-act="banner-x">Разбрах</button></div>' : '';
-  return '<div class="teacher">' + b + '<div class="t-head"><div><h1 class="t-title">Редакция · ' + esc(CLASS) + '</h1><p class="t-sub">Съучениците виждат промените, след като натиснеш „Запази“.</p></div><div class="tabs" role="tablist">' +
+  return '<div class="teacher">' + b + authHTML() + '<div class="t-head"><div><h1 class="t-title">Редакция · ' + esc(CLASS) + '</h1><p class="t-sub">Съучениците виждат промените, след като натиснеш „Запази“.</p></div><div class="tabs" role="tablist">' +
     tabs.map(function(t){ return '<button class="tab' + (tTab === t[0] ? ' on' : '') + '" role="tab" aria-selected="' + (tTab === t[0]) + '" data-act="ttab" data-t="' + t[0] + '">' + t[1] + '</button>'; }).join('') +
     '</div></div>' + body + '<div class="savebar" id="savebar">' + saveBarInner() + '</div>' + datalists() + '</div>';
 }
@@ -857,7 +823,7 @@ function saveBarInner(){
   var txt = saving ? 'Запазване…' : n ? (n === 1 ? '1 незапазена промяна' : n + ' незапазени промени') : 'Всичко е запазено';
   return '<div class="savebar-in"><span class="sb-t' + (n && !saving ? ' dirty' : '') + '">' + txt + '</span><div class="sb-a">' + (n && !saving ? armBtn('discard', 'btn ghost', 'discard', 'Отхвърли', 'Потвърди отхвърлянето') : '') + '<button class="btn primary" data-act="save"' + (!n || saving || readOnly ? ' disabled' : '') + '>Запази</button></div></div>';
 }
-function updateSaveBar(){ var el = document.getElementById('savebar'); if (el) el.innerHTML = saveBarInner(); }
+function updateSaveBar(){ var el = document.getElementById('savebar'); if (!el) return; var h = saveBarInner(); if (el.innerHTML !== h && el._h !== h){ el.innerHTML = h; el._h = h; } }
 function ttHTML(){
   if (!draft.classes.length) return '<div class="panel"><div class="empty">Първо добавете класове от „Класове и звънец“.</div></div>';
   tSel.cls = CLASS;
@@ -975,38 +941,152 @@ function setBell(el){
   if (toMin(b.start) >= toMin(b.end)) flash('Краят на ' + ordWord(b.n) + ' час трябва да е след началото.');
 }
 
-function buildHTML(s){
-  var json = JSON.stringify(s).replace(/</g, '\\u003c');
-  var endS = '<' + '/script>';
-  return SKEL + '\n<title>' + TITLE + '</title>\n' + FONTS + '\n<style id="app-style">' + document.getElementById('app-style').textContent + '</style>\n<div id="app" lang="bg"></div>\n<script type="application/json" id="app-state">' + json + endS + '\n<script id="app-js">' + document.getElementById('app-js').textContent + endS + '\n\n</body></html>';
+/* ---------- Supabase: refresh, login, save ---------- */
+function cacheState(s){ sSet('localStorage', 'zv-data', JSON.stringify(s)); }
+function editing(){ var a = document.activeElement; return view === 'teacher' && a && /INPUT|SELECT|TEXTAREA/.test(a.tagName); }
+function refreshData(){
+  if (refreshing || !SB) return;
+  refreshing = true;
+  SB.load().then(function(net){
+    refreshing = false; lastRefresh = Date.now();
+    net = normalize(net);
+    if (JSON.stringify(net) === JSON.stringify(state)) return;
+    state = net; cacheState(net);
+    if (dirty.length){ var d = clone(net); dirty.forEach(function(k){ setVal(d, k, getVal(draft, k)); }); draft = d; }
+    else draft = clone(net);
+    if (!saving && !editing()) render();
+  }, function(){ refreshing = false; });
+}
+function checkCalendar(){
+  if (!SB || !window.ZvLib) return;
+  fetch(calURL(false), { cache:'no-store' }).then(function(r){ return r.ok ? r.text() : ''; }).then(function(t){
+    var ok = /^BEGIN:VCALENDAR/.test(t);
+    sSet('localStorage', 'zv-cal', ok ? '1' : '0');
+    if (ok !== calOK){ calOK = ok; if (view === 'student' && page === 'now') render(); }
+  }, function(){});
+}
+function authHTML(){
+  if (sess && sess.access_token) return '<div class="gh-ok"><span>Влязъл като <b>' + esc(sess.email || '') + '</b></span>' + armBtn('sb-out', 'link-btn sm', 'sb-out', 'Изход', 'Сигурен ли си?') + '</div>';
+  return '<div class="panel gh" id="login"><div class="form-h"><h3>Вход за редакция</h3></div>' +
+    '<p class="gh-p">Влез с профила от Supabase (Authentication → Users). Входът се помни на това устройство.</p>' +
+    '<div class="f-grid"><label class="field"><span>Имейл</span><input data-f="au" data-k="email" type="email" value="' + esc(auForm.email) + '" autocapitalize="off" autocomplete="username" spellcheck="false"></label>' +
+    '<label class="field"><span>Парола</span><input data-f="au" data-k="password" type="password" value="' + esc(auForm.password) + '" autocomplete="current-password"></label></div>' +
+    '<div class="row-actions"><button class="btn primary" data-act="sb-in"' + (auBusy ? ' disabled' : '') + '>' + (auBusy ? 'Влизане…' : 'Влез') + '</button>' + (auErr ? '<span class="err">' + esc(auErr) + '</span>' : '') + '</div></div>';
+}
+function authReq(grant, body){
+  return fetch(SB.url + '/auth/v1/token?grant_type=' + grant, { method:'POST', headers:{ apikey:SB.key, 'Content-Type':'application/json' }, body:JSON.stringify(body) })
+    .then(function(r){ return r.text().then(function(t){ var j = jparse(t) || {}; if (!r.ok){ var e = new Error(j.error_description || j.msg || j.message || ('HTTP ' + r.status)); e.status = r.status; e.code = j.error_code || j.error; throw e; } return j; }); },
+      function(){ var e = new Error('offline'); e.status = 0; throw e; });
+}
+function setSession(j){
+  sess = { access_token:j.access_token, refresh_token:j.refresh_token, expires_at: j.expires_at || Math.floor(Date.now() / 1000) + (j.expires_in || 3600), email: (j.user && j.user.email) || (sess && sess.email) || '' };
+  sSet('localStorage', 'zv-sess', JSON.stringify(sess));
+}
+function logout(){ sess = null; sSet('localStorage', 'zv-sess', null); }
+function signIn(){
+  var email = String(auForm.email || '').trim(), pw = String(auForm.password || '');
+  if (!email || !pw){ auErr = 'Напиши имейл и парола.'; render(); return; }
+  auBusy = true; auErr = ''; render();
+  authReq('password', { email:email, password:pw }).then(function(j){
+    setSession(j); auForm = { email:'', password:'' }; auBusy = false; if (banner === 'nologin') banner = null; render(); flash('Влезе. Вече можеш да запазваш.');
+  }, function(e){
+    auBusy = false;
+    auErr = e.status === 0 ? 'Няма интернет.' : /confirm/i.test(e.message) ? 'Имейлът не е потвърден. В Supabase създай профила с „Auto Confirm User“.' : /invalid/i.test(e.message) ? 'Грешен имейл или парола.' : 'Входът не успя (' + e.message + ').';
+    render();
+  });
+}
+function ensureSession(){
+  if (!sess || !sess.refresh_token){ var e = new Error('no session'); e.status = 401; return Promise.reject(e); }
+  if (sess.expires_at * 1000 - Date.now() > 90000) return Promise.resolve();
+  return authReq('refresh_token', { refresh_token:sess.refresh_token }).then(setSession, function(e){ if (e.status) { e.status = 401; } throw e; });
+}
+function sbw(method, path, body, prefer){
+  var h = { apikey:SB.key, Authorization:'Bearer ' + sess.access_token };
+  if (body) h['Content-Type'] = 'application/json';
+  if (prefer) h.Prefer = prefer;
+  return fetch(SB.url + '/rest/v1/' + path, { method:method, headers:h, body: body ? JSON.stringify(body) : undefined }).then(function(r){
+    return r.text().then(function(t){ var j = jparse(t); if (!r.ok){ var e = new Error((j && j.message) || ('HTTP ' + r.status)); e.status = r.status; e.code = j && j.code; throw e; } return j; });
+  }, function(){ var e = new Error('offline'); e.status = 0; throw e; });
+}
+function enc(v){ return encodeURIComponent(v); }
+function evRowSB(e){
+  var p = e.p === '' || e.p == null ? null : +e.p;
+  return { id:e.id, type:e.type, date:e.date, period: isNaN(p) ? null : p, subject:e.subject || '', note:e.note || '', classes: e.all ? [] : (e.cls || []),
+    all_school:!!e.all, cancel:!!e.cancel, room:e.room || '', substitute:e.sub || '' };
+}
+function writeKey(k, s){
+  var p = k.split('|'), t = p[0], rows = [];
+  if (t === 'classes') return sbw('POST', 'classes?on_conflict=name', s.classes.map(function(c){ return { name:c.name, shift:c.shift }; }), 'resolution=merge-duplicates');
+  if (t === 'bells'){
+    ['1', '2'].forEach(function(sh){ (s.bells[sh] || []).forEach(function(b, i){ rows.push({ shift:+sh, idx:i, n:b.n, start_time:b.start, end_time:b.end }); }); });
+    return sbw('DELETE', 'bells?shift=gte.0').then(function(){ return rows.length ? sbw('POST', 'bells', rows) : null; });
+  }
+  if (t === 'tt'){
+    var c = p[1], d = +p[2], row = (s.tt[c] && s.tt[c][d]) || [];
+    row.forEach(function(x, i){ if (x && (x.s || x.r || x.t)) rows.push({ class_name:c, weekday:d, idx:i, subject:x.s || '', room:x.r || '', teacher:x.t || '' }); });
+    return sbw('DELETE', 'lessons?class_name=eq.' + enc(c) + '&weekday=eq.' + d).then(function(){ return rows.length ? sbw('POST', 'lessons', rows) : null; });
+  }
+  if (t === 'ev'){
+    var e = getVal(s, k);
+    if (!e) return sbw('DELETE', 'events?id=eq.' + enc(p[1]));
+    return sbw('POST', 'events?on_conflict=id', evRowSB(e), 'resolution=merge-duplicates');
+  }
+  return Promise.resolve();
+}
+function saveMsg(e){
+  var s = e && e.status;
+  if (s === 0) return 'Няма интернет. Промените стоят в черновата.';
+  if (e.noRights || s === 403 || (e && e.code === '42501')) return 'Този профил няма право да записва. Пусни editor.sql със своя имейл.';
+  if (s === 401) return 'Входът изтече. Влез отново.';
+  return 'Запазването не успя (' + (e && e.message || 'грешка') + '). Промените стоят в черновата.';
 }
 function save(){
   if (!dirty.length || saving) return;
-  if (readOnly){ banner = 'readonly'; render(); return; }
-  if (!art){ banner = 'nosave'; render(); return; }
+  if (!SB){ banner = 'nosave'; render(); return; }
+  if (!sess){ banner = 'nologin'; render(); window.scrollTo(0, 0); return; }
   var next = clone(state);
   dirty.forEach(function(k){ setVal(next, k, getVal(draft, k)); });
   next.rev = rid(); next.updated = new Date().toISOString();
-  var html;
-  try { html = buildHTML(next); } catch (e) { flash('Запазването не успя. Опитай отново.'); return; }
-  pendingRev = next.rev; persistWork(); saveUI();
+  var order = { classes:0, bells:1 }, keys = dirty.slice().sort(function(a, b){ var x = order[a.split('|')[0]], y = order[b.split('|')[0]]; return (x == null ? 9 : x) - (y == null ? 9 : y); });
   saving = true; updateSaveBar();
-  function attempt(retry){
-    return art.publish(html).then(function(){
-      setTimeout(function(){ if (state.rev !== next.rev){ state = next; draft = clone(next); clearWork(); saving = false; flash('Запазено. Всички в класа виждат новата версия.'); render(); } }, 7000);
-    }, function(e){
-      var code = (e && e.code) || 'upstream_error';
-      if (code === 'conflict'){ flash('Някой друг току-що запази промени. Зареждаме новата версия…'); return; }
-      if (code === 'upstream_error' && retry) return sleep(600 + Math.random() * 900).then(function(){ return attempt(false); });
-      pendingRev = null; persistWork(); saving = false;
-      if (['not_writer', 'not_granted', 'consent_required', 'not_declared', 'capability_disabled', 'capability_removed'].indexOf(code) >= 0){ readOnly = true; banner = 'readonly'; }
-      else if (code === 'rate_limited') flash('Запазваш твърде често. Изчакай минута и опитай отново.');
-      else if (code === 'too_large') flash('Данните станаха твърде много. Изтрий миналите записи и опитай отново.');
-      else flash('Запазването не успя. Промените са в черновата, опитай отново.');
-      render();
-    });
-  }
-  attempt(true);
+  ensureSession().then(function(){
+    return sbw('PATCH', 'settings?id=eq.1', { rev:next.rev, updated_at:next.updated, school:next.school }, 'return=representation');
+  }).then(function(r){
+    if (!r || !r.length){ var e = new Error('no rights'); e.noRights = true; throw e; }
+    return keys.reduce(function(pr, k){ return pr.then(function(){ return writeKey(k, next); }); }, Promise.resolve());
+  }).then(function(){
+    state = next; draft = clone(next); clearWork(); saving = false; banner = null; cacheState(next);
+    flash('Запазено. Всички виждат промените веднага.'); render();
+    setTimeout(refreshData, 800);
+  }, function(e){
+    saving = false;
+    if (e && e.status === 401 && !e.noRights){ logout(); auErr = 'Входът изтече. Влез отново.'; window.scrollTo(0, 0); }
+    else flash(saveMsg(e));
+    render();
+  });
+}
+function isIOS(){ return /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1); }
+function isStandalone(){ return navigator.standalone === true || !!(window.matchMedia && matchMedia('(display-mode: standalone)').matches); }
+function installHTML(){
+  if (isStandalone() || sGet('localStorage', 'zv-ins-x') === '1') return '';
+  var x = '<button class="icon-b" data-act="ins-x" aria-label="Скрий">×</button>';
+  if (installEvt) return '<div class="ins"><span>Инсталирай Звънец като приложение.</span><div class="ins-a"><button class="btn primary sm" data-act="ins-go">Инсталирай</button>' + x + '</div></div>';
+  if (isIOS()) return '<div class="ins"><span>Сложи Звънец на началния екран: натисни ' + SHARE + ' <b>Сподели</b> и после <b>„Добави към началния екран“</b>.</span>' + x + '</div>';
+  return '';
+}
+function calURL(web){
+  var u = (SB ? SB.url : '') + '/functions/v1/calendar?class=' + (window.ZvLib ? ZvLib.slug(myClass) : '');
+  return web ? u.replace(/^https?:/i, 'webcal:') : u;
+}
+function notifHTML(){
+  if (!calOK) return '';
+  return '<section class="nt"><div class="nt-top"><span class="nt-ic">' + BELL + '</span><div class="nt-tx"><b>Известия за всеки час</b><p>Когато свърши час, телефонът ти показва следващия предмет и стаята. Работи и когато приложението е затворено.</p></div></div>' +
+    '<div class="nt-acts"><a class="btn primary" href="' + esc(calURL(true)) + '">Абонирай се за ' + esc(myClass) + '</a><button class="btn" data-act="copy-cal">Копирай адреса</button></div>' +
+    '<details class="nt-how"><summary>Как се включва</summary><ol>' +
+    '<li>Натисни „Абонирай се“ и потвърди с „Абониране“.</li>' +
+    '<li>Отвори Настройки → Календар → Акаунти → „' + esc(myClass) + ' · Звънец“ и изключи <b>Remove Alerts</b> (премахване на известията). Иначе няма да звъни.</li>' +
+    '<li>Ако бутонът не отвори Календар: Настройки → Календар → Акаунти → Добави акаунт → Друго → Добави абониран календар и постави копирания адрес.</li>' +
+    '</ol><p>Когато програмата се промени, календарът се обновява сам.</p></details></section>';
 }
 
 /* ---------- events ---------- */
@@ -1065,6 +1145,13 @@ APP.addEventListener('click', function(ev){
     case 'bell-del': list = draft.bells[btn.dataset.s] || []; list.pop(); markDirty('bells'); render(); break;
     case 'discard': draft = clone(state); clearWork(); banner = null; evForm = blankEv(); render(); flash('Промените са отхвърлени.'); break;
     case 'save': save(); break;
+    case 'brand': var tn = Date.now(); if (tn - tapT > 2500) taps = 0; tapT = tn;
+      if (++taps >= 5){ taps = 0; editUnlocked = true; sSet('sessionStorage', 'zv-edit', '1'); if (view !== 'teacher'){ view = 'teacher'; tSel.cls = myClass; window.scrollTo(0, 0); render(); } } break;
+    case 'sb-in': signIn(); break;
+    case 'sb-out': logout(); render(); flash('Излезе от профила на това устройство.'); break;
+    case 'copy-cal': var cu = calURL(false); (navigator.clipboard && navigator.clipboard.writeText ? navigator.clipboard.writeText(cu) : Promise.reject()).then(function(){ flash('Адресът е копиран.'); }, function(){ flash(cu); }); break;
+    case 'ins-x': sSet('localStorage', 'zv-ins-x', '1'); render(); break;
+    case 'ins-go': if (installEvt){ var ie = installEvt; installEvt = null; ie.prompt(); render(); } break;
     case 'banner-x': banner = null; render(); break;
   }
 });
@@ -1076,6 +1163,7 @@ function onField(ev){
     case 'tt': setCellField(+el.dataset.i, el.dataset.k, el.value); break;
     case 'ev': evForm[el.dataset.k] = el.type === 'checkbox' ? el.checked : el.value; if (el.dataset.k === 'type' && isChange){ evErr = ''; render(); } else saveUI(); break;
     case 'bell': if (isChange) setBell(el); break;
+    case 'au': auForm[el.dataset.k] = el.value; break;
   }
 }
 APP.addEventListener('input', onField);
@@ -1105,7 +1193,7 @@ function start(hot){
   if (classInfo(state, savedCls)) CLASS = savedCls;
   myClass = CLASS;
   page = ['now', 'week', 'tests'].indexOf(ui.page) >= 0 ? ui.page : 'now';
-  view = ui.view === 'teacher' ? 'teacher' : 'student';
+  view = ui.view === 'teacher' && teacherAllowed() ? 'teacher' : 'student';
   tTab = ['tt', 'ev', 'set'].indexOf(ui.tTab) >= 0 ? ui.tTab : 'tt';
   tSel = { cls:CLASS, day: (ui.tSel && +ui.tSel.day >= 1 && +ui.tSel.day <= 5) ? +ui.tSel.day : todayIdx() };
   selDay = typeof ui.selDay === 'number' ? ui.selDay : null;
@@ -1128,7 +1216,12 @@ function start(hot){
   render();
   initCaps();
   setInterval(tick, 10000);
-  document.addEventListener('visibilitychange', function(){ if (!document.hidden) tick(true); });
+  document.addEventListener('visibilitychange', function(){ if (!document.hidden){ tick(true); if (Date.now() - lastRefresh > 60000) refreshData(); } });
+  setInterval(function(){ if (!document.hidden) refreshData(); }, 10 * 60e3);
+  window.addEventListener('beforeinstallprompt', function(e){ e.preventDefault(); installEvt = e; if (view === 'student' && page === 'now') render(); });
+  window.addEventListener('appinstalled', function(){ installEvt = null; render(); });
+  if (SB && SB.fresh) lastRefresh = Date.now(); else refreshData();
+  checkCalendar();
 }
 
 var H = window.claude && window.claude.hot, started = false;
@@ -1138,5 +1231,93 @@ if (H && typeof H.ready === 'function'){ try { H.ready(go); } catch (e) { go({})
 else go((H && H.data) || {});
 })();
 </script>
+<script>
+(function(){
+var C = window.ZV_CONFIG || {};
+var URL0 = String(C.url || '').trim().replace(/\/+$/, '').replace(/\/rest\/v1$/, '');
+var KEY = String(C.key || '').trim();
+function get(table, query){
+  var h = { apikey: KEY };
+  if (/^eyJ/.test(KEY)) h.Authorization = 'Bearer ' + KEY;
+  return fetch(URL0 + '/rest/v1/' + table + '?' + (query || 'select=*'), { headers: h, cache: 'no-store' }).then(function(r){
+    return r.text().then(function(t){
+      var j = null; try { j = JSON.parse(t); } catch (e) {}
+      if (!r.ok){ var err = new Error((j && (j.message || j.error || j.msg)) || t || ('HTTP ' + r.status)); err.status = r.status; err.table = table; err.code = j && j.code; throw err; }
+      return j;
+    });
+  }, function(e){ var err = new Error(String(e && e.message || e)); err.status = 0; err.table = table; throw err; });
+}
+function hhmm(t){ return String(t || '').slice(0, 5); }
+/* table rows -> the state object the app uses */
+function buildState(t){
+  var st = t.settings[0] || {};
+  var s = { v:1, rev: st.rev || 'r0', updated: st.updated_at || new Date().toISOString(), school: st.school || '', bells:{ '1':[], '2':[] }, classes:[], tt:{}, events:[], sample:{ classes:[] } };
+  t.classes.forEach(function(c){ s.classes.push({ name:c.name, shift:c.shift }); });
+  t.bells.slice().sort(function(a, b){ return a.shift - b.shift || a.idx - b.idx; }).forEach(function(b){
+    (s.bells[String(b.shift)] = s.bells[String(b.shift)] || [])[b.idx] = { n:b.n, start:hhmm(b.start_time), end:hhmm(b.end_time) };
+  });
+  t.lessons.slice().sort(function(a, b){ return a.class_name < b.class_name ? -1 : a.class_name > b.class_name ? 1 : a.weekday - b.weekday || a.idx - b.idx; }).forEach(function(l){
+    var c = s.tt[l.class_name] = s.tt[l.class_name] || {}, row = c[String(l.weekday)] = c[String(l.weekday)] || [];
+    while (row.length < l.idx) row.push(null);
+    row[l.idx] = { s:l.subject, r:l.room, t:l.teacher };
+  });
+  t.events.forEach(function(e){
+    var x = { id:e.id, type:e.type, date:e.date, p:e.period, subject:e.subject, note:e.note, cls:e.classes || [] };
+    if (e.all_school) x.all = true; if (e.cancel) x.cancel = true; if (e.room) x.room = e.room; if (e.substitute) x.sub = e.substitute;
+    s.events.push(x);
+  });
+  return s;
+}
 
-</body></html>
+function load(){
+  if (!C.url || /YOUR-PROJECT|YOUR-/.test(URL0 + KEY)){ var e0 = new Error('config.js'); e0.kind = 'config'; return Promise.reject(e0); }
+  if (!/^https:\/\/[^\/]+$/.test(URL0)){ var e1 = new Error('URL: ' + URL0); e1.kind = 'url'; return Promise.reject(e1); }
+  return Promise.all([get('settings'), get('classes', 'select=*&order=name'), get('bells'), get('lessons'), get('events', 'select=*&order=date,period')]).then(function(r){
+    if (!r[1].length || !r[2].length || !r[3].length){ var e2 = new Error('classes ' + r[1].length + ', bells ' + r[2].length + ', lessons ' + r[3].length); e2.kind = 'empty'; throw e2; }
+    return buildState({ settings:r[0], classes:r[1], bells:r[2], lessons:r[3], events:r[4] });
+  });
+}
+function explain(err){
+  var m = String(err && err.message || ''), s = err && err.status;
+  if (err.kind === 'config') return 'Във файла config.js още стоят YOUR-PROJECT и YOUR-KEY. Постави адреса и ключа между кавичките.';
+  if (err.kind === 'url') return 'Адресът в config.js не изглежда правилно. Трябва да е точно като https://abcd1234.supabase.co (без нищо след .co).';
+  if (err.kind === 'empty') return 'Връзката работи, но таблиците са празни. Пусни seed.sql в SQL Editor.';
+  if (s === 0) return 'Няма връзка със Supabase. Провери интернета, адреса в config.js и дали проектът не е на пауза (Paused).';
+  if (/permission denied/i.test(m) || err.code === '42501') return 'Ключът работи, но няма право да чете таблиците. Пусни в SQL Editor поправката с grant select.';
+  if (/api key|apikey|jwt|unregistered/i.test(m) || s === 401) return 'Supabase не приема ключа в config.js. Използвай publishable (sb_publishable_…) или legacy anon ключа.';
+  if (/does not exist|could not find the table|schema cache/i.test(m) || s === 404 || err.code === 'PGRST205') return 'Таблиците не са намерени. Пусни schema.sql и после seed.sql в SQL Editor.';
+  return 'Supabase върна грешка.';
+}
+function showError(err){
+  console.error(err);
+  var detail = (err.table ? err.table + ': ' : '') + (err.status ? 'HTTP ' + err.status + ' · ' : '') + String(err.message || err);
+  var box = document.createElement('div');
+  box.style.cssText = 'max-width:560px;margin:40px auto;padding:20px;border-radius:16px;background:var(--surface,#fff);border:1px solid var(--line,#D6DEE8);font:16px/1.45 system-ui,-apple-system,sans-serif;color:var(--ink,#14213A)';
+  var h = document.createElement('b'); h.textContent = 'Програмата не можа да се зареди'; h.style.cssText = 'display:block;font-size:19px;margin-bottom:8px';
+  var p = document.createElement('p'); p.textContent = explain(err); p.style.margin = '0 0 12px';
+  var c = document.createElement('code'); c.textContent = detail; c.style.cssText = 'display:block;padding:10px;border-radius:10px;background:var(--surface-2,#F5F7FA);font-size:13px;white-space:pre-wrap;word-break:break-word;color:var(--muted,#66748A)';
+  box.appendChild(h); box.appendChild(p); box.appendChild(c);
+  var app = document.getElementById('app'); app.innerHTML = ''; app.appendChild(box);
+}
+function startApp(state){
+  document.getElementById('app-state').textContent = JSON.stringify(state).replace(/</g, '\\u003c');
+  var s = document.createElement('script');
+  s.text = document.getElementById('app-js').textContent;
+  document.body.appendChild(s);
+}
+window.ZvSB = { url: URL0, key: KEY, load: load, fresh: false };
+var cached = null;
+try { cached = JSON.parse(localStorage.getItem('zv-data')); } catch (e) {}
+if (cached && cached.tt) startApp(cached);
+else {
+  document.getElementById('app').innerHTML = '<div class="boot">Зареждане…</div>';
+  load().then(function(s){
+    try { localStorage.setItem('zv-data', JSON.stringify(s)); } catch (e) {}
+    window.ZvSB.fresh = true; startApp(s);
+  }, showError);
+}
+})();
+</script>
+<script>if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) window.addEventListener('load', function(){ navigator.serviceWorker.register('sw.js').catch(function(){}); });</script>
+</body>
+</html>
