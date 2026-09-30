@@ -379,6 +379,12 @@ button,a,.brand{touch-action:manipulation;-webkit-tap-highlight-color:transparen
 .welcome p{color:var(--ink-2);font-size:15px;max-width:34ch}
 .w-g{display:grid;gap:8px;justify-items:center}
 .w-g .cls-chips{justify-content:center}
+.picker2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px;width:100%;text-align:left}
+.picker2 select{font-family:var(--f-display);font-weight:700;font-size:20px;padding:10px 12px;min-height:48px}
+.picker2 select option:disabled{color:var(--muted)}
+.btn.wide{width:100%;min-height:48px;font-size:16px}
+.sh-body{display:grid;gap:12px;padding:10px 0 4px}
+.welcome .hint{margin:0}
 </style>
 </head>
 <body>
@@ -651,7 +657,7 @@ function headerHTML(){
   } else badge = '<span class="cls-badge"><small>Клас</small>' + esc(CLASS) + '</span>';
   if (view === 'teacher') right = badge + '<button class="btn primary sm" data-act="to-student">Готово</button>';
   else right = (teacherAllowed() ? '<button class="icon-b edit" data-act="to-teacher" aria-label="Редактирай" title="Редактирай">' + PENCIL + '</button>' : '') +
-    (!MINE ? '' : list.length > 1 ? '<button class="cls-btn' + (CLASS !== MINE ? ' peek' : '') + '" data-act="cls-open" aria-label="Други класове"><small>' + (CLASS !== MINE ? 'Гледаш' : 'Клас') + '</small>' + esc(CLASS) + CHEV + '</button>' : badge);
+    (!MINE ? '' : '<button class="cls-btn' + (CLASS !== MINE ? ' peek' : '') + '" data-act="cls-open" aria-label="Друг клас"><small>' + (CLASS !== MINE ? 'Гледаш' : 'Клас') + '</small>' + esc(CLASS) + CHEV + '</button>');
   return '<header class="top"><div class="brand" data-act="brand"><span class="mark">' + BELL + '</span><div class="brand-txt"><div class="brand-t">Звънец</div><div class="brand-s">' + esc(state.school) + '</div></div></div><div class="top-r">' + right + '</div></header>';
 }
 
@@ -1062,23 +1068,43 @@ function setClass(c){
   if (!classInfo(state, c)) return;
   CLASS = myClass = c; tSel.cls = CLASS; if (evForm) evForm.cls = [CLASS]; selDay = null; evErr = ''; clsFrom = null;
 }
-function chipsFor(g, act, big){
-  return '<div class="cls-chips">' + classesOfGrade(state, g).map(function(n){
-    return '<button class="cls-chip' + (big ? ' big' : '') + (!big && n === CLASS ? ' on' : '') + '" data-act="' + act + '" data-c="' + esc(n) + '">' + esc(n) + (!big && n === MINE ? '<small>твоят</small>' : '') + '</button>';
-  }).join('') + '</div>';
+/* all classes of the school; only those with a timetable can be chosen */
+var GRADES = [8, 9, 10, 11, 12], PARS = ['а', 'б', 'в', 'г', 'д', 'е', 'ж'], pick = { g:null, p:'' };
+function hasTT(n){ return !!classInfo(state, n) && hasAnyTT(state, n); }
+function gradeOpen(g){ return PARS.some(function(p){ return hasTT(g + p); }); }
+function firstPar(g){ return PARS.filter(function(p){ return hasTT(g + p); })[0] || ''; }
+function pickInit(from, blank){
+  var g = gradeOf(from), p = String(from || '').slice(String(g).length);
+  if (!gradeOpen(g)) g = GRADES.filter(gradeOpen)[0] || 10;
+  pick = { g:g, p: blank ? '' : (hasTT(g + p) ? p : firstPar(g)) };
+}
+function pickerHTML(act, label){
+  var gOpts = GRADES.map(function(g){ var ok = gradeOpen(g); return '<option value="' + g + '"' + (pick.g === g ? ' selected' : '') + (ok ? '' : ' disabled') + '>' + g + ' клас' + (ok ? '' : ' · скоро') + '</option>'; }).join('');
+  var pOpts = (pick.p ? '' : '<option value="" selected disabled>Избери</option>') + PARS.map(function(p){ var ok = hasTT(pick.g + p); return '<option value="' + p + '"' + (pick.p === p ? ' selected' : '') + (ok ? '' : ' disabled') + '>' + p.toUpperCase() + (ok ? '' : ' · няма програма') + '</option>'; }).join('');
+  return '<div class="picker2"><label class="field"><span>Клас</span><select data-f="pick" data-k="g" aria-label="Клас">' + gOpts + '</select></label>' +
+    '<label class="field"><span>Паралелка</span><select data-f="pick" data-k="p" aria-label="Паралелка">' + pOpts + '</select></label></div>' +
+    '<button class="btn primary wide" data-act="' + act + '"' + (hasTT(pick.g + pick.p) ? '' : ' disabled') + '>' + label + '</button>';
+}
+function soonText(){
+  var s = GRADES.filter(function(g){ return !gradeOpen(g); });
+  if (!s.length) return '';
+  return s.slice(0, -1).join(', ') + (s.length > 1 ? ' и ' : '') + s[s.length - 1] + ' клас още нямат програма.';
 }
 function welcomeHTML(){
+  if (pick.g == null) pickInit(null, true);
   return '<section class="welcome"><span class="mark">' + BELL + '</span><h1>Кой е твоят клас?</h1>' +
     '<p>Звънец винаги ще се отваря с програмата на твоя клас. Другите класове са на едно докосване.</p>' +
-    grades(state).map(function(g){ return '<div class="w-g"><small>' + g + ' клас</small>' + chipsFor(g, 'mine-set', true) + '</div>'; }).join('') + '</section>';
+    pickerHTML('pick-mine', 'Това е моят клас') + (soonText() ? '<p class="hint">' + soonText() + '</p>' : '') + '</section>';
 }
 function sheetHTML(){
-  var mine = sheetOpen === 'mine', title = mine ? 'Кой е твоят клас?' : 'Класове';
-  var list = '<div class="sh-list">' + grades(state).map(function(g){ return '<div class="sh-g"><small>' + g + ' клас</small>' + chipsFor(g, mine ? 'mine-set' : 'cls-pick', false) + '</div>'; }).join('') + '</div>';
+  var mine = sheetOpen === 'mine', title = mine ? 'Кой е твоят клас?' : 'Друг клас';
+  var body = pickerHTML(mine ? 'pick-mine' : 'pick-go', mine ? 'Запази като мой клас' : 'Покажи програмата');
+  var back = !mine && CLASS !== MINE ? '<button class="btn wide" data-act="cls-back">Обратно към ' + esc(MINE) + '</button>' : '';
   var foot = mine ? '<p class="hint">Приложението винаги ще се отваря с програмата на този клас.</p>'
     : '<div class="sh-foot"><span>Твоят клас: <b>' + esc(MINE) + '</b></span><button class="link-btn sm" data-act="mine-change">Смени</button></div>';
   return '<div class="sheet-wrap" data-act="sheet-x"><div class="sheet" data-act="noop" role="dialog" aria-modal="true" aria-label="' + title + '">' +
-    '<div class="sheet-h"><h2>' + title + '</h2><button class="icon-b" data-act="sheet-x" aria-label="Затвори">×</button></div>' + list + foot + '</div></div>';
+    '<div class="sheet-h"><h2>' + title + '</h2><button class="icon-b" data-act="sheet-x" aria-label="Затвори">×</button></div>' +
+    '<div class="sh-body">' + body + back + '</div>' + foot + '</div></div>';
 }
 function perms(){ return (sess && sess.perms) || []; }
 function isAdmin(){ return perms().indexOf('*') >= 0; }
@@ -1287,12 +1313,12 @@ APP.addEventListener('click', function(ev){
     case 'brand': var tn = Date.now(); if (tn - tapT > 2500) taps = 0; tapT = tn;
       if (++taps >= 5){ taps = 0; editUnlocked = true; sSet('sessionStorage', 'zv-edit', '1'); if (view !== 'teacher'){ view = 'teacher'; tSel.cls = myClass; window.scrollTo(0, 0); render(); permsThenRender(); } } break;
     case 'sb-in': signIn(); break;
-    case 'cls-open': sheetOpen = 'view'; render(); break;
+    case 'cls-open': pickInit(CLASS); sheetOpen = 'view'; render(); break;
     case 'sheet-x': sheetOpen = false; render(); break;
-    case 'mine-change': sheetOpen = 'mine'; render(); break;
-    case 'cls-pick': setClass(btn.dataset.c); sheetOpen = false; window.scrollTo(0, 0); render(); break;
-    case 'cls-back': setClass(MINE); window.scrollTo(0, 0); render(); break;
-    case 'mine-set': if (classInfo(state, btn.dataset.c)){ var first = !MINE; MINE = btn.dataset.c; sSet('localStorage', 'zv-mine', MINE); setClass(MINE); sheetOpen = false; window.scrollTo(0, 0); render(); if (!first) flash('Твоят клас вече е ' + MINE + '.'); } break;
+    case 'mine-change': pickInit(MINE); sheetOpen = 'mine'; render(); break;
+    case 'pick-go': if (hasTT(pick.g + pick.p)){ setClass(pick.g + pick.p); sheetOpen = false; window.scrollTo(0, 0); render(); } break;
+    case 'cls-back': setClass(MINE); sheetOpen = false; window.scrollTo(0, 0); render(); break;
+    case 'pick-mine': var nc = pick.g + pick.p; if (hasTT(nc)){ var first = !MINE; MINE = nc; sSet('localStorage', 'zv-mine', MINE); setClass(MINE); sheetOpen = false; window.scrollTo(0, 0); render(); if (!first) flash('Твоят клас вече е ' + MINE + '.'); } break;
     case 'acc-add': accAdd(); break;
     case 'acc-del': accDel(btn.dataset.e, btn.dataset.c); break;
     case 'acc-reload': accRows = null; accErr = ''; render(); break;
@@ -1312,6 +1338,7 @@ function onField(ev){
     case 'ev': evForm[el.dataset.k] = el.type === 'checkbox' ? el.checked : el.value; if (el.dataset.k === 'type' && isChange){ evErr = ''; render(); } else saveUI(); break;
     case 'bell': if (isChange) setBell(el); break;
     case 'au': auForm[el.dataset.k] = el.value; break;
+    case 'pick': if (el.dataset.k === 'g'){ pick.g = +el.value; pick.p = MINE ? firstPar(pick.g) : ''; } else pick.p = el.value; if (isChange) render(); break;
     case 'acc': accForm[el.dataset.k] = el.value; break;
   }
 }
