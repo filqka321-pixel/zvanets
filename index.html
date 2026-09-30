@@ -355,6 +355,30 @@ button,a,.brand{touch-action:manipulation;-webkit-tap-highlight-color:transparen
 .acc-row b{display:block;font-size:14.5px;word-break:break-all}
 .acc-row small{color:var(--muted);font-size:13px}
 .acc-row .you{font-family:var(--f-ui);font-size:12.5px;font-weight:600;color:var(--muted);padding:0 6px}
+/* my class + class sheet */
+.cls-btn{cursor:pointer}
+.cls-btn.peek{border-color:var(--change);background:var(--change-soft)}
+.cls-btn.peek small,.cls-btn.peek svg{color:var(--change)}
+.cls-chips{display:flex;flex-wrap:wrap;gap:8px}
+.cls-chip{min-width:64px;border:1px solid var(--line);background:var(--surface-2);border-radius:14px;padding:10px 14px;font-family:var(--f-display);font-weight:700;font-size:22px;line-height:1;color:var(--ink);display:grid;justify-items:center;gap:4px}
+.cls-chip small{font-family:var(--f-ui);font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--brand)}
+.cls-chip.on{border-color:var(--brand);background:var(--brand-soft);color:var(--brand)}
+.cls-chip.big{min-width:88px;padding:16px 18px;font-size:30px}
+.sheet-h{margin-bottom:4px}
+.sh-g{display:grid;grid-template-columns:64px minmax(0,1fr);gap:10px;align-items:center;padding:12px 0;border-top:1px solid var(--line-2)}
+.sh-list .sh-g:first-child{border-top:0}
+.sh-g>small,.w-g>small{font-family:var(--f-ui);font-size:11.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.sh-foot{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:6px;padding-top:12px;border-top:1px solid var(--line);font-family:var(--f-ui);font-size:14px;color:var(--muted)}
+.sh-foot b{color:var(--ink)}
+.peek-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px;padding:8px 8px 8px 14px;border-radius:14px;background:var(--change-soft);font-family:var(--f-ui);font-size:14px;line-height:1.3}
+.peek-bar b{color:var(--change)}
+.welcome{background:var(--surface);border:1px solid var(--line);border-radius:24px;padding:30px 20px 26px;display:grid;gap:16px;justify-items:center;text-align:center;margin-top:6vh}
+.welcome .mark{width:58px;height:58px;border-radius:17px}
+.welcome .mark svg{width:30px;height:30px}
+.welcome h1{font-family:var(--f-display);font-weight:800;font-size:34px;line-height:1}
+.welcome p{color:var(--ink-2);font-size:15px;max-width:34ch}
+.w-g{display:grid;gap:8px;justify-items:center}
+.w-g .cls-chips{justify-content:center}
 </style>
 </head>
 <body>
@@ -548,6 +572,7 @@ var evForm = null, evErr = '', clsErr = '', showPast = false;
 var newCls = { name:'', shift:2 };
 var art = null, canEdit = null, readOnly = false, saving = false;
 var SB = window.ZvSB, sess = jparse(sGet('localStorage', 'zv-sess')), auForm = { email:'', password:'' }, auErr = '', auBusy = false;
+var MINE = null;
 var accRows = null, accForm = { email:'', cls:'' }, accErr = '', accBusy = false;
 var editUnlocked = sGet('sessionStorage', 'zv-edit') === '1', taps = 0, tapT = 0;
 var installEvt = null, lastRefresh = 0, refreshing = false, calOK = sGet('localStorage', 'zv-cal') === '1';
@@ -604,10 +629,11 @@ function render(){
   var now = new Date(); lastMin = now.getHours() * 60 + now.getMinutes();
   var h = headerHTML();
   h += view === 'teacher' ? teacherHTML(now) : studentHTML(now);
-  h += '<footer class="foot"><span>' + esc(CLASS) + ' · ' + esc(state.school) + '</span><span>·</span><span>Обновено ' + esc(fmtUpdated(state.updated)) + '</span></footer>';
-  if (view === 'student') h += tabbarHTML(now);
+  h += '<footer class="foot"><span>' + (MINE || view === 'teacher' ? esc(CLASS) + ' · ' : '') + esc(state.school) + '</span><span>·</span><span>Обновено ' + esc(fmtUpdated(state.updated)) + '</span></footer>';
+  if (view === 'student' && MINE) h += tabbarHTML(now);
+  if (view === 'student' && sheetOpen && MINE) h += sheetHTML();
   APP.innerHTML = h;
-  APP.classList.toggle('with-tabs', view === 'student');
+  APP.classList.toggle('with-tabs', view === 'student' && !!MINE);
   var pill = APP.querySelector('.tb-pill');
   if (pill){ var to = +pill.dataset.to; pill.getBoundingClientRect(); pill.style.transform = pillX(to); tabFrom = to; }
   var cp = APP.querySelector('.cls-pill');
@@ -624,7 +650,8 @@ function headerHTML(){
       list.map(function(n){ var on = n === CLASS; return '<button class="cls-o' + (on ? ' on' : '') + '" data-act="cls" data-c="' + esc(n) + '" aria-pressed="' + on + '">' + esc(n) + '</button>'; }).join('') + '</div>';
   } else badge = '<span class="cls-badge"><small>Клас</small>' + esc(CLASS) + '</span>';
   if (view === 'teacher') right = badge + '<button class="btn primary sm" data-act="to-student">Готово</button>';
-  else right = (teacherAllowed() ? '<button class="icon-b edit" data-act="to-teacher" aria-label="Редактирай" title="Редактирай">' + PENCIL + '</button>' : '') + badge;
+  else right = (teacherAllowed() ? '<button class="icon-b edit" data-act="to-teacher" aria-label="Редактирай" title="Редактирай">' + PENCIL + '</button>' : '') +
+    (!MINE ? '' : list.length > 1 ? '<button class="cls-btn' + (CLASS !== MINE ? ' peek' : '') + '" data-act="cls-open" aria-label="Други класове"><small>' + (CLASS !== MINE ? 'Гледаш' : 'Клас') + '</small>' + esc(CLASS) + CHEV + '</button>' : badge);
   return '<header class="top"><div class="brand" data-act="brand"><span class="mark">' + BELL + '</span><div class="brand-txt"><div class="brand-t">Звънец</div><div class="brand-s">' + esc(state.school) + '</div></div></div><div class="top-r">' + right + '</div></header>';
 }
 
@@ -632,6 +659,7 @@ function headerHTML(){
 function weekMonday(now, off){ var dow = now.getDay(); var base = dow === 0 ? addDays(now, 1) : dow === 6 ? addDays(now, 2) : addDays(now, 1 - dow); return addDays(base, off * 7); }
 function defaultSel(now){ var dow = now.getDay(); return (weekOffset === 0 && dow >= 1 && dow <= 5) ? dow : 1; }
 function studentHTML(now){
+  if (!MINE) return '<div class="page">' + welcomeHTML() + '</div>';
   var body;
   if (page === 'week'){
     var mon = weekMonday(now, weekOffset), d = selDay != null ? selDay : defaultSel(now);
@@ -639,7 +667,8 @@ function studentHTML(now){
     body = weekHTML(now, mon, d) + dayHTML(dayPlan(state, myClass, date), date, isToday, now);
   } else if (page === 'tests') body = testsHTML(now);
   else body = installHTML() + heroHTML(now) + notifHTML();
-  return '<div class="page page-' + page + '">' + body + '</div>';
+  var peek = CLASS !== MINE ? '<div class="peek-bar"><span>Гледаш програмата на <b>' + esc(CLASS) + '</b></span><button class="btn sm" data-act="cls-back">Към ' + esc(MINE) + '</button></div>' : '';
+  return '<div class="page page-' + page + '">' + peek + body + '</div>';
 }
 function soonTests(now){
   var t = isoDate(now);
@@ -1029,6 +1058,28 @@ function sbw(method, path, body, prefer){
   }, function(){ var e = new Error('offline'); e.status = 0; throw e; });
 }
 function enc(v){ return encodeURIComponent(v); }
+function setClass(c){
+  if (!classInfo(state, c)) return;
+  CLASS = myClass = c; tSel.cls = CLASS; if (evForm) evForm.cls = [CLASS]; selDay = null; evErr = ''; clsFrom = null;
+}
+function chipsFor(g, act, big){
+  return '<div class="cls-chips">' + classesOfGrade(state, g).map(function(n){
+    return '<button class="cls-chip' + (big ? ' big' : '') + (!big && n === CLASS ? ' on' : '') + '" data-act="' + act + '" data-c="' + esc(n) + '">' + esc(n) + (!big && n === MINE ? '<small>твоят</small>' : '') + '</button>';
+  }).join('') + '</div>';
+}
+function welcomeHTML(){
+  return '<section class="welcome"><span class="mark">' + BELL + '</span><h1>Кой е твоят клас?</h1>' +
+    '<p>Звънец винаги ще се отваря с програмата на твоя клас. Другите класове са на едно докосване.</p>' +
+    grades(state).map(function(g){ return '<div class="w-g"><small>' + g + ' клас</small>' + chipsFor(g, 'mine-set', true) + '</div>'; }).join('') + '</section>';
+}
+function sheetHTML(){
+  var mine = sheetOpen === 'mine', title = mine ? 'Кой е твоят клас?' : 'Класове';
+  var list = '<div class="sh-list">' + grades(state).map(function(g){ return '<div class="sh-g"><small>' + g + ' клас</small>' + chipsFor(g, mine ? 'mine-set' : 'cls-pick', false) + '</div>'; }).join('') + '</div>';
+  var foot = mine ? '<p class="hint">Приложението винаги ще се отваря с програмата на този клас.</p>'
+    : '<div class="sh-foot"><span>Твоят клас: <b>' + esc(MINE) + '</b></span><button class="link-btn sm" data-act="mine-change">Смени</button></div>';
+  return '<div class="sheet-wrap" data-act="sheet-x"><div class="sheet" data-act="noop" role="dialog" aria-modal="true" aria-label="' + title + '">' +
+    '<div class="sheet-h"><h2>' + title + '</h2><button class="icon-b" data-act="sheet-x" aria-label="Затвори">×</button></div>' + list + foot + '</div></div>';
+}
 function perms(){ return (sess && sess.perms) || []; }
 function isAdmin(){ return perms().indexOf('*') >= 0; }
 function canClass(c){ return isAdmin() || perms().indexOf(c) >= 0; }
@@ -1236,6 +1287,12 @@ APP.addEventListener('click', function(ev){
     case 'brand': var tn = Date.now(); if (tn - tapT > 2500) taps = 0; tapT = tn;
       if (++taps >= 5){ taps = 0; editUnlocked = true; sSet('sessionStorage', 'zv-edit', '1'); if (view !== 'teacher'){ view = 'teacher'; tSel.cls = myClass; window.scrollTo(0, 0); render(); permsThenRender(); } } break;
     case 'sb-in': signIn(); break;
+    case 'cls-open': sheetOpen = 'view'; render(); break;
+    case 'sheet-x': sheetOpen = false; render(); break;
+    case 'mine-change': sheetOpen = 'mine'; render(); break;
+    case 'cls-pick': setClass(btn.dataset.c); sheetOpen = false; window.scrollTo(0, 0); render(); break;
+    case 'cls-back': setClass(MINE); window.scrollTo(0, 0); render(); break;
+    case 'mine-set': if (classInfo(state, btn.dataset.c)){ var first = !MINE; MINE = btn.dataset.c; sSet('localStorage', 'zv-mine', MINE); setClass(MINE); sheetOpen = false; window.scrollTo(0, 0); render(); if (!first) flash('Твоят клас вече е ' + MINE + '.'); } break;
     case 'acc-add': accAdd(); break;
     case 'acc-del': accDel(btn.dataset.e, btn.dataset.c); break;
     case 'acc-reload': accRows = null; accErr = ''; render(); break;
@@ -1281,8 +1338,9 @@ function initCaps(){
 function start(hot){
   hot = hot || {};
   var ui = hot.ui || jparse(sGet('sessionStorage', 'zv-ui')) || {};
-  var savedCls = sGet('localStorage', 'zv-class');
-  if (classInfo(state, savedCls)) CLASS = savedCls;
+  var mine = sGet('localStorage', 'zv-mine');
+  MINE = classInfo(state, mine) ? mine : null;
+  if (MINE) CLASS = MINE;
   myClass = CLASS;
   page = ['now', 'week', 'tests'].indexOf(ui.page) >= 0 ? ui.page : 'now';
   view = ui.view === 'teacher' && teacherAllowed() ? 'teacher' : 'student';
@@ -1314,6 +1372,7 @@ function start(hot){
   window.addEventListener('appinstalled', function(){ installEvt = null; render(); });
   if (SB && SB.fresh) lastRefresh = Date.now(); else refreshData();
   checkCalendar();
+  document.addEventListener('keydown', function(e){ if (e.key === 'Escape' && sheetOpen){ sheetOpen = false; render(); } });
   if (view === 'teacher') permsThenRender();
 }
 
