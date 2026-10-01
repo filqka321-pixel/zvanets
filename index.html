@@ -1140,16 +1140,22 @@ function devId(){
 function recordVisit(){
   var day = isoDate(new Date()), key = day + '|' + (MINE || '');
   if (!SB || sGet('localStorage', 'zv-visit') === key) return;
-  var h = { apikey:SB.key, 'Content-Type':'application/json', Prefer:'resolution=ignore-duplicates,return=minimal' };
+  var h = { apikey:SB.key, 'Content-Type':'application/json' };
   if (/^eyJ/.test(SB.key)) h.Authorization = 'Bearer ' + SB.key;
-  fetch(SB.url + '/rest/v1/visits?on_conflict=day,device,class_name', { method:'POST', headers:h, body:JSON.stringify({ device:devId(), class_name:MINE || '', installed:isStandalone() }) })
-    .then(function(r){ if (r.ok || r.status === 409) sSet('localStorage', 'zv-visit', key); }, function(){});
+  fetch(SB.url + '/rest/v1/rpc/log_visit', { method:'POST', headers:h, body:JSON.stringify({ p_device:devId(), p_class:MINE || '', p_installed:isStandalone() }) })
+    .then(function(r){
+      if (r.ok){ sSet('localStorage', 'zv-visit', key); sSet('localStorage', 'zv-visit-err', null); return; }
+      return r.text().then(function(t){ var j = jparse(t) || {}; sSet('localStorage', 'zv-visit-err', 'HTTP ' + r.status + (j.message ? ' · ' + j.message : '')); });
+    }, function(){ sSet('localStorage', 'zv-visit-err', 'няма връзка'); });
 }
 /* ---- Статистика (admin only) ---- */
 function statLoad(){
   statBusy = true; statErr = '';
   return ensureSession().then(function(){ return sbw('POST', 'rpc/visit_stats', {}); }).then(function(r){
-    statData = r || {}; statAt = new Date(); statBusy = false; if (tTab === 'stat') render();
+    statBusy = false;
+    if (!r){ statData = {}; statErr = 'Supabase не те разпознава като админ. Провери, че имейлът ти е в таблицата editors с клас *.'; }
+    else { statData = r; statAt = new Date(); }
+    if (tTab === 'stat') render();
   }, function(e){
     statBusy = false; statData = {};
     statErr = (e.status === 404 || e.code === 'PGRST202' || e.code === '42883') ? 'Статистиката още не е включена. Пусни visits.sql в Supabase.' : 'Статистиката не се зареди (' + e.message + ').';
@@ -1177,7 +1183,9 @@ function statHTML(){
   var crow = cls.map(function(x){
     return '<div class="st-cls">' + (x.cls ? '<b>' + esc(x.cls) + '</b>' : '<b class="none">без клас</b>') + '<div class="st-track"><i style="width:' + Math.max(2, Math.round(x.n / cmax * 100)) + '%"></i></div><span>' + x.n + '</span></div>';
   }).join('');
-  return '<div class="st"><div class="st-tiles">' + tiles + '</div>' +
+  var vk = sGet('localStorage', 'zv-visit') || '', verr = sGet('localStorage', 'zv-visit-err');
+  var mine = vk.indexOf(isoDate(new Date()) + '|') === 0 ? '<b>✓ Това устройство е отчетено днес.</b>' : verr ? '<b>✗ Това устройство не успя да се отчете:</b> ' + esc(verr) : 'Това устройство още не е отчетено днес.';
+  return '<div class="st"><div class="st-tiles">' + tiles + '</div>' + '<p class="st-note">' + mine + '</p>' +
     '<p class="st-note"><b>' + n(d.installed_week) + ' от ' + n(d.week) + '</b> устройства през последните 7 дни отварят Звънец от началния екран.</p>' +
     '<div class="panel"><div class="form-h"><h3>Устройства по дни</h3><button class="link-btn sm" data-act="st-reload">Обнови</button></div>' +
     '<div><div class="st-bars">' + bars + '</div><div class="st-days">' + days + '</div></div>' +
