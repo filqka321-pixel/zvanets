@@ -603,6 +603,7 @@ var newCls = { name:'', shift:2 };
 var art = null, canEdit = null, readOnly = false, saving = false;
 var SB = window.ZvSB, sess = jparse(sGet('localStorage', 'zv-sess')), auForm = { email:'', password:'' }, auErr = '', auBusy = false;
 var MINE = null;
+var CHART = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M5 20v-7M12 20V5M19 20v-10"/></svg>';
 var statData = null, statAt = null, statBusy = false, statErr = '';
 var accRows = null, accForm = { email:'', cls:'' }, accErr = '', accBusy = false;
 var editUnlocked = sGet('sessionStorage', 'zv-edit') === '1', taps = 0, tapT = 0;
@@ -659,7 +660,7 @@ function render(){
   clearTimeout(armTimer); armed = null;
   var now = new Date(); lastMin = now.getHours() * 60 + now.getMinutes();
   var h = headerHTML();
-  h += view === 'teacher' ? teacherHTML(now) : studentHTML(now);
+  h += view === 'stats' ? '<div class="teacher"><div class="t-head"><div><h1 class="t-title">Статистика</h1><p class="t-sub">Колко устройства отварят Звънец. Анонимно, без имена.</p></div></div>' + statHTML() + '</div>' : view === 'teacher' ? teacherHTML(now) : studentHTML(now);
   h += '<footer class="foot"><span>' + (MINE || view === 'teacher' ? esc(CLASS) + ' · ' : '') + esc(state.school) + '</span><span>·</span><span>Обновено ' + esc(fmtUpdated(state.updated)) + '</span></footer>';
   if (view === 'student' && MINE) h += tabbarHTML(now);
   if (view === 'student' && sheetOpen && MINE) h += sheetHTML();
@@ -680,8 +681,9 @@ function headerHTML(){
     badge = '<div class="cls-seg" role="group" aria-label="Клас"><i class="cls-pill" data-to="' + to + '" style="width:calc((100% - 6px) / ' + list.length + ');transform:translateX(' + (from * 100) + '%)"></i>' +
       list.map(function(n){ var on = n === CLASS; return '<button class="cls-o' + (on ? ' on' : '') + '" data-act="cls" data-c="' + esc(n) + '" aria-pressed="' + on + '">' + esc(n) + '</button>'; }).join('') + '</div>';
   } else badge = '<span class="cls-badge"><small>Клас</small>' + esc(CLASS) + '</span>';
-  if (view === 'teacher') right = badge + '<button class="btn primary sm" data-act="to-student">Готово</button>';
-  else right = (teacherAllowed() ? '<button class="icon-b edit" data-act="to-teacher" aria-label="Редактирай" title="Редактирай">' + PENCIL + '</button>' : '') +
+  if (view === 'stats') right = '<button class="btn primary sm" data-act="to-student">Готово</button>';
+  else if (view === 'teacher') right = badge + '<button class="btn primary sm" data-act="to-student">Готово</button>';
+  else right = (isAdmin() ? '<button class="icon-b edit" data-act="to-stats" aria-label="Статистика" title="Статистика">' + CHART + '</button>' : '') + (teacherAllowed() ? '<button class="icon-b edit" data-act="to-teacher" aria-label="Редактирай" title="Редактирай">' + PENCIL + '</button>' : '') +
     (!MINE ? '' : '<button class="cls-btn' + (CLASS !== MINE ? ' peek' : '') + '" data-act="cls-open" aria-label="Друг клас"><small>' + (CLASS !== MINE ? 'Гледаш' : 'Клас') + '</small>' + esc(CLASS) + CHEV + '</button>');
   return '<header class="top"><div class="brand" data-act="brand"><span class="mark">' + BELL + '</span><div class="brand-txt"><div class="brand-t">Звънец</div><div class="brand-s">Програма</div></div></div><div class="top-r">' + right + '</div></header>';
 }
@@ -872,12 +874,12 @@ var BANNERS = {
 function armBtn(key, cls, act, l0, l1, extra){ return '<button class="' + cls + '" data-act="' + act + '" data-arm="' + esc(key) + '" data-l0="' + esc(l0) + '" data-l1="' + esc(l1) + '"' + (extra || '') + '>' + esc(l0) + '</button>'; }
 function teacherHTML(now){
   var tabs = [['tt', 'Програма'], ['ev', 'Тестове и събития']];
-  if (isAdmin()) tabs.push(['set', 'Звънец'], ['acc', 'Достъп'], ['stat', 'Статистика']);
+  if (isAdmin()) tabs.push(['set', 'Звънец'], ['acc', 'Достъп']);
   if (!tabs.some(function(t){ return t[0] === tTab; })) tTab = 'tt';
   if (!sess || !sess.access_token) return '<div class="teacher">' + authHTML() + '</div>';
   if (!sess.perms) return '<div class="teacher">' + authHTML() + '<div class="panel"><div class="empty">Зареждане на правата…</div></div></div>';
   if (!editList().length) return '<div class="teacher">' + authHTML() + '<div class="panel"><div class="empty">Този профил още няма права за клас. Помоли администратора да ти даде достъп.</div></div></div>';
-  var body = tTab === 'ev' ? evHTML(now) : tTab === 'set' ? setHTML() : tTab === 'acc' ? accHTML() : tTab === 'stat' ? statHTML() : ttHTML();
+  var body = tTab === 'ev' ? evHTML(now) : tTab === 'set' ? setHTML() : tTab === 'acc' ? accHTML() : ttHTML();
   var b = banner && BANNERS[banner] ? '<div class="banner ' + BANNERS[banner][0] + '" role="status"><p>' + esc(BANNERS[banner][1]) + '</p><button class="btn sm" data-act="banner-x">Разбрах</button></div>' : '';
   return '<div class="teacher">' + b + authHTML() + '<div class="t-head"><div><h1 class="t-title">Редакция · ' + esc(CLASS) + '</h1><p class="t-sub">Съучениците виждат промените, след като натиснеш „Запази“.</p></div><div class="tabs" role="tablist">' +
     tabs.map(function(t){ return '<button class="tab' + (tTab === t[0] ? ' on' : '') + '" role="tab" aria-selected="' + (tTab === t[0]) + '" data-act="ttab" data-t="' + t[0] + '">' + t[1] + '</button>'; }).join('') +
@@ -1155,11 +1157,11 @@ function statLoad(){
     statBusy = false;
     if (!r){ statData = {}; statErr = 'Supabase не те разпознава като админ. Провери, че имейлът ти е в таблицата editors с клас *.'; }
     else { statData = r; statAt = new Date(); }
-    if (tTab === 'stat') render();
+    if (view === 'stats') render();
   }, function(e){
     statBusy = false; statData = {};
     statErr = (e.status === 404 || e.code === 'PGRST202' || e.code === '42883') ? 'Статистиката още не е включена. Пусни visits.sql в Supabase.' : 'Статистиката не се зареди (' + e.message + ').';
-    if (tTab === 'stat') render();
+    if (view === 'stats') render();
   });
 }
 function statHTML(){
@@ -1367,7 +1369,7 @@ APP.addEventListener('click', function(ev){
     case 'week-now': weekOffset = 0; selDay = null; render(); break;
     case 'to-teacher': view = 'teacher'; if (!classInfo(draft, tSel.cls)) tSel.cls = myClass; if (canEdit === false){ readOnly = true; banner = 'readonly'; } window.scrollTo(0, 0); render(); permsThenRender(); break;
     case 'to-student': view = 'student'; window.scrollTo(0, 0); render(); break;
-    case 'ttab': if (btn.dataset.t === 'stat') statData = null; tTab = btn.dataset.t; evErr = ''; clsErr = ''; render(); break;
+    case 'ttab': tTab = btn.dataset.t; evErr = ''; clsErr = ''; render(); break;
     case 'tsel-day': tSel.day = +btn.dataset.d; render(); break;
     case 'tt-clear':
       d = +btn.dataset.i; list = ttRow(tSel.cls, tSel.day); list[d] = null; tidyRow(tSel.cls, tSel.day); markTT(tSel.cls, tSel.day);
@@ -1400,6 +1402,7 @@ APP.addEventListener('click', function(ev){
       if (++taps >= 5){ taps = 0; editUnlocked = true; sSet('sessionStorage', 'zv-edit', '1'); if (view !== 'teacher'){ view = 'teacher'; tSel.cls = myClass; window.scrollTo(0, 0); render(); permsThenRender(); } } break;
     case 'sb-in': signIn(); break;
     case 'st-bar': flash(btn.dataset.l); break;
+    case 'to-stats': if (isAdmin()){ view = 'stats'; statData = null; sheetOpen = false; window.scrollTo(0, 0); render(); } break;
     case 'st-reload': statData = null; render(); break;
     case 'cls-open': pickInit(CLASS); sheetOpen = 'view'; render(); break;
     case 'sheet-x': sheetOpen = false; render(); break;
@@ -1434,7 +1437,7 @@ APP.addEventListener('input', onField);
 APP.addEventListener('change', onField);
 
 function tick(force){
-  if (view === 'teacher' && tTab === 'stat' && !statBusy && statAt && Date.now() - statAt > 60000 && !document.hidden){ statLoad(); }
+  if (view === 'stats' && !statBusy && statAt && Date.now() - statAt > 60000 && !document.hidden){ statLoad(); }
   var d = new Date(), mm = d.getHours() * 60 + d.getMinutes();
   if (!force && mm === lastMin) return;
   if (view === 'student' && page !== 'tests') render();
