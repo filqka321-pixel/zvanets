@@ -385,6 +385,30 @@ button,a,.brand{touch-action:manipulation;-webkit-tap-highlight-color:transparen
 .btn.wide{width:100%;min-height:48px;font-size:16px}
 .sh-body{display:grid;gap:12px;padding:10px 0 4px}
 .welcome .hint{margin:0}
+/* stats */
+.st{display:grid;gap:14px}
+.st-tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+@media (max-width:440px){.st-tiles{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.st-tile{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:12px 14px;display:grid;gap:6px}
+.st-tile small{font-family:var(--f-ui);font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.st-tile b{font-family:var(--f-display);font-weight:700;font-size:32px;line-height:1;font-variant-numeric:tabular-nums}
+.st-note{font-size:14px;color:var(--ink-2)}
+.st-note b{color:var(--ink)}
+.st-bars{display:grid;grid-template-columns:repeat(14,minmax(0,1fr));gap:2px;height:140px;border-bottom:1px solid var(--line)}
+.st-bar{border:0;background:none;padding:0;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;height:100%;cursor:pointer}
+.st-bar i{display:block;width:72%;max-width:20px;background:var(--brand);border-radius:4px 4px 0 0}
+.st-bar b{font-family:var(--f-ui);font-size:11px;font-weight:700;color:var(--ink-2);margin-bottom:3px;font-variant-numeric:tabular-nums}
+.st-bar:hover i,.st-bar:focus-visible i{filter:brightness(1.15)}
+.st-days{display:grid;grid-template-columns:repeat(14,minmax(0,1fr));gap:2px;margin-top:6px}
+.st-days small{text-align:center;font-family:var(--f-ui);font-size:10.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+.st-days small.we{opacity:.55}
+.st-cls{display:grid;grid-template-columns:64px minmax(0,1fr) 44px;gap:10px;align-items:center;padding:7px 0;border-top:1px solid var(--line-2)}
+.st-cls:first-child{border-top:0}
+.st-cls b{font-family:var(--f-display);font-weight:700;font-size:20px;line-height:1}
+.st-cls b.none{font-family:var(--f-ui);font-size:13px;font-weight:600;color:var(--muted)}
+.st-track{height:10px;border-radius:999px;background:var(--surface-2);overflow:hidden}
+.st-track i{display:block;height:100%;background:var(--brand);border-radius:0 4px 4px 0}
+.st-cls span{text-align:right;font-family:var(--f-ui);font-weight:700;font-variant-numeric:tabular-nums}
 </style>
 </head>
 <body>
@@ -579,6 +603,7 @@ var newCls = { name:'', shift:2 };
 var art = null, canEdit = null, readOnly = false, saving = false;
 var SB = window.ZvSB, sess = jparse(sGet('localStorage', 'zv-sess')), auForm = { email:'', password:'' }, auErr = '', auBusy = false;
 var MINE = null;
+var statData = null, statBusy = false, statErr = '';
 var accRows = null, accForm = { email:'', cls:'' }, accErr = '', accBusy = false;
 var editUnlocked = sGet('sessionStorage', 'zv-edit') === '1', taps = 0, tapT = 0;
 var installEvt = null, lastRefresh = 0, refreshing = false, calOK = sGet('localStorage', 'zv-cal') === '1';
@@ -847,16 +872,16 @@ var BANNERS = {
 function armBtn(key, cls, act, l0, l1, extra){ return '<button class="' + cls + '" data-act="' + act + '" data-arm="' + esc(key) + '" data-l0="' + esc(l0) + '" data-l1="' + esc(l1) + '"' + (extra || '') + '>' + esc(l0) + '</button>'; }
 function teacherHTML(now){
   var tabs = [['tt', 'Програма'], ['ev', 'Тестове и събития']];
-  if (isAdmin()) tabs.push(['set', 'Звънец'], ['acc', 'Достъп']);
+  if (isAdmin()) tabs.push(['set', 'Звънец'], ['acc', 'Достъп'], ['stat', 'Статистика']);
   if (!tabs.some(function(t){ return t[0] === tTab; })) tTab = 'tt';
   if (!sess || !sess.access_token) return '<div class="teacher">' + authHTML() + '</div>';
   if (!sess.perms) return '<div class="teacher">' + authHTML() + '<div class="panel"><div class="empty">Зареждане на правата…</div></div></div>';
   if (!editList().length) return '<div class="teacher">' + authHTML() + '<div class="panel"><div class="empty">Този профил още няма права за клас. Помоли администратора да ти даде достъп.</div></div></div>';
-  var body = tTab === 'ev' ? evHTML(now) : tTab === 'set' ? setHTML() : tTab === 'acc' ? accHTML() : ttHTML();
+  var body = tTab === 'ev' ? evHTML(now) : tTab === 'set' ? setHTML() : tTab === 'acc' ? accHTML() : tTab === 'stat' ? statHTML() : ttHTML();
   var b = banner && BANNERS[banner] ? '<div class="banner ' + BANNERS[banner][0] + '" role="status"><p>' + esc(BANNERS[banner][1]) + '</p><button class="btn sm" data-act="banner-x">Разбрах</button></div>' : '';
   return '<div class="teacher">' + b + authHTML() + '<div class="t-head"><div><h1 class="t-title">Редакция · ' + esc(CLASS) + '</h1><p class="t-sub">Съучениците виждат промените, след като натиснеш „Запази“.</p></div><div class="tabs" role="tablist">' +
     tabs.map(function(t){ return '<button class="tab' + (tTab === t[0] ? ' on' : '') + '" role="tab" aria-selected="' + (tTab === t[0]) + '" data-act="ttab" data-t="' + t[0] + '">' + t[1] + '</button>'; }).join('') +
-    '</div></div>' + body + '<div class="savebar" id="savebar">' + saveBarInner() + '</div>' + datalists() + '</div>';
+    '</div></div>' + body + ((tTab === 'stat' || tTab === 'acc') && !dirty.length ? '' : '<div class="savebar" id="savebar">' + saveBarInner() + '</div>') + datalists() + '</div>';
 }
 function datalists(){
   var teach = [], rooms = [], subj = SUBJECTS.slice();
@@ -1030,7 +1055,7 @@ function setSession(j){
   sess = { access_token:j.access_token, refresh_token:j.refresh_token, expires_at: j.expires_at || Math.floor(Date.now() / 1000) + (j.expires_in || 3600), email: (j.user && j.user.email) || (sess && sess.email) || '' };
   sSet('localStorage', 'zv-sess', JSON.stringify(sess));
 }
-function logout(){ sess = null; accRows = null; sSet('localStorage', 'zv-sess', null); }
+function logout(){ sess = null; accRows = null; statData = null; sSet('localStorage', 'zv-sess', null); }
 function signIn(){
   var email = String(auForm.email || '').trim(), pw = String(auForm.password || '');
   if (!email || !pw){ auErr = 'Напиши имейл и парола.'; render(); return; }
@@ -1105,6 +1130,59 @@ function sheetHTML(){
   return '<div class="sheet-wrap" data-act="sheet-x"><div class="sheet" data-act="noop" role="dialog" aria-modal="true" aria-label="' + title + '">' +
     '<div class="sheet-h"><h2>' + title + '</h2><button class="icon-b" data-act="sheet-x" aria-label="Затвори">×</button></div>' +
     '<div class="sh-body">' + body + back + '</div>' + foot + '</div></div>';
+}
+/* ---- anonymous visit counter: one row per device per day ---- */
+function devId(){
+  var d = sGet('localStorage', 'zv-dev');
+  if (!d){ d = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : rid() + rid() + rid(); sSet('localStorage', 'zv-dev', d); }
+  return d;
+}
+function recordVisit(){
+  var day = isoDate(new Date());
+  if (!SB || !MINE || sGet('localStorage', 'zv-visit') === day) return;
+  var h = { apikey:SB.key, 'Content-Type':'application/json', Prefer:'resolution=ignore-duplicates,return=minimal' };
+  if (/^eyJ/.test(SB.key)) h.Authorization = 'Bearer ' + SB.key;
+  fetch(SB.url + '/rest/v1/visits?on_conflict=day,device', { method:'POST', headers:h, body:JSON.stringify({ device:devId(), class_name:MINE, installed:isStandalone() }) })
+    .then(function(r){ if (r.ok || r.status === 409) sSet('localStorage', 'zv-visit', day); }, function(){});
+}
+/* ---- Статистика (admin only) ---- */
+function statLoad(){
+  statBusy = true; statErr = '';
+  return ensureSession().then(function(){ return sbw('POST', 'rpc/visit_stats', {}); }).then(function(r){
+    statData = r || {}; statBusy = false; if (tTab === 'stat') render();
+  }, function(e){
+    statBusy = false; statData = {};
+    statErr = (e.status === 404 || e.code === 'PGRST202' || e.code === '42883') ? 'Статистиката още не е включена. Пусни visits.sql в Supabase.' : 'Статистиката не се зареди (' + e.message + ').';
+    if (tTab === 'stat') render();
+  });
+}
+function statHTML(){
+  if (statData === null && !statBusy) statLoad();
+  if (statErr) return '<div class="panel"><div class="empty">' + esc(statErr) + '</div></div>';
+  if (statData === null) return '<div class="panel"><div class="empty">Зареждане…</div></div>';
+  var d = statData, n = function(v){ return String(v == null ? 0 : v); };
+  var tiles = [['Днес', d.today], ['7 дни', d.week], ['30 дни', d.month], ['Общо', d.total]].map(function(t){
+    return '<div class="st-tile"><small>' + t[0] + '</small><b>' + n(t[1]) + '</b></div>';
+  }).join('');
+  var daily = d.daily || [], max = Math.max.apply(null, [1].concat(daily.map(function(x){ return x.n; })));
+  var maxShown = false, last = daily.length - 1;
+  var bars = daily.map(function(x, i){
+    var dt = parseISO(x.day), lab = dt.getDate() + ' ' + MONTHS[dt.getMonth()] + ': ' + x.n + (x.n === 1 ? ' устройство' : ' устройства');
+    var show = i === last || (x.n === max && x.n > 0 && !maxShown); if (x.n === max && x.n > 0) maxShown = true;
+    var h = x.n ? Math.max(3, Math.round(x.n / max * 82)) : 0;
+    return '<button class="st-bar" data-act="st-bar" data-l="' + esc(lab) + '" title="' + esc(lab) + '" aria-label="' + esc(lab) + '">' + (show ? '<b>' + x.n + '</b>' : '') + '<i style="height:' + h + '%"></i></button>';
+  }).join('');
+  var days = daily.map(function(x){ var dt = parseISO(x.day), we = dt.getDay() === 0 || dt.getDay() === 6; return '<small' + (we ? ' class="we"' : '') + '>' + dt.getDate() + '</small>'; }).join('');
+  var cls = d.classes || [], cmax = Math.max.apply(null, [1].concat(cls.map(function(x){ return x.n; })));
+  var crow = cls.map(function(x){
+    return '<div class="st-cls">' + (x.cls ? '<b>' + esc(x.cls) + '</b>' : '<b class="none">без клас</b>') + '<div class="st-track"><i style="width:' + Math.max(2, Math.round(x.n / cmax * 100)) + '%"></i></div><span>' + x.n + '</span></div>';
+  }).join('');
+  return '<div class="st"><div class="st-tiles">' + tiles + '</div>' +
+    '<p class="st-note"><b>' + n(d.installed_week) + ' от ' + n(d.week) + '</b> устройства през последните 7 дни отварят Звънец от началния екран.</p>' +
+    '<div class="panel"><div class="form-h"><h3>Устройства по дни</h3><button class="link-btn sm" data-act="st-reload">Обнови</button></div>' +
+    '<div><div class="st-bars">' + bars + '</div><div class="st-days">' + days + '</div></div>' +
+    '<p class="hint">Всяко устройство се брои веднъж на ден. Натисни стълбче за точния брой.</p></div>' +
+    '<div class="panel"><div class="form-h"><h3>По класове · 7 дни</h3></div>' + (crow || '<div class="empty">Още няма посещения.</div>') + '</div></div>';
 }
 function perms(){ return (sess && sess.perms) || []; }
 function isAdmin(){ return perms().indexOf('*') >= 0; }
@@ -1313,12 +1391,14 @@ APP.addEventListener('click', function(ev){
     case 'brand': var tn = Date.now(); if (tn - tapT > 2500) taps = 0; tapT = tn;
       if (++taps >= 5){ taps = 0; editUnlocked = true; sSet('sessionStorage', 'zv-edit', '1'); if (view !== 'teacher'){ view = 'teacher'; tSel.cls = myClass; window.scrollTo(0, 0); render(); permsThenRender(); } } break;
     case 'sb-in': signIn(); break;
+    case 'st-bar': flash(btn.dataset.l); break;
+    case 'st-reload': statData = null; render(); break;
     case 'cls-open': pickInit(CLASS); sheetOpen = 'view'; render(); break;
     case 'sheet-x': sheetOpen = false; render(); break;
     case 'mine-change': pickInit(MINE); sheetOpen = 'mine'; render(); break;
     case 'pick-go': if (hasTT(pick.g + pick.p)){ setClass(pick.g + pick.p); sheetOpen = false; window.scrollTo(0, 0); render(); } break;
     case 'cls-back': setClass(MINE); sheetOpen = false; window.scrollTo(0, 0); render(); break;
-    case 'pick-mine': var nc = pick.g + pick.p; if (hasTT(nc)){ var first = !MINE; MINE = nc; sSet('localStorage', 'zv-mine', MINE); setClass(MINE); sheetOpen = false; window.scrollTo(0, 0); render(); if (!first) flash('Твоят клас вече е ' + MINE + '.'); } break;
+    case 'pick-mine': var nc = pick.g + pick.p; if (hasTT(nc)){ var first = !MINE; MINE = nc; sSet('localStorage', 'zv-mine', MINE); setClass(MINE); sheetOpen = false; window.scrollTo(0, 0); render(); if (!first) flash('Твоят клас вече е ' + MINE + '.'); recordVisit(); } break;
     case 'acc-add': accAdd(); break;
     case 'acc-del': accDel(btn.dataset.e, btn.dataset.c); break;
     case 'acc-reload': accRows = null; accErr = ''; render(); break;
@@ -1393,12 +1473,13 @@ function start(hot){
   render();
   initCaps();
   setInterval(tick, 10000);
-  document.addEventListener('visibilitychange', function(){ if (!document.hidden){ tick(true); if (Date.now() - lastRefresh > 60000) refreshData(); } });
+  document.addEventListener('visibilitychange', function(){ if (!document.hidden){ tick(true); recordVisit(); if (Date.now() - lastRefresh > 60000) refreshData(); } });
   setInterval(function(){ if (!document.hidden) refreshData(); }, 10 * 60e3);
   window.addEventListener('beforeinstallprompt', function(e){ e.preventDefault(); installEvt = e; if (view === 'student' && page === 'now') render(); });
   window.addEventListener('appinstalled', function(){ installEvt = null; render(); });
   if (SB && SB.fresh) lastRefresh = Date.now(); else refreshData();
   checkCalendar();
+  recordVisit();
   document.addEventListener('keydown', function(e){ if (e.key === 'Escape' && sheetOpen){ sheetOpen = false; render(); } });
   if (view === 'teacher') permsThenRender();
 }
