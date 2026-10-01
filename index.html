@@ -603,7 +603,7 @@ var newCls = { name:'', shift:2 };
 var art = null, canEdit = null, readOnly = false, saving = false;
 var SB = window.ZvSB, sess = jparse(sGet('localStorage', 'zv-sess')), auForm = { email:'', password:'' }, auErr = '', auBusy = false;
 var MINE = null;
-var statData = null, statBusy = false, statErr = '';
+var statData = null, statAt = null, statBusy = false, statErr = '';
 var accRows = null, accForm = { email:'', cls:'' }, accErr = '', accBusy = false;
 var editUnlocked = sGet('sessionStorage', 'zv-edit') === '1', taps = 0, tapT = 0;
 var installEvt = null, lastRefresh = 0, refreshing = false, calOK = sGet('localStorage', 'zv-cal') === '1';
@@ -1138,18 +1138,18 @@ function devId(){
   return d;
 }
 function recordVisit(){
-  var day = isoDate(new Date());
-  if (!SB || !MINE || sGet('localStorage', 'zv-visit') === day) return;
+  var day = isoDate(new Date()), key = day + '|' + (MINE || '');
+  if (!SB || sGet('localStorage', 'zv-visit') === key) return;
   var h = { apikey:SB.key, 'Content-Type':'application/json', Prefer:'resolution=ignore-duplicates,return=minimal' };
   if (/^eyJ/.test(SB.key)) h.Authorization = 'Bearer ' + SB.key;
-  fetch(SB.url + '/rest/v1/visits?on_conflict=day,device', { method:'POST', headers:h, body:JSON.stringify({ device:devId(), class_name:MINE, installed:isStandalone() }) })
-    .then(function(r){ if (r.ok || r.status === 409) sSet('localStorage', 'zv-visit', day); }, function(){});
+  fetch(SB.url + '/rest/v1/visits?on_conflict=day,device,class_name', { method:'POST', headers:h, body:JSON.stringify({ device:devId(), class_name:MINE || '', installed:isStandalone() }) })
+    .then(function(r){ if (r.ok || r.status === 409) sSet('localStorage', 'zv-visit', key); }, function(){});
 }
 /* ---- Статистика (admin only) ---- */
 function statLoad(){
   statBusy = true; statErr = '';
   return ensureSession().then(function(){ return sbw('POST', 'rpc/visit_stats', {}); }).then(function(r){
-    statData = r || {}; statBusy = false; if (tTab === 'stat') render();
+    statData = r || {}; statAt = new Date(); statBusy = false; if (tTab === 'stat') render();
   }, function(e){
     statBusy = false; statData = {};
     statErr = (e.status === 404 || e.code === 'PGRST202' || e.code === '42883') ? 'Статистиката още не е включена. Пусни visits.sql в Supabase.' : 'Статистиката не се зареди (' + e.message + ').';
@@ -1181,7 +1181,7 @@ function statHTML(){
     '<p class="st-note"><b>' + n(d.installed_week) + ' от ' + n(d.week) + '</b> устройства през последните 7 дни отварят Звънец от началния екран.</p>' +
     '<div class="panel"><div class="form-h"><h3>Устройства по дни</h3><button class="link-btn sm" data-act="st-reload">Обнови</button></div>' +
     '<div><div class="st-bars">' + bars + '</div><div class="st-days">' + days + '</div></div>' +
-    '<p class="hint">Всяко устройство се брои веднъж на ден. Натисни стълбче за точния брой.</p></div>' +
+    '<p class="hint">Всяко устройство се брои веднъж на ден. Натисни стълбче за точния брой.' + (statAt ? ' Обновено в ' + pad(statAt.getHours()) + ':' + pad(statAt.getMinutes()) + '.' : '') + '</p></div>' +
     '<div class="panel"><div class="form-h"><h3>По класове · 7 дни</h3></div>' + (crow || '<div class="empty">Още няма посещения.</div>') + '</div></div>';
 }
 function perms(){ return (sess && sess.perms) || []; }
@@ -1359,7 +1359,7 @@ APP.addEventListener('click', function(ev){
     case 'week-now': weekOffset = 0; selDay = null; render(); break;
     case 'to-teacher': view = 'teacher'; if (!classInfo(draft, tSel.cls)) tSel.cls = myClass; if (canEdit === false){ readOnly = true; banner = 'readonly'; } window.scrollTo(0, 0); render(); permsThenRender(); break;
     case 'to-student': view = 'student'; window.scrollTo(0, 0); render(); break;
-    case 'ttab': tTab = btn.dataset.t; evErr = ''; clsErr = ''; render(); break;
+    case 'ttab': if (btn.dataset.t === 'stat') statData = null; tTab = btn.dataset.t; evErr = ''; clsErr = ''; render(); break;
     case 'tsel-day': tSel.day = +btn.dataset.d; render(); break;
     case 'tt-clear':
       d = +btn.dataset.i; list = ttRow(tSel.cls, tSel.day); list[d] = null; tidyRow(tSel.cls, tSel.day); markTT(tSel.cls, tSel.day);
@@ -1426,6 +1426,7 @@ APP.addEventListener('input', onField);
 APP.addEventListener('change', onField);
 
 function tick(force){
+  if (view === 'teacher' && tTab === 'stat' && !statBusy && statAt && Date.now() - statAt > 60000 && !document.hidden){ statLoad(); }
   var d = new Date(), mm = d.getHours() * 60 + d.getMinutes();
   if (!force && mm === lastMin) return;
   if (view === 'student' && page !== 'tests') render();

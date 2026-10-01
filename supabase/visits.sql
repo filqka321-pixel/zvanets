@@ -10,7 +10,7 @@ create table if not exists visits (
   device     text    not null check (char_length(device) between 8 and 64),
   class_name text    not null default '' check (char_length(class_name) <= 8),
   installed  boolean not null default false,
-  primary key (day, device)                       -- едно устройство = един ред на ден
+  primary key (day, device, class_name)           -- едно устройство = един ред на ден (и на клас)
 );
 create index if not exists visits_day_idx on visits (day);
 
@@ -30,16 +30,19 @@ declare t date := sofia_today(); r json;
 begin
   if not is_admin() then return null; end if;
   select json_build_object(
-    'today',  (select count(*) from visits where day = t),
+    'today',  (select count(distinct device) from visits where day = t),
     'week',   (select count(distinct device) from visits where day > t - 7),
     'month',  (select count(distinct device) from visits where day > t - 30),
     'total',  (select count(distinct device) from visits),
     'installed_week', (select count(distinct device) from visits where installed and day > t - 7),
     'daily',  (select coalesce(json_agg(json_build_object('day', g.d, 'n', coalesce(v.n, 0)) order by g.d), '[]'::json)
                from (select (t - i) as d from generate_series(0, 13) i) g
-               left join (select day, count(*) as n from visits where day > t - 14 group by day) v on v.day = g.d),
+               left join (select day, count(distinct device) as n from visits where day > t - 14 group by day) v on v.day = g.d),
     'classes', (select coalesce(json_agg(json_build_object('cls', c.class_name, 'n', c.n) order by c.n desc, c.class_name), '[]'::json)
-               from (select class_name, count(distinct device) as n from visits where day > t - 7 group by class_name) c)
+               from (select class_name, count(distinct device) as n from visits v
+                     where day > t - 7
+                       and (class_name <> '' or not exists (select 1 from visits w where w.device = v.device and w.day > t - 7 and w.class_name <> ''))
+                     group by class_name) c)
   ) into r;
   return r;
 end $$;
