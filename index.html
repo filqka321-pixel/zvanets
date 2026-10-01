@@ -434,6 +434,19 @@ button,a,.brand{touch-action:manipulation;-webkit-tap-highlight-color:transparen
 .tc-l>span:first-child{font-variant-numeric:tabular-nums;color:var(--muted);font-family:var(--f-ui);font-weight:600;font-size:13px}
 .tc-l b{font-family:var(--f-display);font-weight:700;font-size:19px;line-height:1}
 .tc-note{font-size:13px;color:var(--muted);margin:16px 4px 0;line-height:1.45}
+/* notifications bar */
+.nt{padding:0;gap:0;overflow:hidden}
+.nt-bar{display:flex;align-items:center;gap:12px;width:100%;padding:11px 14px;background:none;border:0;text-align:left;color:inherit;cursor:pointer}
+.nt-bar .nt-ic{width:34px;height:34px;border-radius:10px;flex:none}
+.nt-bar .nt-ic svg{width:18px;height:18px}
+.nt-t{flex:1;font-family:var(--f-display);font-weight:700;font-size:19px;line-height:1.1}
+.nt-bar>svg{flex:none;color:var(--muted);transition:transform .22s ease}
+.nt.open .nt-bar>svg{transform:rotate(180deg)}
+.nt-body{padding:2px 16px 16px;display:grid;gap:12px;animation:ntIn .22s ease-out}
+.nt-body>p{font-size:14px;color:var(--ink-2)}
+.nt-steps{margin:0;padding-left:20px;display:grid;gap:6px;font-size:14px;color:var(--ink-2)}
+.nt-foot{font-size:13px;color:var(--muted)}
+@keyframes ntIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
 </style>
 </head>
 <body>
@@ -629,6 +642,7 @@ var newCls = { name:'', shift:2 };
 var art = null, canEdit = null, readOnly = false, saving = false;
 var SB = window.ZvSB, sess = jparse(sGet('localStorage', 'zv-sess')), auForm = { email:'', password:'' }, auErr = '', auBusy = false;
 var MINE = null;
+var ntOpen = false;
 var tq = '', tcOpen = null;
 var CHART = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M5 20v-7M12 20V5M19 20v-10"/></svg>';
 var statData = null, statAt = null, statBusy = false, statErr = '';
@@ -1456,13 +1470,16 @@ function calURL(web){
 }
 function notifHTML(){
   if (!calOK) return '';
-  return '<section class="nt"><div class="nt-top"><span class="nt-ic">' + BELL + '</span><div class="nt-tx"><b>Известия за всеки час</b><p>Когато свърши час, телефонът ти показва следващия предмет и стаята. Работи и когато приложението е затворено.</p></div></div>' +
+  var head = '<button class="nt-bar" data-act="nt-toggle" aria-expanded="' + ntOpen + '"><span class="nt-ic">' + BELL + '</span><span class="nt-t">Известия за всеки час</span>' + CHEV + '</button>';
+  if (!ntOpen) return '<section class="nt">' + head + '</section>';
+  return '<section class="nt open">' + head + '<div class="nt-body">' +
+    '<p>Когато свърши час, телефонът ти показва следващия предмет и стаята. Работи и когато приложението е затворено.</p>' +
     '<div class="nt-acts"><a class="btn primary" href="' + esc(calURL(true)) + '">Абонирай се за ' + esc(myClass) + '</a><button class="btn" data-act="copy-cal">Копирай адреса</button></div>' +
-    '<details class="nt-how"><summary>Как се включва</summary><ol>' +
+    '<ol class="nt-steps">' +
     '<li>Натисни „Абонирай се“ и потвърди с „Абониране“.</li>' +
     '<li>Отвори Настройки → Календар → Акаунти → „' + esc(myClass) + ' · Звънец“ и изключи <b>Remove Alerts</b> (премахване на известията). Иначе няма да звъни.</li>' +
     '<li>Ако бутонът не отвори Календар: Настройки → Календар → Акаунти → Добави акаунт → Друго → Добави абониран календар и постави копирания адрес.</li>' +
-    '</ol><p>Когато програмата се промени, календарът се обновява сам.</p></details></section>';
+    '</ol><p class="nt-foot">Когато програмата се промени, календарът се обновява сам.</p></div></section>';
 }
 
 /* ---------- events ---------- */
@@ -1524,6 +1541,7 @@ APP.addEventListener('click', function(ev){
     case 'brand': var tn = Date.now(); if (tn - tapT > 2500) taps = 0; tapT = tn;
       if (++taps >= 5){ taps = 0; editUnlocked = true; sSet('sessionStorage', 'zv-edit', '1'); if (view !== 'teacher'){ view = 'teacher'; tSel.cls = myClass; window.scrollTo(0, 0); render(); permsThenRender(); } } break;
     case 'sb-in': signIn(); break;
+    case 'nt-toggle': ntOpen = !ntOpen; render(); break;
     case 'tc-open': tcOpen = tcOpen === btn.dataset.k ? null : btn.dataset.k; teachRefresh(); break;
     case 'st-bar': flash(btn.dataset.l); break;
     case 'to-stats': if (isAdmin()){ view = 'stats'; statData = null; sheetOpen = false; window.scrollTo(0, 0); render(); } break;
