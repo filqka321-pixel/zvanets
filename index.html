@@ -409,6 +409,31 @@ button,a,.brand{touch-action:manipulation;-webkit-tap-highlight-color:transparen
 .st-track{height:10px;border-radius:999px;background:var(--surface-2);overflow:hidden}
 .st-track i{display:block;height:100%;background:var(--brand);border-radius:0 4px 4px 0}
 .st-cls span{text-align:right;font-family:var(--f-ui);font-weight:700;font-variant-numeric:tabular-nums}
+/* teachers page */
+.tabbar-in{grid-template-columns:repeat(4,minmax(0,1fr))}
+.tb-pill{width:calc((100% - 18px) / 4)}
+.tq{display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:0 12px;margin:0 0 4px}
+.tq:focus-within{border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-soft)}
+.tq svg{width:18px;height:18px;color:var(--muted);flex:none}
+.tq input{border:0;background:transparent;padding:12px 0;font-size:16px;box-shadow:none;border-radius:0}
+.tq input:focus{box-shadow:none;border:0}
+.tc{display:block;width:100%;text-align:left;border-top:1px solid var(--line-2);padding:12px 14px;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.tc:first-child{border-top:0}
+.tc.open{background:var(--surface-2)}
+.tc-top{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:center}
+.tc-n{font-weight:700;font-size:16px;line-height:1.25}
+.tc-s{display:block;font-size:14px;line-height:1.35;color:var(--ink-2);margin-top:2px}
+.tc-s.now b{color:var(--now)}
+.tc-s.muted,.tc-s .muted{color:var(--muted)}
+.tc .room.off{background:var(--surface-2);color:var(--muted)}
+.tc.open .room.off{background:var(--surface)}
+.tc-day{margin-top:10px;display:grid;gap:4px}
+.tc-l{display:grid;grid-template-columns:88px minmax(0,1fr) auto;gap:10px;align-items:center;font-size:14px;padding:7px 10px;border-radius:10px;background:var(--surface)}
+.tc-l.cur{background:var(--now-soft)}
+.tc-l.past{opacity:.5}
+.tc-l>span:first-child{font-variant-numeric:tabular-nums;color:var(--muted);font-family:var(--f-ui);font-weight:600;font-size:13px}
+.tc-l b{font-family:var(--f-display);font-weight:700;font-size:19px;line-height:1}
+.tc-note{font-size:13px;color:var(--muted);margin:16px 4px 0;line-height:1.45}
 </style>
 </head>
 <body>
@@ -449,11 +474,12 @@ var SHORT = {'Химия и опазване на околната среда':'
 function short(s){ return SHORT[s] || s || ''; }
 function durS(m){ m = Math.max(1, Math.ceil(m)); return m < 60 ? m + ' мин' : Math.floor(m / 60) + ':' + pad(m % 60) + ' ч'; }
 var ICONS = {
+  teach:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10" cy="8" r="3.5"/><path d="M3.5 20c.6-3.6 3.2-5.5 6.5-5.5 1.2 0 2.3.3 3.2.8"/><circle cx="17.5" cy="16.5" r="2.6"/><path d="M19.4 18.4 21 20"/></svg>',
   now:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>',
   week:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4M8 14h2M14 14h2M8 17h2"/></svg>',
   tests:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="4.5" width="14" height="16" rx="2.5"/><path d="M9 3h6v3H9zM9 13l2 2 4-4.5"/></svg>'
 };
-var PAGES = [['now', 'Сега'], ['week', 'Програма'], ['tests', 'Тестове']];
+var PAGES = [['now', 'Сега'], ['week', 'Програма'], ['tests', 'Тестове'], ['teach', 'Учители']];
 var tabFrom = null;
 function pageIdx(p){ for (var i = 0; i < PAGES.length; i++) if (PAGES[i][0] === p) return i; return 0; }
 function pillX(i){ return 'translateX(calc(' + i + ' * (100% + 6px)))'; }
@@ -603,6 +629,7 @@ var newCls = { name:'', shift:2 };
 var art = null, canEdit = null, readOnly = false, saving = false;
 var SB = window.ZvSB, sess = jparse(sGet('localStorage', 'zv-sess')), auForm = { email:'', password:'' }, auErr = '', auBusy = false;
 var MINE = null;
+var tq = '', tcOpen = null;
 var CHART = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M5 20v-7M12 20V5M19 20v-10"/></svg>';
 var statData = null, statAt = null, statBusy = false, statErr = '';
 var accRows = null, accForm = { email:'', cls:'' }, accErr = '', accBusy = false;
@@ -699,8 +726,9 @@ function studentHTML(now){
     var date = addDays(mon, d - 1), isToday = isoDate(date) === isoDate(now);
     body = weekHTML(now, mon, d) + dayHTML(dayPlan(state, myClass, date), date, isToday, now);
   } else if (page === 'tests') body = testsHTML(now);
+  else if (page === 'teach') body = teachHTML(now);
   else body = installHTML() + heroHTML(now) + notifHTML();
-  var peek = CLASS !== MINE ? '<div class="peek-bar"><span>Гледаш програмата на <b>' + esc(CLASS) + '</b></span><button class="btn sm" data-act="cls-back">Към ' + esc(MINE) + '</button></div>' : '';
+  var peek = CLASS !== MINE && page !== 'teach' ? '<div class="peek-bar"><span>Гледаш програмата на <b>' + esc(CLASS) + '</b></span><button class="btn sm" data-act="cls-back">Към ' + esc(MINE) + '</button></div>' : '';
   return '<div class="page page-' + page + '">' + peek + body + '</div>';
 }
 function soonTests(now){
@@ -1194,6 +1222,101 @@ function statHTML(){
     '<p class="hint">Всяко устройство се брои веднъж на ден. Натисни стълбче за точния брой.' + (statAt ? ' Обновено в ' + pad(statAt.getHours()) + ':' + pad(statAt.getMinutes()) + '.' : '') + '</p></div>' +
     '<div class="panel"><div class="form-h"><h3>По класове · 7 дни</h3></div>' + (crow || '<div class="empty">Още няма посещения.</div>') + '</div></div>';
 }
+/* ---- Учители: who teaches where, built from every class's timetable ---- */
+var SEARCH_I = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/></svg>';
+function tNorm(s){ return String(s || '').toLowerCase().replace(/ё/g, 'е').replace(/[.\-]/g, ' ').replace(/\s+/g, ' ').trim(); }
+function tKey(n){ var w = tNorm(n).split(' '); return (w.length > 1 ? w[0].charAt(0) + ' ' : '') + w[w.length - 1]; }
+/* one lesson's teacher field -> people, e.g. "В. Филипова-Панкова (104) · М. Кръстева (403)" or "Гр. 1 Илиан Николов · Гр. 2 Мария Георгиева" */
+function splitTeachers(t, room){
+  var out = [];
+  String(t || '').split(/\s*(?:·|\/)\s*/).forEach(function(p){
+    p = p.trim(); var r = '', g = '';
+    var m = /\(([^)]*)\)\s*$/.exec(p); if (m){ if (/\d/.test(m[1])) r = m[1].trim(); p = p.slice(0, m.index).trim(); }
+    var gm = /^Гр\.?\s*(\d+)\s+/i.exec(p); if (gm){ g = 'гр. ' + gm[1]; p = p.slice(gm[0].length).trim(); }
+    if (p.length < 4 || !/[А-ЯЁA-Z][а-яёa-z]/.test(p) || /^(само|група|гр\b)/i.test(p)) return;
+    out.push({ name:p, room: r || room || '', group:g });
+  });
+  return out;
+}
+function classesWithTT(){ return state.classes.map(function(c){ return c.name; }).filter(function(n){ return hasAnyTT(state, n); }).sort(collator.compare); }
+function teacherDay(date){
+  var map = {};
+  function get(n){ var k = tKey(n), t = map[k] = map[k] || { key:k, name:n, ls:[] }; if (n.length > t.name.length) t.name = n; return t; }
+  Object.keys(state.tt).forEach(function(c){ Object.keys(state.tt[c]).forEach(function(d){ (state.tt[c][d] || []).forEach(function(x){ if (x && x.t) splitTeachers(x.t, x.r).forEach(function(p){ get(p.name); }); }); }); });
+  state.classes.forEach(function(c){
+    var plan = dayPlan(state, c.name, date); if (plan.off || plan.weekend) return;
+    plan.slots.forEach(function(x){
+      if (!x.active || !x.teacher) return;
+      splitTeachers(x.teacher, x.room).forEach(function(p){
+        var t = get(p.name), same = null;
+        t.ls.forEach(function(l){ if (l.start === x.start && l.subject === x.subject && l.room === p.room) same = l; });
+        if (same){ if (same.cls.indexOf(c.name) < 0) same.cls.push(c.name); return; }
+        t.ls.push({ start:x.start, end:x.end, bs:x.b.start, be:x.b.end, cls:[c.name], subject:x.subject, room:p.room, group:p.group });
+      });
+    });
+  });
+  return Object.keys(map).map(function(k){
+    var t = map[k], blocks = [];
+    t.ls.sort(function(a, b){ return a.start - b.start; }).forEach(function(l){
+      l.cls.sort(collator.compare);
+      var p = blocks[blocks.length - 1];
+      if (p && p.subject === l.subject && p.room === l.room && p.cls.join() === l.cls.join() && l.start - p.end <= 20){ p.end = l.end; p.be = l.be; }
+      else blocks.push(Object.assign({}, l, { cls:l.cls.slice() }));
+    });
+    t.blocks = blocks; return t;
+  }).sort(function(a, b){ return collator.compare(a.name, b.name); });
+}
+function tStatus(t, isToday, m){
+  var b = t.blocks;
+  if (!b.length) return { kind:'none' };
+  if (!isToday) return { kind:'later', next:b[0] };
+  var cur = null; b.forEach(function(l){ if (m >= l.start && m < l.end) cur = l; });
+  var after = cur ? cur.end : m, next = null; b.forEach(function(l){ if (!next && l.start >= after && l !== cur) next = l; });
+  if (cur) return { kind:'now', cur:cur, next:next };
+  if (next) return { kind:'free', next:next };
+  return { kind:'done' };
+}
+function teachDate(now){ var d = now.getDay(); return (d === 0 || d === 6) ? nextWeekday(now) : now; }
+function tcRow(t, st, isToday, m){
+  var s, room = '', off = false, cj = function(l){ return esc(l.cls.join(', ')); };
+  if (st.kind === 'now'){ var c = st.cur; s = '<span class="tc-s now"><b>Сега</b> · ' + cj(c) + ' · ' + esc(short(c.subject)) + (c.group ? ' (' + c.group + ')' : '') + ' · до ' + c.be + '</span>'; room = c.room; }
+  else if (st.kind === 'free'){ var n = st.next; s = '<span class="tc-s">Няма час сега · <span class="muted">следващ в ' + n.bs + ' с ' + cj(n) + '</span></span>'; room = n.room; off = true; }
+  else if (st.kind === 'later'){ n = st.next; s = '<span class="tc-s">Първи час в ' + n.bs + ' · ' + cj(n) + ' · ' + esc(short(n.subject)) + '</span>'; room = n.room; off = true; }
+  else if (st.kind === 'done') s = '<span class="tc-s muted">Приключи за днес</span>';
+  else s = '<span class="tc-s muted">' + (isToday ? 'Днес няма часове' : 'Няма часове в този ден') + '</span>';
+  var roomH = room ? '<div class="room' + (off ? ' off' : '') + '"><small>' + (off ? 'после' : 'стая') + '</small><b>' + esc(room) + '</b></div>' : '';
+  var open = tcOpen === t.key, day = '';
+  if (open) day = t.blocks.length ? '<div class="tc-day">' + t.blocks.map(function(l){
+      var cur = isToday && m >= l.start && m < l.end, past = isToday && m >= l.end;
+      return '<div class="tc-l' + (cur ? ' cur' : past ? ' past' : '') + '"><span>' + l.bs + '–' + l.be + '</span><span>' + cj(l) + ' · ' + esc(short(l.subject)) + (l.group ? ' (' + l.group + ')' : '') + '</span><b>' + esc(l.room || '—') + '</b></div>';
+    }).join('') + '</div>' : '';
+  return '<div class="tc' + (open ? ' open' : '') + '" data-act="tc-open" data-k="' + esc(t.key) + '" role="button" tabindex="0" aria-expanded="' + open + '"><div class="tc-top"><div><div class="tc-n">' + esc(t.name) + '</div>' + s + '</div>' + roomH + '</div>' + day + '</div>';
+}
+function teachListHTML(){
+  var now = new Date(), date = teachDate(now), isToday = isoDate(date) === isoDate(now), m = nowMin(now);
+  var q = tNorm(tq), list = teacherDay(date).filter(function(t){
+    if (!q) return true;
+    var nm = tNorm(t.name); if (nm.indexOf(q) >= 0) return true;
+    var ws = nm.split(' '); return q.split(' ').every(function(w){ return ws.some(function(x){ return x.indexOf(w) === 0; }); });
+  });
+  if (!list.length) return '<div class="up"><div class="empty">' + (q ? 'Няма учител с такова име.' : 'Още няма въведени програми.') + '</div></div>';
+  var groups = isToday ? [['now', 'В час сега'], ['free', 'Нямат час в момента'], ['done', 'Приключиха за днес'], ['none', 'Днес нямат часове']]
+                       : [['later', 'Преподават ' + DAY_IN[date.getDay()]], ['none', 'Нямат часове ' + DAY_IN[date.getDay()]]];
+  var sts = list.map(function(t){ return { t:t, st:tStatus(t, isToday, m) }; });
+  return groups.map(function(g){
+    var rows = sts.filter(function(x){ return x.st.kind === g[0]; });
+    if (!rows.length) return '';
+    return '<div class="grp">' + g[1] + ' · ' + rows.length + '</div><div class="up">' + rows.map(function(x){ return tcRow(x.t, x.st, isToday, m); }).join('') + '</div>';
+  }).join('');
+}
+function teachHTML(now){
+  var date = teachDate(now), isToday = isoDate(date) === isoDate(now), cl = classesWithTT();
+  return '<div class="h"><h2>Учители</h2><div class="aside">' + (isToday ? 'Днес · ' + pad(now.getHours()) + ':' + pad(now.getMinutes()) : cap(DAYS[date.getDay()]) + ' · ' + date.getDate() + ' ' + MONTHS[date.getMonth()]) + '</div></div>' +
+    '<label class="tq">' + SEARCH_I + '<input data-f="tq" type="search" value="' + esc(tq) + '" placeholder="Търси учител" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="search" aria-label="Търси учител"></label>' +
+    '<div id="tc-list">' + teachListHTML() + '</div>' +
+    '<p class="tc-note">Натисни учител, за да видиш всичките му часове за деня. Данните са от програмите на ' + cl.length + ' въведени класа (' + esc(cl.join(', ')) + '). Отчитат се заместванията и отменените часове.</p>';
+}
+function teachRefresh(){ var el = document.getElementById('tc-list'); if (el) el.innerHTML = teachListHTML(); }
 function perms(){ return (sess && sess.perms) || []; }
 function isAdmin(){ return perms().indexOf('*') >= 0; }
 function canClass(c){ return isAdmin() || perms().indexOf(c) >= 0; }
@@ -1401,6 +1524,7 @@ APP.addEventListener('click', function(ev){
     case 'brand': var tn = Date.now(); if (tn - tapT > 2500) taps = 0; tapT = tn;
       if (++taps >= 5){ taps = 0; editUnlocked = true; sSet('sessionStorage', 'zv-edit', '1'); if (view !== 'teacher'){ view = 'teacher'; tSel.cls = myClass; window.scrollTo(0, 0); render(); permsThenRender(); } } break;
     case 'sb-in': signIn(); break;
+    case 'tc-open': tcOpen = tcOpen === btn.dataset.k ? null : btn.dataset.k; teachRefresh(); break;
     case 'st-bar': flash(btn.dataset.l); break;
     case 'to-stats': if (isAdmin()){ view = 'stats'; statData = null; sheetOpen = false; window.scrollTo(0, 0); render(); } break;
     case 'st-reload': statData = null; render(); break;
@@ -1429,6 +1553,7 @@ function onField(ev){
     case 'ev': evForm[el.dataset.k] = el.type === 'checkbox' ? el.checked : el.value; if (el.dataset.k === 'type' && isChange){ evErr = ''; render(); } else saveUI(); break;
     case 'bell': if (isChange) setBell(el); break;
     case 'au': auForm[el.dataset.k] = el.value; break;
+    case 'tq': if (!isChange){ tq = el.value; teachRefresh(); } break;
     case 'pick': if (el.dataset.k === 'g'){ pick.g = +el.value; pick.p = MINE ? firstPar(pick.g) : ''; } else pick.p = el.value; if (isChange) render(); break;
     case 'acc': accForm[el.dataset.k] = el.value; break;
   }
@@ -1440,7 +1565,8 @@ function tick(force){
   if (view === 'stats' && !statBusy && statAt && Date.now() - statAt > 60000 && !document.hidden){ statLoad(); }
   var d = new Date(), mm = d.getHours() * 60 + d.getMinutes();
   if (!force && mm === lastMin) return;
-  if (view === 'student' && page !== 'tests') render();
+  if (view === 'student' && page === 'teach') teachRefresh();
+  else if (view === 'student' && page !== 'tests') render();
 }
 
 function initCaps(){
@@ -1461,7 +1587,7 @@ function start(hot){
   MINE = classInfo(state, mine) ? mine : null;
   if (MINE) CLASS = MINE;
   myClass = CLASS;
-  page = ['now', 'week', 'tests'].indexOf(ui.page) >= 0 ? ui.page : 'now';
+  page = ['now', 'week', 'tests', 'teach'].indexOf(ui.page) >= 0 ? ui.page : 'now';
   view = ui.view === 'teacher' && teacherAllowed() ? 'teacher' : 'student';
   tTab = ['tt', 'ev', 'set'].indexOf(ui.tTab) >= 0 ? ui.tTab : 'tt';
   tSel = { cls:CLASS, day: (ui.tSel && +ui.tSel.day >= 1 && +ui.tSel.day <= 5) ? +ui.tSel.day : todayIdx() };
