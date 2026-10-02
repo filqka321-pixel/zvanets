@@ -475,6 +475,8 @@ button,a,.brand{touch-action:manipulation;-webkit-tap-highlight-color:transparen
 .insf-later{justify-self:center}
 .insf-arrow{position:fixed;left:50%;bottom:calc(10px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);color:var(--now);animation:insBob 1.2s ease-in-out infinite;pointer-events:none;z-index:30}
 .insf-arrow svg{width:34px;height:34px;display:block}
+.insf-arrow.right{left:auto;right:calc(22px + env(safe-area-inset-right,0px));transform:none;animation-name:insBobR}
+@keyframes insBobR{0%,100%{transform:translateY(0)}50%{transform:translateY(7px)}}
 @keyframes insBob{0%,100%{transform:translate(-50%,0)}50%{transform:translate(-50%,7px)}}
 .role-seg{display:grid;grid-template-columns:1fr 1fr;gap:3px;width:100%;background:var(--surface-2);border:1px solid var(--line);border-radius:14px;padding:3px}
 .role-b{border:0;background:none;border-radius:11px;padding:10px 8px;font-family:var(--f-ui);font-weight:700;font-size:15px;color:var(--muted)}
@@ -1650,14 +1652,16 @@ function installFullHTML(){
     head = '<h1>Инсталирай Звънец</h1><p>Отваря се с едно докосване от началния екран и работи без интернет.</p>';
     body = '<button class="btn primary wide" data-act="ins-go">Инсталирай</button>';
   } else if (ios){
-    var chrome = /CriOS|FxiOS|EdgiOS/i.test(uaStr());
+    var chrome = /CriOS|FxiOS|EdgiOS/i.test(uaStr()), vm = /Version\/(\d+)/.exec(uaStr()), newSafari = !chrome && !!vm && +vm[1] >= 26;
     head = '<h1>Сложи Звънец на началния екран</h1><p>Отнема 10 секунди. После се отваря като обикновено приложение и работи без интернет.</p>';
     body = '<ol class="insf-steps">' +
-      insStep(1, 'Натисни ' + insKey(SHARE, 'Сподели') + ' <small>' + (chrome ? 'Горе вдясно, в лентата с адреса.' : 'Долу на екрана. Ако го няма, натисни ⋯ и после „Сподели“.') + '</small>') +
+      insStep(1, chrome ? 'Натисни ' + insKey(SHARE, 'Сподели') + ' <small>Горе вдясно, в лентата с адреса.</small>'
+        : newSafari ? 'Натисни ' + insKey('', '⋯') + ' долу вдясно, после ' + insKey(SHARE, 'Сподели') + ' <small>Ако виждаш направо бутона „Сподели“, натисни него.</small>'
+        : 'Натисни ' + insKey(SHARE, 'Сподели') + ' <small>Долу в средата на екрана. Ако го няма, натисни ⋯ и после „Сподели“.</small>') +
       insStep(2, 'Превърти надолу и избери ' + insKey(PLUSBOX, 'Добави към началния екран') + ' <small>На английски: „Add to Home Screen“.</small>') +
       insStep(3, 'Натисни ' + insKey('', 'Добави') + ' горе вдясно. <small>После отвори Звънец от иконата със звънеца.</small>') +
       '</ol>';
-    if (!chrome) arrow = '<span class="insf-arrow" aria-hidden="true">' + ARROW_DOWN + '</span>';
+    if (!chrome) arrow = '<span class="insf-arrow' + (newSafari ? ' right' : '') + '" aria-hidden="true">' + ARROW_DOWN + '</span>';
   } else {
     head = '<h1>Сложи Звънец на началния екран</h1><p>Отваря се с едно докосване и работи без интернет.</p>';
     body = '<ol class="insf-steps">' +
