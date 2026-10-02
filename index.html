@@ -450,6 +450,21 @@ button,a,.brand{touch-action:manipulation;-webkit-tap-highlight-color:transparen
 .nt-steps{margin:0;padding-left:20px;display:grid;gap:6px;font-size:14px;color:var(--ink-2)}
 .nt-foot{font-size:13px;color:var(--muted)}
 @keyframes ntIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+/* 5 tabs */
+.tabbar{padding-inline:8px}
+.tabbar-in{grid-template-columns:repeat(5,minmax(0,1fr));gap:4px}
+.tb-pill{width:calc((100% - 16px) / 5)}
+.tb{font-size:11.5px;padding:7px 1px 6px}
+.tb svg{width:24px;height:24px}
+/* homework */
+.hw-r{display:grid;grid-template-columns:34px minmax(0,1fr);gap:12px;align-items:start;padding:12px 14px;border-top:1px solid var(--line-2)}
+.hw-r:first-child{border-top:0}
+.hw-c{width:30px;height:30px;border-radius:50%;border:2px solid var(--line);background:var(--surface);color:transparent;display:grid;place-items:center;padding:0;margin-top:1px}
+.hw-c svg{width:16px;height:16px}
+.hw-r.done .hw-c{background:var(--event);border-color:var(--event);color:var(--surface)}
+.hw-s{font-weight:700;font-size:15.5px;line-height:1.25}
+.hw-n{font-size:14.5px;line-height:1.4;color:var(--ink-2);margin-top:2px;white-space:pre-wrap;overflow-wrap:anywhere}
+.hw-r.done .hw-s,.hw-r.done .hw-n{text-decoration:line-through;color:var(--muted)}
 </style>
 </head>
 <body>
@@ -476,7 +491,7 @@ var TYPES = {
   control:{label:'Контролна работа',tone:'test'},
   classwork:{label:'Класна работа',tone:'test'},
   oral:{label:'Изпитване',tone:'test'},
-  project:{label:'Проект / задание',tone:'task'},
+  project:{label:'Домашно',tone:'task'},
   event:{label:'Събитие',tone:'event'},
   change:{label:'Промяна в часа',tone:'change'},
   holiday:{label:'Неучебен ден',tone:'off'}
@@ -490,15 +505,16 @@ var SHORT = {'Химия и опазване на околната среда':'
 function short(s){ return SHORT[s] || s || ''; }
 function durS(m){ m = Math.max(1, Math.ceil(m)); return m < 60 ? m + ' мин' : Math.floor(m / 60) + ':' + pad(m % 60) + ' ч'; }
 var ICONS = {
+  hw:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 6.5c-2.4-1.5-5.2-1.6-8-.6v12.6c2.8-1 5.6-.9 8 .6 2.4-1.5 5.2-1.6 8-.6V5.9c-2.8-1-5.6-.9-8 .6Z"/><path d="M12 6.5v12.6"/></svg>',
   teach:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10" cy="8" r="3.5"/><path d="M3.5 20c.6-3.6 3.2-5.5 6.5-5.5 1.2 0 2.3.3 3.2.8"/><circle cx="17.5" cy="16.5" r="2.6"/><path d="M19.4 18.4 21 20"/></svg>',
   now:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>',
   week:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4M8 14h2M14 14h2M8 17h2"/></svg>',
   tests:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="4.5" width="14" height="16" rx="2.5"/><path d="M9 3h6v3H9zM9 13l2 2 4-4.5"/></svg>'
 };
-var PAGES = [['now', 'Сега'], ['week', 'Програма'], ['tests', 'Тестове'], ['teach', 'Учители']];
+var PAGES = [['week', 'Програма'], ['hw', 'Домашни'], ['now', 'Сега'], ['tests', 'Тестове'], ['teach', 'Учители']];
 var tabFrom = null;
 function pageIdx(p){ for (var i = 0; i < PAGES.length; i++) if (PAGES[i][0] === p) return i; return 0; }
-function pillX(i){ return 'translateX(calc(' + i + ' * (100% + 6px)))'; }
+function pillX(i){ return 'translateX(calc(' + i + ' * (100% + 4px)))'; }
 
 var APP = document.getElementById('app');
 var collator = new Intl.Collator('bg', {numeric:true});
@@ -744,6 +760,7 @@ function studentHTML(now){
     body = weekHTML(now, mon, d) + dayHTML(dayPlan(state, myClass, date), date, isToday, now);
   } else if (page === 'tests') body = testsHTML(now);
   else if (page === 'teach') body = teachHTML(now);
+  else if (page === 'hw') body = hwHTML(now);
   else body = installHTML() + heroHTML(now) + notifHTML();
   var peek = CLASS !== MINE && page !== 'teach' ? '<div class="peek-bar"><span>Гледаш програмата на <b>' + esc(CLASS) + '</b></span><button class="btn sm" data-act="cls-back">Към ' + esc(MINE) + '</button></div>' : '';
   return '<div class="page page-' + page + '">' + peek + body + '</div>';
@@ -756,7 +773,7 @@ function tabbarHTML(now){
   var n = soonTests(now), to = pageIdx(page), from = tabFrom == null ? to : tabFrom;
   return '<nav class="tabbar" aria-label="Страници"><div class="tabbar-in"><i class="tb-pill" data-to="' + to + '" style="transform:' + pillX(from) + '"></i>' + PAGES.map(function(p, i){
     var on = page === p[0];
-    return '<button class="tb' + (on ? ' on' : '') + (on && from !== to ? ' just' : '') + '" data-act="page" data-p="' + p[0] + '"' + (on ? ' aria-current="page"' : '') + '>' + ICONS[p[0]] + '<span>' + p[1] + '</span>' + (p[0] === 'tests' && n ? '<i class="tb-badge">' + n + '</i>' : '') + '</button>';
+    return '<button class="tb' + (on ? ' on' : '') + (on && from !== to ? ' just' : '') + '" data-act="page" data-p="' + p[0] + '"' + (on ? ' aria-current="page"' : '') + '>' + ICONS[p[0]] + '<span>' + p[1] + '</span>' + (p[0] === 'tests' && n ? '<i class="tb-badge">' + n + '</i>' : '') + (p[0] === 'hw' && hwOpen(now) ? '<i class="tb-badge">' + hwOpen(now) + '</i>' : '') + '</button>';
   }).join('') + '</div></nav>';
 }
 function metaInline(x){ var p = ''; if (x.room) p += ' · <b>' + esc(roomLabel(x.room)) + '</b>'; if (x.teacher) p += ' · ' + esc(x.teacher); return p; }
@@ -890,7 +907,7 @@ function evRow(e, now, bells){
 }
 function testsHTML(now){
   var t = isoDate(now), bells = bellsFor(state, myClass);
-  var all = state.events.filter(function(e){ return forClass(e, myClass); }).sort(evSort);
+  var all = state.events.filter(function(e){ return forClass(e, myClass) && e.type !== 'project'; }).sort(evSort);
   var up = all.filter(function(e){ return e.date >= t; }), past = all.filter(function(e){ return e.date < t; }).reverse();
   var n = up.filter(function(e){ return tone(e) === 'test'; }).length;
   var h = '<div class="h"><h2>Предстоящи тестове</h2><span class="aside">' + (n ? n + (n === 1 ? ' тест' : ' теста') : '') + '</span></div>';
@@ -918,7 +935,7 @@ var BANNERS = {
 };
 function armBtn(key, cls, act, l0, l1, extra){ return '<button class="' + cls + '" data-act="' + act + '" data-arm="' + esc(key) + '" data-l0="' + esc(l0) + '" data-l1="' + esc(l1) + '"' + (extra || '') + '>' + esc(l0) + '</button>'; }
 function teacherHTML(now){
-  var tabs = [['tt', 'Програма'], ['ev', 'Тестове и събития']];
+  var tabs = [['tt', 'Програма'], ['ev', 'Тестове, домашни, събития']];
   if (isAdmin()) tabs.push(['set', 'Звънец'], ['acc', 'Достъп']);
   if (!tabs.some(function(t){ return t[0] === tTab; })) tTab = 'tt';
   if (!sess || !sess.access_token) return '<div class="teacher">' + authHTML() + '</div>';
@@ -970,17 +987,17 @@ function periodOptions(sel){
   return '<option value="">Цял ден</option>' + ns.map(function(n){ return '<option value="' + n + '"' + (String(sel) === String(n) ? ' selected' : '') + '>' + cap(ordWord(n)) + ' час</option>'; }).join('');
 }
 function evHTML(now){
-  var f = evForm, isChange = f.type === 'change', isOff = f.type === 'holiday';
+  var f = evForm, isChange = f.type === 'change', isOff = f.type === 'holiday', isHw = f.type === 'project';
   var changeFields = isChange ? '<div class="f-grid"><label class="check"><input type="checkbox" id="ev-cancel" data-f="ev" data-k="cancel"' + (f.cancel ? ' checked' : '') + '> Часът е отменен</label>' +
     '<label class="field"><span>Нова стая</span><input id="ev-room" data-f="ev" data-k="room" list="dl-room" value="' + esc(f.room) + '" placeholder="напр. 118" autocomplete="off"></label>' +
     '<label class="field"><span>Заместващ учител</span><input id="ev-sub" data-f="ev" data-k="sub" list="dl-teach" value="' + esc(f.sub) + '" placeholder="Име" autocomplete="off"></label></div>' : '';
   var form = '<div class="panel" id="ev-form"><div class="form-h"><h3>' + (f.id ? 'Редакция на запис' : 'Нов запис') + '</h3>' + (f.id ? '<button class="btn ghost sm" data-act="ev-cancel-edit">Откажи редакцията</button>' : '') + '</div>' +
     '<div class="f-grid"><label class="field"><span>Вид</span><select id="ev-type" data-f="ev" data-k="type">' + Object.keys(TYPES).map(function(k){ return '<option value="' + k + '"' + (k === f.type ? ' selected' : '') + '>' + TYPES[k].label + '</option>'; }).join('') + '</select></label>' +
-    '<label class="field"><span>Дата</span><input type="date" id="ev-date" data-f="ev" data-k="date" value="' + esc(f.date) + '"></label>' +
+    '<label class="field"><span>' + (isHw ? 'За кога' : 'Дата') + '</span><input type="date" id="ev-date" data-f="ev" data-k="date" value="' + esc(f.date) + '"></label>' +
     (isOff ? '' : '<label class="field"><span>Час</span><select id="ev-p" data-f="ev" data-k="p">' + periodOptions(f.p) + '</select></label>') +
     '<label class="field"><span>' + (isOff ? 'Повод' : isChange ? 'Предмет (по желание)' : 'Предмет') + '</span><input id="ev-subj" data-f="ev" data-k="subject" list="dl-subj" value="' + esc(f.subject) + '" placeholder="' + (isOff ? 'напр. Ден на народните будители' : 'напр. Математика') + '" autocomplete="off"></label></div>' +
     changeFields +
-    '<label class="field"><span>Бележка за класа</span><input id="ev-note" data-f="ev" data-k="note" value="' + esc(f.note) + '" placeholder="' + (isChange ? 'напр. Часът ще е в лабораторията' : 'напр. Материал: уроци 1–5') + '" autocomplete="off"></label>' +
+    '<label class="field"><span>' + (isHw ? 'Какво е домашното' : 'Бележка за класа') + '</span><input id="ev-note" data-f="ev" data-k="note" value="' + esc(f.note) + '" placeholder="' + (isHw ? 'напр. стр. 45, зад. 3–7' : isChange ? 'напр. Часът ще е в лабораторията' : 'напр. Материал: уроци 1–5') + '" autocomplete="off"></label>' +
     (isOff ? '<p class="hint">В този ден вместо програмата ще пише „Неучебен ден“.</p>' : '') +
     (evErr ? '<p class="err" role="alert">' + esc(evErr) + '</p>' : '') +
     '<div class="row-actions"><button class="btn primary" data-act="ev-add">' + (f.id ? 'Запази записа' : 'Добави') + '</button></div></div>';
@@ -1041,6 +1058,7 @@ function addEvent(){
     if (!f.cancel && !room && !sub && !subject) return fail('Посочи промяната: отменен час, нова стая или заместващ учител.');
   }
   if (NEEDS_SUBJECT.indexOf(type) >= 0 && !subject) return fail('Въведи предмет.');
+  if (type === 'project' && !note) return fail('Напиши какво е домашното.');
   if (type === 'holiday' && !subject && !note) return fail('Напиши повода за неучебния ден.');
   var ev = { id: f.id || ('e' + rid()), type:type, date:f.date, p:p, subject:subject, note:note };
   ev.cls = cls;
@@ -1338,6 +1356,37 @@ function teachHTML(now){
     '<p class="tc-note">Натисни учител, за да видиш всичките му часове за деня. Данните са от програмите на ' + cl.length + ' въведени класа (' + esc(cl.join(', ')) + '). Отчитат се заместванията и отменените часове.</p>';
 }
 function teachRefresh(){ var el = document.getElementById('tc-list'); if (el) el.innerHTML = teachListHTML(); }
+/* ---- Домашни: events of type "project"; "done" ticks stay on this device ---- */
+var CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+function hwDone(){ var a = jparse(sGet('localStorage', 'zv-hw-done')); return Array.isArray(a) ? a : []; }
+function hwList(){ return state.events.filter(function(e){ return e.type === 'project' && forClass(e, myClass); }).sort(evSort); }
+function hwOpen(now){ var t = isoDate(now), done = hwDone(); return hwList().filter(function(e){ return e.date >= t && done.indexOf(e.id) < 0; }).length; }
+function hwRow(e, done){
+  var isDone = done.indexOf(e.id) >= 0;
+  return '<div class="hw-r' + (isDone ? ' done' : '') + '"><button class="hw-c" data-act="hw-done" data-id="' + esc(e.id) + '" aria-pressed="' + isDone + '" aria-label="' + (isDone ? 'Отбележи като ненаправено' : 'Отбележи като направено') + '">' + CHECK + '</button>' +
+    '<div><div class="hw-s">' + esc(e.subject || 'Домашно') + '</div>' + (e.note ? '<div class="hw-n">' + esc(e.note) + '</div>' : '') + (e.p != null ? '<div class="up-w">за ' + ordWord(e.p) + ' час</div>' : '') + '</div></div>';
+}
+function hwHTML(now){
+  var t = isoDate(now), done = hwDone(), all = hwList();
+  var up = all.filter(function(e){ return e.date >= t; }), past = all.filter(function(e){ return e.date < t; }).reverse(), left = hwOpen(now);
+  var h = '<div class="h"><h2>Домашни</h2><span class="aside">' + (up.length ? (left ? left + ' за правене' : 'всичко е готово') : '') + '</span></div>';
+  if (!up.length) h += '<div class="up"><div class="empty">Няма зададени домашни.' + (teacherAllowed() ? ' Добави ги от „Редактирай“ → „Тестове, домашни, събития“ с вид „Домашно“.' : '') + '</div></div>';
+  else {
+    var groups = [], cur = null;
+    up.forEach(function(e){
+      if (!cur || cur.date !== e.date){ cur = { date:e.date, items:[] }; groups.push(cur); }
+      cur.items.push(e);
+    });
+    h += groups.map(function(g){
+      var d = parseISO(g.date), k = dayDiff(d, now);
+      var name = 'За ' + (k === 0 ? 'днес' : k === 1 ? 'утре' : DAYS[d.getDay()].toLowerCase()) + ' · ' + d.getDate() + ' ' + MONTHS[d.getMonth()];
+      return '<div class="grp">' + name + '</div><div class="up">' + g.items.map(function(e){ return hwRow(e, done); }).join('') + '</div>';
+    }).join('');
+    h += '<p class="tc-note">Отметките се пазят само на твоя телефон.</p>';
+  }
+  if (past.length) h += '<details class="past"><summary>Минали (' + past.length + ')</summary><div class="up">' + past.map(function(e){ return hwRow(e, done); }).join('') + '</div></details>';
+  return h;
+}
 function perms(){ return (sess && sess.perms) || []; }
 function isAdmin(){ return perms().indexOf('*') >= 0; }
 function canClass(c){ return isAdmin() || perms().indexOf(c) >= 0; }
@@ -1548,6 +1597,7 @@ APP.addEventListener('click', function(ev){
     case 'brand': var tn = Date.now(); if (tn - tapT > 2500) taps = 0; tapT = tn;
       if (++taps >= 5){ taps = 0; editUnlocked = true; sSet('sessionStorage', 'zv-edit', '1'); if (view !== 'teacher'){ view = 'teacher'; tSel.cls = myClass; window.scrollTo(0, 0); render(); permsThenRender(); } } break;
     case 'sb-in': signIn(); break;
+    case 'hw-done': var hd = hwDone(), hi = hd.indexOf(btn.dataset.id); if (hi >= 0) hd.splice(hi, 1); else hd.push(btn.dataset.id); sSet('localStorage', 'zv-hw-done', JSON.stringify(hd.slice(-300))); render(); break;
     case 'nt-toggle': ntOpen = !ntOpen; render(); break;
     case 'tc-open': tcOpen = tcOpen === btn.dataset.k ? null : btn.dataset.k; teachRefresh(); break;
     case 'st-bar': flash(btn.dataset.l); break;
@@ -1613,7 +1663,7 @@ function start(hot){
   MINE = classInfo(state, mine) ? mine : null;
   if (MINE) CLASS = MINE;
   myClass = CLASS;
-  page = ['now', 'week', 'tests', 'teach'].indexOf(ui.page) >= 0 ? ui.page : 'now';
+  page = ['now', 'week', 'tests', 'teach', 'hw'].indexOf(ui.page) >= 0 ? ui.page : 'now';
   view = ui.view === 'teacher' && teacherAllowed() ? 'teacher' : 'student';
   tTab = ['tt', 'ev', 'set'].indexOf(ui.tTab) >= 0 ? ui.tTab : 'tt';
   tSel = { cls:CLASS, day: (ui.tSel && +ui.tSel.day >= 1 && +ui.tSel.day <= 5) ? +ui.tSel.day : todayIdx() };
