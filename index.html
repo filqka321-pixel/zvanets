@@ -1226,7 +1226,7 @@ function devId(){
 }
 function recordVisit(){
   var day = isoDate(new Date()), key = day + '|' + vClass();
-  if (!SB || sGet('localStorage', 'zv-visit') === key) return;
+  if (!SB || !vClass() || sGet('localStorage', 'zv-visit') === key) return;
   var h = { apikey:SB.key, 'Content-Type':'application/json' };
   if (/^eyJ/.test(SB.key)) h.Authorization = 'Bearer ' + SB.key;
   fetch(SB.url + '/rest/v1/rpc/log_visit', { method:'POST', headers:h, body:JSON.stringify({ p_device:devId(), p_class:vClass(), p_installed:isStandalone() }) })
