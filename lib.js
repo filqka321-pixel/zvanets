@@ -1,4 +1,3 @@
-/* Звънец · общи функции: календар (.ics) за известия и подреден data.json */
 (function (root) {
   'use strict';
 
@@ -51,9 +50,6 @@
     lines.push('BEGIN:VALARM', 'ACTION:DISPLAY', 'DESCRIPTION:' + txt(text), 'TRIGGER:' + trigger, 'END:VALARM');
   }
 
-  /* Календар за един клас: всеки час се повтаря всяка седмица, известието идва,
-     когато свърши предишният час (10 мин преди първия). Тестовете са целодневни
-     събития с известие в 19:00 предната вечер. Неучебните дни махат часовете. */
   function buildICS(s, cls, now) {
     now = now || new Date();
     var ci = null;
@@ -99,7 +95,6 @@
       });
     }
 
-    /* промени в конкретен час: нова стая, заместник или друг предмет */
     evs.forEach(function (e) {
       if (e.type !== 'change' || e.cancel || e.p == null) return;
       var cd = parseISO(e.date), les = lessons[cd.getDay() + '|' + e.p];
@@ -116,7 +111,6 @@
       L.push('END:VEVENT');
     });
 
-    /* тестове, събития и неучебни дни */
     evs.forEach(function (e) {
       if (e.type === 'change') return;
       var dd = parseISO(e.date), subj = short(e.subject);
@@ -142,7 +136,6 @@
     return L.map(fold).join('\r\n') + '\r\n';
   }
 
-  /* data.json, подреден така, че да се поправя лесно на ръка: по един час / тест на ред */
   function pretty(s) {
     var J = JSON.stringify;
     function list(arr, ind, fn) {

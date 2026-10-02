@@ -82,7 +82,6 @@ h1,h2,h3,p{margin:0}
 .grid{display:grid;gap:18px;grid-template-columns:minmax(0,1fr)}
 .main,.side{min-width:0}
 @media (min-width:900px){.grid{grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);align-items:start}.side{position:sticky;top:calc(env(safe-area-inset-top,0px) + 12px)}}
-/* hero */
 .hero{background:var(--hero-bg);color:var(--hero-ink);border-radius:22px;padding:18px 18px 16px;display:grid;gap:14px;min-width:0;overflow:hidden}
 .hero-top{display:flex;align-items:flex-end;justify-content:space-between;gap:4px 12px;flex-wrap:wrap}
 .date{min-width:0}
@@ -111,7 +110,6 @@ h1,h2,h3,p{margin:0}
 .alerts{display:grid;gap:6px;border-top:1px solid var(--hero-track);padding-top:12px}
 .alert{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:14px}
 .alert-h{font-family:var(--f-ui);font-size:11.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--hero-muted)}
-/* tags */
 .tag{--tc:var(--test);--tb:var(--test-soft);--th:var(--hero-test);display:inline-flex;align-items:center;gap:5px;font-family:var(--f-ui);font-weight:600;font-size:12px;line-height:1.2;padding:3px 8px;border-radius:999px;background:var(--tb);color:var(--tc);white-space:nowrap}
 .t-change{--tc:var(--change);--tb:var(--change-soft);--th:var(--hero-change)}
 .t-event{--tc:var(--event);--tb:var(--event-soft);--th:var(--hero-event)}
@@ -121,7 +119,6 @@ h1,h2,h3,p{margin:0}
 .hero .tag::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--th)}
 .ex{font-family:var(--f-ui);font-size:11px;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:1px 7px}
 .sample{display:inline-block;font-family:var(--f-ui);font-size:11.5px;font-weight:600;color:var(--task);background:var(--task-soft);border-radius:999px;padding:2px 9px;white-space:nowrap}
-/* headings */
 .h{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:22px 2px 10px;flex-wrap:wrap}
 .h h2{font-family:var(--f-display);font-weight:700;font-size:26px;line-height:1;letter-spacing:.005em}
 .aside{font-family:var(--f-ui);font-size:13px;color:var(--muted);display:flex;gap:4px;align-items:center;flex-wrap:wrap}
@@ -145,7 +142,6 @@ h1,h2,h3,p{margin:0}
 .day-h span.sub{display:block;font-family:var(--f-ui);font-size:12.5px;color:var(--muted)}
 .day-ev{display:grid;gap:6px;margin-bottom:8px}
 .day-ev .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:9px 12px;font-size:14px}
-/* lessons */
 .lessons{background:var(--surface);border:1px solid var(--line);border-radius:18px;overflow:hidden}
 .ls{display:grid;grid-template-columns:50px minmax(0,1fr) auto;gap:12px;align-items:center;padding:11px 14px;border-top:1px solid var(--line-2)}
 .ls:first-child{border-top:0}
@@ -169,7 +165,6 @@ h1,h2,h3,p{margin:0}
 .ls.free .ls-n b{font-size:24px;color:var(--muted)}
 .ls.cxl .ls-s{text-decoration:line-through;text-decoration-thickness:1.5px;color:var(--muted)}
 .empty{padding:22px 16px;color:var(--muted);text-align:center;font-size:14.5px;display:grid;gap:8px;justify-items:center}
-/* upcoming */
 .up{background:var(--surface);border:1px solid var(--line);border-radius:18px;overflow:hidden}
 .up-row,.ev-row{display:grid;grid-template-columns:52px minmax(0,1fr);gap:12px;padding:12px 14px;border-top:1px solid var(--line-2);align-items:start}
 .up-row:first-child,.ev-row:first-child{border-top:0}
@@ -181,7 +176,6 @@ h1,h2,h3,p{margin:0}
 .up-w{font-size:13px;color:var(--muted);margin-top:2px}
 .up-w b{color:var(--ink-2);font-weight:600}
 .foot{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin-top:28px;font-family:var(--f-ui);font-size:12.5px;color:var(--muted);text-align:center}
-/* sheet */
 .sheet-wrap{position:fixed;inset:0;z-index:50;display:flex;align-items:flex-end;justify-content:center;background:rgba(8,14,24,.5)}
 .sheet{background:var(--surface);width:100%;max-width:560px;max-height:86%;overflow:auto;border-radius:22px 22px 0 0;padding:16px 16px calc(18px + env(safe-area-inset-bottom,0px));cursor:default}
 @media (min-width:640px){.sheet-wrap{align-items:center}.sheet{border-radius:22px}}
@@ -194,7 +188,6 @@ h1,h2,h3,p{margin:0}
 .chip{border:1px solid var(--line);background:var(--surface-2);border-radius:10px;padding:5px 10px;font-family:var(--f-display);font-weight:700;font-size:20px;line-height:1.1;min-width:50px}
 .chip.sm{font-size:16px;min-width:42px;padding:4px 8px}
 .chip.on{background:var(--brand);color:var(--brand-ink);border-color:var(--brand)}
-/* teacher */
 .t-head{display:grid;gap:12px;margin-bottom:14px}
 .t-title{font-family:var(--f-display);font-weight:700;font-size:32px;line-height:1}
 .t-sub{font-family:var(--f-ui);font-size:13.5px;color:var(--muted);margin-top:3px}
@@ -279,7 +272,6 @@ input[type=checkbox]{width:18px;height:18px;padding:0;accent-color:var(--brand);
 .sb-a{display:flex;gap:8px;flex-wrap:wrap}
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:11px 16px;border-radius:13px;font-family:var(--f-ui);font-size:14px;font-weight:600;z-index:60;width:max-content;max-width:calc(100% - 32px);box-shadow:var(--shadow);text-align:center}
 .toast.up{bottom:calc(92px + env(safe-area-inset-bottom,0px))}
-/* pages + tab bar */
 .page{max-width:680px;margin-inline:auto}
 .page>.h:first-child{margin-top:4px}
 #app.with-tabs{padding-bottom:calc(96px + env(safe-area-inset-bottom,0px))}
@@ -294,7 +286,6 @@ input[type=checkbox]{width:18px;height:18px;padding:0;accent-color:var(--brand);
 @keyframes tbPop{0%{transform:translateY(0) scale(.86)}55%{transform:translateY(-3px) scale(1.12)}100%{transform:none}}
 @keyframes tbFade{from{color:var(--muted)}to{color:var(--brand)}}
 .tb-badge{position:absolute;top:2px;left:calc(50% + 7px);min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:var(--now);color:var(--surface);font-size:11px;font-weight:700;display:grid;place-items:center;font-variant-numeric:tabular-nums}
-/* big home card */
 .hero-big{display:flex;flex-direction:column;gap:18px;min-height:calc(100vh - 190px);min-height:calc(100svh - 190px)}
 .hero-big>.ht{margin-top:auto}
 .hs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
@@ -317,7 +308,6 @@ input[type=checkbox]{width:18px;height:18px;padding:0;accent-color:var(--brand);
 .ht-r{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:14.5px}
 .ht-w{color:var(--hero-muted)}
 .ht-more{font-family:var(--f-ui);font-size:13px;font-weight:600;color:var(--hero-accent)}
-/* tests page */
 .grp{font-family:var(--f-ui);font-size:11.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:18px 4px 8px}
 .page-tests .h+.grp{margin-top:6px}
 .past{margin-top:18px}
@@ -325,7 +315,6 @@ input[type=checkbox]{width:18px;height:18px;padding:0;accent-color:var(--brand);
 .past summary::-webkit-details-marker{display:none}
 .past .up{opacity:.72}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
-/* PWA + Supabase */
 html{-webkit-text-size-adjust:100%}
 button,a,.brand{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 .brand,.tabbar,.cls-seg{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
@@ -355,7 +344,6 @@ button,a,.brand{touch-action:manipulation;-webkit-tap-highlight-color:transparen
 .acc-row b{display:block;font-size:14.5px;word-break:break-all}
 .acc-row small{color:var(--muted);font-size:13px}
 .acc-row .you{font-family:var(--f-ui);font-size:12.5px;font-weight:600;color:var(--muted);padding:0 6px}
-/* my class + class sheet */
 .cls-btn{cursor:pointer}
 .cls-btn.peek{border-color:var(--change);background:var(--change-soft)}
 .cls-btn.peek small,.cls-btn.peek svg{color:var(--change)}
@@ -385,7 +373,6 @@ button,a,.brand{touch-action:manipulation;-webkit-tap-highlight-color:transparen
 .btn.wide{width:100%;min-height:48px;font-size:16px}
 .sh-body{display:grid;gap:12px;padding:10px 0 4px}
 .welcome .hint{margin:0}
-/* stats */
 .st{display:grid;gap:14px}
 .st-tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
 @media (max-width:440px){.st-tiles{grid-template-columns:repeat(2,minmax(0,1fr))}}
@@ -412,7 +399,6 @@ button,a,.brand{touch-action:manipulation;-webkit-tap-highlight-color:transparen
 .st-sb{border:0;background:none;border-radius:8px;padding:5px 12px;font-family:var(--f-ui);font-weight:600;font-size:13px;color:var(--muted)}
 .st-sb.on{background:var(--ink);color:var(--bg)}
 .st-cls span{text-align:right;font-family:var(--f-ui);font-weight:700;font-variant-numeric:tabular-nums}
-/* teachers page */
 .tabbar-in{grid-template-columns:repeat(4,minmax(0,1fr))}
 .tb-pill{width:calc((100% - 18px) / 4)}
 .tq{display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:0 12px;margin:0 0 4px}
@@ -437,7 +423,6 @@ button,a,.brand{touch-action:manipulation;-webkit-tap-highlight-color:transparen
 .tc-l>span:first-child{font-variant-numeric:tabular-nums;color:var(--muted);font-family:var(--f-ui);font-weight:600;font-size:13px}
 .tc-l b{font-family:var(--f-display);font-weight:700;font-size:19px;line-height:1}
 .tc-note{font-size:13px;color:var(--muted);margin:16px 4px 0;line-height:1.45}
-/* notifications bar */
 .nt{padding:0;gap:0;overflow:hidden}
 .nt-bar{display:flex;align-items:center;gap:12px;width:100%;padding:11px 14px;background:none;border:0;text-align:left;color:inherit;cursor:pointer}
 .nt-bar .nt-ic{width:34px;height:34px;border-radius:10px;flex:none}
@@ -450,13 +435,11 @@ button,a,.brand{touch-action:manipulation;-webkit-tap-highlight-color:transparen
 .nt-steps{margin:0;padding-left:20px;display:grid;gap:6px;font-size:14px;color:var(--ink-2)}
 .nt-foot{font-size:13px;color:var(--muted)}
 @keyframes ntIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
-/* 5 tabs */
 .tabbar{padding-inline:8px}
 .tabbar-in{grid-template-columns:repeat(5,minmax(0,1fr));gap:4px}
 .tb-pill{width:calc((100% - 16px) / 5)}
 .tb{font-size:11.5px;padding:7px 1px 6px}
 .tb svg{width:24px;height:24px}
-/* homework */
 .hw-r{display:grid;grid-template-columns:34px minmax(0,1fr);gap:12px;align-items:start;padding:12px 14px;border-top:1px solid var(--line-2)}
 .hw-r:first-child{border-top:0}
 .hw-c{width:30px;height:30px;border-radius:50%;border:2px solid var(--line);background:var(--surface);color:transparent;display:grid;place-items:center;padding:0;margin-top:1px}
@@ -465,7 +448,6 @@ button,a,.brand{touch-action:manipulation;-webkit-tap-highlight-color:transparen
 .hw-s{font-weight:700;font-size:15.5px;line-height:1.25}
 .hw-n{font-size:14.5px;line-height:1.4;color:var(--ink-2);margin-top:2px;white-space:pre-wrap;overflow-wrap:anywhere}
 .hw-r.done .hw-s,.hw-r.done .hw-n{text-decoration:line-through;color:var(--muted)}
-/* install guide */
 .insf{background:var(--surface);border:1px solid var(--line);border-radius:24px;padding:26px 18px 18px;display:grid;gap:16px;margin-top:3vh}
 .insf-h{display:grid;gap:10px;justify-items:center;text-align:center}
 .insf-h .mark{width:58px;height:58px;border-radius:17px}
@@ -486,7 +468,6 @@ button,a,.brand{touch-action:manipulation;-webkit-tap-highlight-color:transparen
 .insf-arrow{position:fixed;left:50%;bottom:calc(10px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);color:var(--now);animation:insBob 1.2s ease-in-out infinite;pointer-events:none;z-index:30}
 .insf-arrow svg{width:34px;height:34px;display:block}
 @keyframes insBob{0%,100%{transform:translate(-50%,0)}50%{transform:translate(-50%,7px)}}
-/* teacher mode */
 .role-seg{display:grid;grid-template-columns:1fr 1fr;gap:3px;width:100%;background:var(--surface-2);border:1px solid var(--line);border-radius:14px;padding:3px}
 .role-b{border:0;background:none;border-radius:11px;padding:10px 8px;font-family:var(--f-ui);font-weight:700;font-size:15px;color:var(--muted)}
 .role-b.on{background:var(--ink);color:var(--bg)}
@@ -553,7 +534,6 @@ function pillX(i){ return 'translateX(calc(' + i + ' * (100% + 4px)))'; }
 var APP = document.getElementById('app');
 var collator = new Intl.Collator('bg', {numeric:true});
 
-/* ---------- helpers ---------- */
 function esc(v){ return String(v == null ? '' : v).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
 function clone(o){ return o == null ? o : JSON.parse(JSON.stringify(o)); }
 function rid(){ return Math.random().toString(36).slice(2, 9) + Date.now().toString(36).slice(-4); }
@@ -582,7 +562,6 @@ function tone(e){ return (TYPES[e.type] || TYPES.event).tone; }
 function tlabel(e){ return (TYPES[e.type] || TYPES.event).label; }
 function tagSpan(t, label){ return '<span class="tag t-' + t + '">' + esc(label) + '</span>'; }
 
-/* ---------- state ---------- */
 var state = jparse(document.getElementById('app-state').textContent);
 function normalize(s){
   if (!s || typeof s !== 'object') s = {};
@@ -686,7 +665,6 @@ function getStatus(s, name, now){
   return { kind:'break', plan:plan, next:after, mins: after ? after.start - m : 0 };
 }
 
-/* ---------- ui state ---------- */
 var page = 'now';
 var view = 'student', tTab = 'tt', myClass = null, selDay = null, weekOffset = 0, sheetOpen = false, firstVisit = false;
 var tSel = { cls:null, day:1 };
@@ -719,7 +697,6 @@ function markDirty(k){ if (!isDirty(k)) dirty.push(k); persistWorkSoon(); update
 function uiData(){ return { page:page, view:view, tTab:tTab, tSel:tSel, selDay:selDay, weekOffset:weekOffset, evForm:evForm, showPast:showPast }; }
 function saveUI(){ sSet('sessionStorage', 'zv-ui', JSON.stringify(uiData())); }
 
-/* draft keys: tt|class|day, ev|id, bells, classes, school, meta */
 function getVal(src, k){
   var p = k.split('|'), t = p[0];
   if (t === 'tt') return (src.tt[p[1]] && src.tt[p[1]][p[2]]) || null;
@@ -745,7 +722,6 @@ function persistWork(){ clearTimeout(workTimer); var w = workData(); sSet('sessi
 function persistWorkSoon(){ clearTimeout(workTimer); workTimer = setTimeout(persistWork, 350); }
 function clearWork(){ dirty = []; pendingRev = null; clearTimeout(workTimer); sSet('sessionStorage', 'zv-work', null); }
 
-/* ---------- toast ---------- */
 var toastEl = null, toastT = 0;
 function flash(msg){
   if (!toastEl){ toastEl = document.createElement('div'); toastEl.className = 'toast'; toastEl.setAttribute('role', 'status'); document.body.appendChild(toastEl); }
@@ -753,7 +729,6 @@ function flash(msg){
   clearTimeout(toastT); toastT = setTimeout(function(){ toastEl.hidden = true; }, 4500);
 }
 
-/* ---------- render: shared ---------- */
 function render(){
   clearTimeout(armTimer); armed = null;
   var now = new Date(); lastMin = now.getHours() * 60 + now.getMinutes();
@@ -788,7 +763,6 @@ function headerHTML(){
   return '<header class="top"><div class="brand" data-act="brand"><span class="mark">' + BELL + '</span><div class="brand-txt"><div class="brand-t">Звънец</div><div class="brand-s">Програма</div></div></div><div class="top-r">' + right + '</div></header>';
 }
 
-/* ---------- render: student ---------- */
 function weekMonday(now, off){ var dow = now.getDay(); var base = dow === 0 ? addDays(now, 1) : dow === 6 ? addDays(now, 2) : addDays(now, 1 - dow); return addDays(base, off * 7); }
 function defaultSel(now){ var dow = now.getDay(); return (weekOffset === 0 && dow >= 1 && dow <= 5) ? dow : 1; }
 function studentHTML(now){
@@ -967,7 +941,6 @@ function testsHTML(now){
   if (past.length) h += '<details class="past"><summary>Минали (' + past.length + ')</summary><div class="up">' + past.map(function(e){ return evRow(e, now, bells); }).join('') + '</div></details>';
   return h;
 }
-/* ---------- render: teacher ---------- */
 var BANNERS = {
   conflict:['warn','Някой друг запази промени, докато запазваше. Твоите промени не са загубени: прегледай ги и натисни „Запази“ отново.'],
   rebased:['info','Програмата беше обновена междувременно. Незапазените ти промени са пренесени върху новата версия.'],
@@ -1067,7 +1040,6 @@ function setHTML(){
   return '<div style="max-width:560px">' + bellsPanel(String(ci ? ci.shift : 2)) + '<p class="hint" style="margin-top:10px">Часовете са по разписанието от сайта на училището. Провери ги в началото на всеки срок.</p></div>';
 }
 
-/* ---------- teacher actions ---------- */
 function ttRow(c, d){
   draft.tt[c] = draft.tt[c] || {};
   var n = bellsFor(draft, c).length, r = draft.tt[c][d];
@@ -1121,7 +1093,6 @@ function setBell(el){
   if (toMin(b.start) >= toMin(b.end)) flash('Краят на ' + ordWord(b.n) + ' час трябва да е след началото.');
 }
 
-/* ---------- Supabase: refresh, login, save ---------- */
 function cacheState(s){ sSet('localStorage', 'zv-data', JSON.stringify(s)); }
 function editing(){ var a = document.activeElement; return view === 'teacher' && a && /INPUT|SELECT|TEXTAREA/.test(a.tagName); }
 function refreshData(){
@@ -1200,7 +1171,6 @@ function setClass(c){
   if (!classInfo(state, c)) return;
   CLASS = myClass = c; tSel.cls = CLASS; if (evForm) evForm.cls = [CLASS]; selDay = null; evErr = ''; clsFrom = null;
 }
-/* all classes of the school; only those with a timetable can be chosen */
 var GRADES = [8, 9, 10, 11, 12], PARS = ['а', 'б', 'в', 'г', 'д', 'е', 'ж'], pick = { g:null, p:'' };
 function hasTT(n){ return !!classInfo(state, n) && hasAnyTT(state, n); }
 function gradeOpen(g){ return PARS.some(function(p){ return hasTT(g + p); }); }
@@ -1240,7 +1210,6 @@ function sheetHTML(){
     '<div class="sheet-h"><h2>' + title + '</h2><button class="icon-b" data-act="sheet-x" aria-label="Затвори">×</button></div>' +
     '<div class="sh-body">' + body + back + '</div>' + foot + '</div></div>';
 }
-/* ---- anonymous visit counter: one row per device per day ---- */
 function devId(){
   var d = sGet('localStorage', 'zv-dev');
   if (!d){ d = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : rid() + rid() + rid(); sSet('localStorage', 'zv-dev', d); }
@@ -1257,7 +1226,6 @@ function recordVisit(){
       return r.text().then(function(t){ var j = jparse(t) || {}; sSet('localStorage', 'zv-visit-err', 'HTTP ' + r.status + (j.message ? ' · ' + j.message : '')); });
     }, function(){ sSet('localStorage', 'zv-visit-err', 'няма връзка'); });
 }
-/* ---- Статистика (admin only) ---- */
 function statLoad(){
   statBusy = true; statErr = '';
   return ensureSession().then(function(){ return sbw('POST', 'rpc/visit_stats', {}); }).then(function(r){
@@ -1305,11 +1273,9 @@ function statHTML(){
     (crow || '<div class="empty">' + (cmode === 'today' ? 'Днес още никой не е влизал.' : 'Още няма посещения.') + '</div>') +
     (hasToday ? '' : '<p class="hint">За разбивка само за днес пусни visits-v4.sql в Supabase.</p>') + '</div></div>';
 }
-/* ---- Учители: who teaches where, built from every class's timetable ---- */
 var SEARCH_I = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/></svg>';
 function tNorm(s){ return String(s || '').toLowerCase().replace(/ё/g, 'е').replace(/[.\-]/g, ' ').replace(/\s+/g, ' ').trim(); }
 function tKey(n){ var w = tNorm(n).split(' '); return (w.length > 1 ? w[0].charAt(0) + ' ' : '') + w[w.length - 1]; }
-/* one lesson's teacher field -> people, e.g. "В. Филипова-Панкова (104) · М. Кръстева (403)" or "Гр. 1 Илиан Николов · Гр. 2 Мария Георгиева" */
 function splitTeachers(t, room){
   var out = [];
   String(t || '').split(/\s*(?:·|\/)\s*/).forEach(function(p){
@@ -1400,7 +1366,6 @@ function teachHTML(now){
     '<p class="tc-note">Натисни учител, за да видиш всичките му часове за деня. Данните са от програмите на ' + cl.length + ' въведени класа (' + esc(cl.join(', ')) + '). Отчитат се заместванията и отменените часове.</p>';
 }
 function teachRefresh(){ var el = document.getElementById('tc-list'); if (el) el.innerHTML = teachListHTML(); }
-/* ---- Домашни: events of type "project"; "done" ticks stay on this device ---- */
 var CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
 function hwDone(){ var a = jparse(sGet('localStorage', 'zv-hw-done')); return Array.isArray(a) ? a : []; }
 function hwList(){ return state.events.filter(function(e){ return e.type === 'project' && forClass(e, myClass); }).sort(evSort); }
@@ -1431,7 +1396,6 @@ function hwHTML(now){
   if (past.length) h += '<details class="past"><summary>Минали (' + past.length + ')</summary><div class="up">' + past.map(function(e){ return hwRow(e, done); }).join('') + '</div></details>';
   return h;
 }
-/* ---- teacher mode ---- */
 function isT(){ return ROLE === 'teacher' && !!TKEY; }
 function vClass(){ return isT() ? 'учител' : (MINE || ''); }
 function tAll(){ return teacherDay(new Date()).map(function(t){ return { key:t.key, name:t.name }; }); }
@@ -1540,7 +1504,6 @@ function keyAllowed(k, next){
   if (p[0] === 'meta') return true;
   return isAdmin();
 }
-/* ---- Достъп (admin only) ---- */
 function accLoad(){
   accBusy = true;
   return ensureSession().then(function(){ return sbw('GET', 'editors?select=email,class_name&order=class_name,email'); }).then(function(r){
@@ -1645,7 +1608,6 @@ function isStandalone(){ return navigator.standalone === true || !!(window.match
 function uaStr(){ return navigator.userAgent || ''; }
 function isAndroid(){ return /android/i.test(uaStr()); }
 function isMobile(){ return isIOS() || isAndroid(); }
-/* opened inside another app's browser (Messenger, Instagram…): no "Add to Home Screen" there */
 function inAppName(){
   var u = uaStr();
   if (/FBAN|FBAV|FB_IAB|FB4A|FBIOS/i.test(u)) return /Messenger|Orca/i.test(u) ? 'Messenger' : 'Facebook';
@@ -1720,7 +1682,6 @@ function notifHTML(){
     '</ol><p class="nt-foot">Когато програмата се промени, календарът се обновява сам.</p></div></section>';
 }
 
-/* ---------- events ---------- */
 function disarm(){
   clearTimeout(armTimer);
   if (armed){ var sel = '[data-arm="' + (window.CSS && CSS.escape ? CSS.escape(armed) : armed) + '"]'; var b = APP.querySelector(sel); if (b){ b.textContent = b.dataset.l0; b.classList.remove('armed'); } }
@@ -1916,7 +1877,6 @@ function get(table, query){
   }, function(e){ var err = new Error(String(e && e.message || e)); err.status = 0; err.table = table; throw err; });
 }
 function hhmm(t){ return String(t || '').slice(0, 5); }
-/* table rows -> the state object the app uses */
 function buildState(t){
   var st = t.settings[0] || {};
   var s = { v:1, rev: st.rev || 'r0', updated: st.updated_at || new Date().toISOString(), school: st.school || '', bells:{ '1':[], '2':[] }, classes:[], tt:{}, events:[], sample:{ classes:[] } };

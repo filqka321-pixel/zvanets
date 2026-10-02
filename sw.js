@@ -1,5 +1,4 @@
-/* Звънец · service worker: приложението се отваря и без интернет (данните идват от Supabase и се пазят на телефона) */
-const VERSION = 'zvanets-sb-15';
+const VERSION = 'zvanets-sb-16';
 const CORE = ['./', 'index.html', 'config.js', 'lib.js', 'manifest.webmanifest', 'favicon.svg', 'icon-192.png', 'icon-512.png', 'apple-touch-icon.png'];
 const SCOPE = self.registration.scope;
 
@@ -22,7 +21,6 @@ function withTimeout(p, ms) {
   });
 }
 
-/* първо мрежата (за да идват новите данни), кешът е резерва */
 async function networkFirst(req, key, ms) {
   const cache = await caches.open(VERSION);
   const net = fetch(req).then((res) => {
@@ -37,7 +35,6 @@ async function networkFirst(req, key, ms) {
   }
 }
 
-/* първо кешът, а във фонов режим се обновява */
 async function staleWhileRevalidate(req) {
   const cache = await caches.open(VERSION);
   const hit = await cache.match(req, { ignoreSearch: true });
