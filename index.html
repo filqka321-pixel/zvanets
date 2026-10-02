@@ -408,6 +408,9 @@ button,a,.brand{touch-action:manipulation;-webkit-tap-highlight-color:transparen
 .st-cls b.none{font-family:var(--f-ui);font-size:13px;font-weight:600;color:var(--muted)}
 .st-track{height:10px;border-radius:999px;background:var(--surface-2);overflow:hidden}
 .st-track i{display:block;height:100%;background:var(--brand);border-radius:0 4px 4px 0}
+.st-seg{display:inline-grid;grid-auto-flow:column;gap:2px;background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:2px}
+.st-sb{border:0;background:none;border-radius:8px;padding:5px 12px;font-family:var(--f-ui);font-weight:600;font-size:13px;color:var(--muted)}
+.st-sb.on{background:var(--ink);color:var(--bg)}
 .st-cls span{text-align:right;font-family:var(--f-ui);font-weight:700;font-variant-numeric:tabular-nums}
 /* teachers page */
 .tabbar-in{grid-template-columns:repeat(4,minmax(0,1fr))}
@@ -645,7 +648,7 @@ var MINE = null;
 var ntOpen = false;
 var tq = '', tcOpen = null;
 var CHART = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M5 20v-7M12 20V5M19 20v-10"/></svg>';
-var statData = null, statAt = null, statBusy = false, statErr = '';
+var statData = null, statAt = null, statBusy = false, statErr = '', statCls = 'today';
 var accRows = null, accForm = { email:'', cls:'' }, accErr = '', accBusy = false;
 var editUnlocked = sGet('sessionStorage', 'zv-edit') === '1', taps = 0, tapT = 0;
 var installEvt = null, lastRefresh = 0, refreshing = false, calOK = sGet('localStorage', 'zv-cal') === '1';
@@ -1223,7 +1226,8 @@ function statHTML(){
     return '<button class="st-bar" data-act="st-bar" data-l="' + esc(lab) + '" title="' + esc(lab) + '" aria-label="' + esc(lab) + '">' + (show ? '<b>' + x.n + '</b>' : '') + '<i style="height:' + h + '%"></i></button>';
   }).join('');
   var days = daily.map(function(x){ var dt = parseISO(x.day), we = dt.getDay() === 0 || dt.getDay() === 6; return '<small' + (we ? ' class="we"' : '') + '>' + dt.getDate() + '</small>'; }).join('');
-  var cls = d.classes || [], cmax = Math.max.apply(null, [1].concat(cls.map(function(x){ return x.n; })));
+  var hasToday = Array.isArray(d.classes_today), cmode = hasToday ? statCls : 'week';
+  var cls = (cmode === 'today' ? d.classes_today : d.classes) || [], cmax = Math.max.apply(null, [1].concat(cls.map(function(x){ return x.n; })));
   var crow = cls.map(function(x){
     return '<div class="st-cls">' + (x.cls ? '<b>' + esc(x.cls) + '</b>' : '<b class="none">без клас</b>') + '<div class="st-track"><i style="width:' + Math.max(2, Math.round(x.n / cmax * 100)) + '%"></i></div><span>' + x.n + '</span></div>';
   }).join('');
@@ -1234,7 +1238,10 @@ function statHTML(){
     '<div class="panel"><div class="form-h"><h3>Устройства по дни</h3><button class="link-btn sm" data-act="st-reload">Обнови</button></div>' +
     '<div><div class="st-bars">' + bars + '</div><div class="st-days">' + days + '</div></div>' +
     '<p class="hint">Всяко устройство се брои веднъж на ден. Натисни стълбче за точния брой.' + (statAt ? ' Обновено в ' + pad(statAt.getHours()) + ':' + pad(statAt.getMinutes()) + '.' : '') + '</p></div>' +
-    '<div class="panel"><div class="form-h"><h3>По класове · 7 дни</h3></div>' + (crow || '<div class="empty">Още няма посещения.</div>') + '</div></div>';
+    '<div class="panel"><div class="form-h"><h3>По класове</h3>' +
+    (hasToday ? '<div class="st-seg" role="group" aria-label="Период">' + [['today', 'Днес'], ['week', '7 дни']].map(function(o){ return '<button class="st-sb' + (cmode === o[0] ? ' on' : '') + '" data-act="st-cls" data-m="' + o[0] + '" aria-pressed="' + (cmode === o[0]) + '">' + o[1] + '</button>'; }).join('') + '</div>' : '<span class="aside">7 дни</span>') + '</div>' +
+    (crow || '<div class="empty">' + (cmode === 'today' ? 'Днес още никой не е влизал.' : 'Още няма посещения.') + '</div>') +
+    (hasToday ? '' : '<p class="hint">За разбивка само за днес пусни visits-v4.sql в Supabase.</p>') + '</div></div>';
 }
 /* ---- Учители: who teaches where, built from every class's timetable ---- */
 var SEARCH_I = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/></svg>';
@@ -1546,6 +1553,7 @@ APP.addEventListener('click', function(ev){
     case 'st-bar': flash(btn.dataset.l); break;
     case 'to-stats': if (isAdmin()){ view = 'stats'; statData = null; sheetOpen = false; window.scrollTo(0, 0); render(); } break;
     case 'st-reload': statData = null; render(); break;
+    case 'st-cls': statCls = btn.dataset.m === 'week' ? 'week' : 'today'; render(); break;
     case 'cls-open': pickInit(CLASS); sheetOpen = 'view'; render(); break;
     case 'sheet-x': sheetOpen = false; render(); break;
     case 'mine-change': pickInit(MINE); sheetOpen = 'mine'; render(); break;
