@@ -486,6 +486,19 @@ button,a,.brand{touch-action:manipulation;-webkit-tap-highlight-color:transparen
 .insf-arrow{position:fixed;left:50%;bottom:calc(10px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);color:var(--now);animation:insBob 1.2s ease-in-out infinite;pointer-events:none;z-index:30}
 .insf-arrow svg{width:34px;height:34px;display:block}
 @keyframes insBob{0%,100%{transform:translate(-50%,0)}50%{transform:translate(-50%,7px)}}
+/* teacher mode */
+.role-seg{display:grid;grid-template-columns:1fr 1fr;gap:3px;width:100%;background:var(--surface-2);border:1px solid var(--line);border-radius:14px;padding:3px}
+.role-b{border:0;background:none;border-radius:11px;padding:10px 8px;font-family:var(--f-ui);font-weight:700;font-size:15px;color:var(--muted)}
+.role-b.on{background:var(--ink);color:var(--bg)}
+.tsel{width:100%;text-align:left}
+.tsel select{font-weight:600;font-size:17px;padding:11px 12px;min-height:48px}
+.cls-btn .tn{max-width:38vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:18px}
+.tb.off{opacity:.36}
+.tb.off span::after{content:"скоро";display:block;font-weight:500;font-size:10px;line-height:1}
+.t-warn{display:flex;gap:10px;align-items:flex-start;margin:14px 0 0;padding:12px 14px;border-radius:14px;background:var(--task-soft);color:var(--ink);font-size:13.5px;line-height:1.45}
+.t-warn b{color:var(--task)}
+.sh-foot2{display:flex;justify-content:center;padding-top:10px}
+.hl-s small{font-weight:500;color:var(--hero-muted);font-size:12.5px}
 </style>
 </head>
 <body>
@@ -682,6 +695,7 @@ var newCls = { name:'', shift:2 };
 var art = null, canEdit = null, readOnly = false, saving = false;
 var SB = window.ZvSB, sess = jparse(sGet('localStorage', 'zv-sess')), auForm = { email:'', password:'' }, auErr = '', auBusy = false;
 var MINE = null;
+var ROLE = 'student', TKEY = '', wRole = 'student', pickT = '';
 var insFull = false;
 var PLUSBOX = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="4.5"/><path d="M12 8.5v7M8.5 12h7"/></svg>';
 var ARROW_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v15M6 13l6 6 6-6"/></svg>';
@@ -747,10 +761,11 @@ function render(){
   h += view === 'stats' ? '<div class="teacher"><div class="t-head"><div><h1 class="t-title">Статистика</h1><p class="t-sub">Колко устройства отварят Звънец. Анонимно, без имена.</p></div></div>' + statHTML() + '</div>' : view === 'teacher' ? teacherHTML(now) : studentHTML(now);
   h += '<footer class="foot"><span>' + (MINE || view === 'teacher' ? esc(CLASS) + ' · ' : '') + esc(state.school) + '</span><span>·</span><span>Обновено ' + esc(fmtUpdated(state.updated)) + '</span></footer>';
   var guide = view === 'student' && insFull && insNeeded();
-  if (view === 'student' && MINE && !guide) h += tabbarHTML(now);
-  if (view === 'student' && sheetOpen && MINE && !guide) h += sheetHTML();
+  var chosen = !!MINE || isT();
+  if (view === 'student' && chosen && !guide) h += tabbarHTML(now);
+  if (view === 'student' && sheetOpen && chosen && !guide) h += sheetHTML();
   APP.innerHTML = h;
-  APP.classList.toggle('with-tabs', view === 'student' && !!MINE && !guide);
+  APP.classList.toggle('with-tabs', view === 'student' && chosen && !guide);
   var pill = APP.querySelector('.tb-pill');
   if (pill){ var to = +pill.dataset.to; pill.getBoundingClientRect(); pill.style.transform = pillX(to); tabFrom = to; }
   var cp = APP.querySelector('.cls-pill');
@@ -769,7 +784,7 @@ function headerHTML(){
   if (view === 'stats') right = '<button class="btn primary sm" data-act="to-student">Готово</button>';
   else if (view === 'teacher') right = badge + '<button class="btn primary sm" data-act="to-student">Готово</button>';
   else right = (isAdmin() ? '<button class="icon-b edit" data-act="to-stats" aria-label="Статистика" title="Статистика">' + CHART + '</button>' : '') + (teacherAllowed() ? '<button class="icon-b edit" data-act="to-teacher" aria-label="Редактирай" title="Редактирай">' + PENCIL + '</button>' : '') +
-    (!MINE || (insFull && insNeeded()) ? '' : '<button class="cls-btn' + (CLASS !== MINE ? ' peek' : '') + '" data-act="cls-open" aria-label="Друг клас"><small>' + (CLASS !== MINE ? 'Гледаш' : 'Клас') + '</small>' + esc(CLASS) + CHEV + '</button>');
+    (isT() && !(insFull && insNeeded()) ? tBtnHTML() : !MINE || (insFull && insNeeded()) ? '' : '<button class="cls-btn' + (CLASS !== MINE ? ' peek' : '') + '" data-act="cls-open" aria-label="Друг клас"><small>' + (CLASS !== MINE ? 'Гледаш' : 'Клас') + '</small>' + esc(CLASS) + CHEV + '</button>');
   return '<header class="top"><div class="brand" data-act="brand"><span class="mark">' + BELL + '</span><div class="brand-txt"><div class="brand-t">Звънец</div><div class="brand-s">Програма</div></div></div><div class="top-r">' + right + '</div></header>';
 }
 
@@ -778,7 +793,8 @@ function weekMonday(now, off){ var dow = now.getDay(); var base = dow === 0 ? ad
 function defaultSel(now){ var dow = now.getDay(); return (weekOffset === 0 && dow >= 1 && dow <= 5) ? dow : 1; }
 function studentHTML(now){
   if (insFull && insNeeded()) return '<div class="page">' + installFullHTML() + '</div>';
-  if (!MINE) return '<div class="page">' + welcomeHTML() + '</div>';
+  if (!MINE && !isT()) return '<div class="page">' + welcomeHTML() + '</div>';
+  if (isT()) return teacherModeHTML(now);
   var body;
   if (page === 'week'){
     var mon = weekMonday(now, weekOffset), d = selDay != null ? selDay : defaultSel(now);
@@ -796,10 +812,10 @@ function soonTests(now){
   return state.events.filter(function(e){ return forClass(e, myClass) && tone(e) === 'test' && e.date >= t && dayDiff(parseISO(e.date), now) < 7; }).length;
 }
 function tabbarHTML(now){
-  var n = soonTests(now), to = pageIdx(page), from = tabFrom == null ? to : tabFrom;
+  var n = isT() ? 0 : soonTests(now), to = pageIdx(page), from = tabFrom == null ? to : tabFrom;
   return '<nav class="tabbar" aria-label="Страници"><div class="tabbar-in"><i class="tb-pill" data-to="' + to + '" style="transform:' + pillX(from) + '"></i>' + PAGES.map(function(p, i){
-    var on = page === p[0];
-    return '<button class="tb' + (on ? ' on' : '') + (on && from !== to ? ' just' : '') + '" data-act="page" data-p="' + p[0] + '"' + (on ? ' aria-current="page"' : '') + '>' + ICONS[p[0]] + '<span>' + p[1] + '</span>' + (p[0] === 'tests' && n ? '<i class="tb-badge">' + n + '</i>' : '') + (p[0] === 'hw' && hwOpen(now) ? '<i class="tb-badge">' + hwOpen(now) + '</i>' : '') + '</button>';
+    var on = page === p[0], off = isT() && (p[0] === 'hw' || p[0] === 'tests');
+    return '<button class="tb' + (on ? ' on' : '') + (off ? ' off' : '') + (on && from !== to ? ' just' : '') + '" data-act="' + (off ? 'page-off' : 'page') + '" data-p="' + p[0] + '"' + (on ? ' aria-current="page"' : '') + '>' + ICONS[p[0]] + '<span>' + p[1] + '</span>' + (p[0] === 'tests' && n ? '<i class="tb-badge">' + n + '</i>' : '') + (p[0] === 'hw' && !isT() && hwOpen(now) ? '<i class="tb-badge">' + hwOpen(now) + '</i>' : '') + '</button>';
   }).join('') + '</div></nav>';
 }
 function metaInline(x){ var p = ''; if (x.room) p += ' · <b>' + esc(roomLabel(x.room)) + '</b>'; if (x.teacher) p += ' · ' + esc(x.teacher); return p; }
@@ -885,9 +901,9 @@ function weekHTML(now, mon, d){
   var cap0 = weekOffset === 0 ? ((wd === 0 || wd === 6) ? 'идната седмица' : 'тази седмица') : '<button class="link-btn sm" data-act="week-now">към днес</button>';
   var tabs = [1, 2, 3, 4, 5].map(function(k){
     var dt = addDays(mon, k - 1), iso = isoDate(dt);
-    var n = eventsOn(state, myClass, iso).filter(function(e){ return tone(e) === 'test'; }).length;
-    var on = k === d, isT = iso === todayIso;
-    return '<button class="day' + (on ? ' on' : '') + (isT ? ' today' : '') + '" data-act="day" data-d="' + k + '" aria-pressed="' + on + '" aria-label="' + DAYS[k] + ', ' + dt.getDate() + ' ' + MONTHS[dt.getMonth()] + (n ? ', има тест' : '') + '"><b>' + DAYS_SHORT[k] + '</b><span>' + dt.getDate() + '</span><i class="dd">' + (n ? '<em></em>' : '') + '</i></button>';
+    var n = isT() ? 0 : eventsOn(state, myClass, iso).filter(function(e){ return tone(e) === 'test'; }).length;
+    var on = k === d, isTd = iso === todayIso;
+    return '<button class="day' + (on ? ' on' : '') + (isTd ? ' today' : '') + '" data-act="day" data-d="' + k + '" aria-pressed="' + on + '" aria-label="' + DAYS[k] + ', ' + dt.getDate() + ' ' + MONTHS[dt.getMonth()] + (n ? ', има тест' : '') + '"><b>' + DAYS_SHORT[k] + '</b><span>' + dt.getDate() + '</span><i class="dd">' + (n ? '<em></em>' : '') + '</i></button>';
   }).join('');
   return '<div class="h"><h2>Програма</h2><div class="wk"><button class="icon-b" data-act="week" data-o="-1" aria-label="Предишна седмица">‹</button><span class="wk-l">' + mon.getDate() + ' ' + MS[mon.getMonth()] + ' – ' + fri.getDate() + ' ' + MS[fri.getMonth()] + '<small>' + cap0 + '</small></span><button class="icon-b" data-act="week" data-o="1" aria-label="Следваща седмица">›</button></div></div><div class="days" role="group" aria-label="Ден от седмицата">' + tabs + '</div>';
 }
@@ -1208,16 +1224,18 @@ function soonText(){
 }
 function welcomeHTML(){
   if (pick.g == null) pickInit(null, true);
-  return '<section class="welcome"><span class="mark">' + BELL + '</span><h1>Кой е твоят клас?</h1>' +
-    '<p>Звънец винаги ще се отваря с програмата на твоя клас. Другите класове са на едно докосване.</p>' +
-    pickerHTML('pick-mine', 'Това е моят клас') + (soonText() ? '<p class="hint">' + soonText() + '</p>' : '') + '</section>';
+  var t = wRole === 'teacher';
+  return '<section class="welcome"><span class="mark">' + BELL + '</span><h1>' + (t ? 'Кой учител си?' : 'Кой е твоят клас?') + '</h1>' +
+    '<p>' + (t ? 'Звънец ще показва твоите часове: с кой клас си и в коя стая.' : 'Звънец винаги ще се отваря с програмата на твоя клас. Другите класове са на едно докосване.') + '</p>' + roleSegHTML() +
+    (t ? tPickerHTML('t-mine', 'Това съм аз') : pickerHTML('pick-mine', 'Това е моят клас') + (soonText() ? '<p class="hint">' + soonText() + '</p>' : '')) + '</section>';
 }
 function sheetHTML(){
+  if (sheetOpen === 'role') return roleSheetHTML();
   var mine = sheetOpen === 'mine', title = mine ? 'Кой е твоят клас?' : 'Друг клас';
   var body = pickerHTML(mine ? 'pick-mine' : 'pick-go', mine ? 'Запази като мой клас' : 'Покажи програмата');
   var back = !mine && CLASS !== MINE ? '<button class="btn wide" data-act="cls-back">Обратно към ' + esc(MINE) + '</button>' : '';
   var foot = mine ? '<p class="hint">Приложението винаги ще се отваря с програмата на този клас.</p>'
-    : '<div class="sh-foot"><span>Твоят клас: <b>' + esc(MINE) + '</b></span><button class="link-btn sm" data-act="mine-change">Смени</button></div>';
+    : '<div class="sh-foot"><span>Твоят клас: <b>' + esc(MINE) + '</b></span><button class="link-btn sm" data-act="mine-change">Смени</button></div><div class="sh-foot2"><button class="link-btn sm" data-act="role-open">Аз съм учител</button></div>';
   return '<div class="sheet-wrap" data-act="sheet-x"><div class="sheet" data-act="noop" role="dialog" aria-modal="true" aria-label="' + title + '">' +
     '<div class="sheet-h"><h2>' + title + '</h2><button class="icon-b" data-act="sheet-x" aria-label="Затвори">×</button></div>' +
     '<div class="sh-body">' + body + back + '</div>' + foot + '</div></div>';
@@ -1229,11 +1247,11 @@ function devId(){
   return d;
 }
 function recordVisit(){
-  var day = isoDate(new Date()), key = day + '|' + (MINE || '');
+  var day = isoDate(new Date()), key = day + '|' + vClass();
   if (!SB || sGet('localStorage', 'zv-visit') === key) return;
   var h = { apikey:SB.key, 'Content-Type':'application/json' };
   if (/^eyJ/.test(SB.key)) h.Authorization = 'Bearer ' + SB.key;
-  fetch(SB.url + '/rest/v1/rpc/log_visit', { method:'POST', headers:h, body:JSON.stringify({ p_device:devId(), p_class:MINE || '', p_installed:isStandalone() }) })
+  fetch(SB.url + '/rest/v1/rpc/log_visit', { method:'POST', headers:h, body:JSON.stringify({ p_device:devId(), p_class:vClass(), p_installed:isStandalone() }) })
     .then(function(r){
       if (r.ok){ sSet('localStorage', 'zv-visit', key); sSet('localStorage', 'zv-visit-err', null); return; }
       return r.text().then(function(t){ var j = jparse(t) || {}; sSet('localStorage', 'zv-visit-err', 'HTTP ' + r.status + (j.message ? ' · ' + j.message : '')); });
@@ -1316,7 +1334,7 @@ function teacherDay(date){
         var t = get(p.name), same = null;
         t.ls.forEach(function(l){ if (l.start === x.start && l.subject === x.subject && l.room === p.room) same = l; });
         if (same){ if (same.cls.indexOf(c.name) < 0) same.cls.push(c.name); return; }
-        t.ls.push({ start:x.start, end:x.end, bs:x.b.start, be:x.b.end, cls:[c.name], subject:x.subject, room:p.room, group:p.group });
+        t.ls.push({ n:x.n, start:x.start, end:x.end, bs:x.b.start, be:x.b.end, cls:[c.name], subject:x.subject, room:p.room, group:p.group });
       });
     });
   });
@@ -1412,6 +1430,91 @@ function hwHTML(now){
   }
   if (past.length) h += '<details class="past"><summary>Минали (' + past.length + ')</summary><div class="up">' + past.map(function(e){ return hwRow(e, done); }).join('') + '</div></details>';
   return h;
+}
+/* ---- teacher mode ---- */
+function isT(){ return ROLE === 'teacher' && !!TKEY; }
+function vClass(){ return isT() ? 'учител' : (MINE || ''); }
+function tAll(){ return teacherDay(new Date()).map(function(t){ return { key:t.key, name:t.name }; }); }
+function tMe(date){ var l = teacherDay(date); for (var i = 0; i < l.length; i++) if (l[i].key === TKEY) return l[i]; return null; }
+function tName(){ var a = tAll(); for (var i = 0; i < a.length; i++) if (a[i].key === TKEY) return a[i].name; return ''; }
+function tNextDay(now){
+  for (var k = 1; k <= 14; k++){ var d = addDays(now, k); if (d.getDay() === 0 || d.getDay() === 6) continue; var t = tMe(d); if (t && t.blocks.length) return { date:d, t:t }; }
+  return null;
+}
+function tCls(l){ return esc(l.cls.join(', ')); }
+function tCovered(){ var c = classesWithTT(); return c.length ? c[0] + (c.length > 1 ? '–' + c[c.length - 1] : '') : 'няма'; }
+function tWarn(){ return '<p class="t-warn"><span><b>Непълни данни.</b> Виждаш само часовете си с въведените класове (' + esc(tCovered()) + '). Останалите часове, тестовете и домашните ще се появят, когато се добавят програмите на всички класове.</span></p>'; }
+function tPickerHTML(act, label){
+  var a = tAll();
+  return '<label class="field tsel"><span>Учител</span><select data-f="pickt" aria-label="Учител">' + (pickT ? '' : '<option value="" selected disabled>Избери името си</option>') +
+    a.map(function(t){ return '<option value="' + esc(t.key) + '"' + (pickT === t.key ? ' selected' : '') + '>' + esc(t.name) + '</option>'; }).join('') + '</select></label>' +
+    '<button class="btn primary wide" data-act="' + act + '"' + (pickT ? '' : ' disabled') + '>' + label + '</button>' +
+    '<p class="hint">Не намираш името си? Засега са въведени само класовете ' + esc(tCovered()) + '.</p>';
+}
+function roleSegHTML(){
+  return '<div class="role-seg" role="group" aria-label="Кой си">' + [['student', 'Ученик'], ['teacher', 'Учител']].map(function(o){
+    return '<button class="role-b' + (wRole === o[0] ? ' on' : '') + '" data-act="role-set" data-r="' + o[0] + '" aria-pressed="' + (wRole === o[0]) + '">' + o[1] + '</button>'; }).join('') + '</div>';
+}
+function roleSheetHTML(){
+  return '<div class="sheet-wrap" data-act="sheet-x"><div class="sheet" data-act="noop" role="dialog" aria-modal="true" aria-label="Учител">' +
+    '<div class="sheet-h"><h2>Режим за учители</h2><button class="icon-b" data-act="sheet-x" aria-label="Затвори">×</button></div>' +
+    '<div class="sh-body">' + tPickerHTML('t-mine', isT() ? 'Смени учителя' : 'Това съм аз') + '</div>' +
+    '<div class="sh-foot"><span>' + (isT() ? 'Сега: <b>' + esc(tName()) + '</b>' : 'Виждаш часовете си по класове.') + '</span><button class="link-btn sm" data-act="role-student">' + (isT() ? 'Към ученик' : 'Откажи') + '</button></div></div></div>';
+}
+function tBtnHTML(){
+  var w = tName().split(' ');
+  return '<button class="cls-btn" data-act="role-open" aria-label="Режим за учители"><small>Учител</small><span class="tn">' + esc(w[w.length - 1]) + '</span>' + CHEV + '</button>';
+}
+function tHeroHTML(now){
+  var wk = now.getDay() === 0 || now.getDay() === 6, me = wk ? null : tMe(now), m = nowMin(now);
+  var b = me ? me.blocks : [], cur = null, next = null;
+  b.forEach(function(l){ if (m >= l.start && m < l.end) cur = l; });
+  b.forEach(function(l){ if (!next && l.start > m) next = l; });
+  function meta(l){ return [l.room ? '<b>' + esc(roomLabel(l.room)) + '</b>' : '', esc(short(l.subject)) + (l.group ? ' (' + l.group + ')' : '')].filter(Boolean).join(' · '); }
+  var eb, ti, mt = '', ex = '', focus = null, fDate = now, live = b.some(function(l){ return l.end > m; });
+  if (cur){
+    eb = 'Сега · до ' + cur.be; ti = tCls(cur); mt = meta(cur);
+    ex = '<div class="prog-row"><div class="progress"><i style="width:' + Math.round((m - cur.start) / (cur.end - cur.start) * 100) + '%"></i></div><span class="left">остават ' + dur(cur.end - m) + '</span></div>' +
+      '<div class="now-next">' + (next ? 'След това: <b>' + tCls(next) + '</b> в ' + next.bs + (next.room ? ' · ' + esc(roomLabel(next.room)) : '') : 'Това е последният ти час за днес с тези класове.') + '</div>';
+  } else if (next){
+    eb = 'Следващ час'; ti = tCls(next) + ' в ' + next.bs; mt = meta(next) + ' · след ' + dur(next.start - m);
+  } else {
+    var nd = tNextDay(now);
+    eb = b.length ? 'Часовете ти за днес свършиха' : wk ? 'Почивен ден' : 'Днес нямаш часове с тези класове';
+    if (nd){ var f = nd.t.blocks[0]; ti = cap(dayWord(nd.date, now)) + ' от ' + f.bs; mt = tCls(f) + ' · ' + meta(f); fDate = nd.date; focus = nd.t; }
+    else ti = 'Няма намерени часове';
+  }
+  if (live) focus = me;
+  var stats = '', list = '';
+  if (focus && focus.blocks.length){
+    var fb = focus.blocks, rows = live ? fb.filter(function(l){ return l.end > m; }) : fb, k = dayDiff(fDate, now);
+    stats = '<div class="hs">' + [['Часове', String(focus.ls.length)], ['Начало', fb[0].bs], ['Край', fb[fb.length - 1].be]].map(function(it){ return '<div class="hs-i"><small>' + it[0] + '</small><b>' + esc(it[1]) + '</b></div>'; }).join('') + '</div>';
+    var lbl = live ? 'Остава днес' : (k === 1 ? 'Утре' : DAYS[fDate.getDay()]) + ' · ' + fDate.getDate() + ' ' + MONTHS[fDate.getMonth()];
+    list = '<div class="hl"><div class="hl-h"><span class="alert-h">' + esc(lbl) + '</span><span class="hl-c">' + esc(tName()) + '</span></div>' + rows.map(function(l){
+      var c = live && m >= l.start && m < l.end;
+      return '<div class="hl-r' + (c ? ' cur' : '') + '"><span class="hl-t">' + l.bs + '</span><span class="hl-s">' + tCls(l) + ' <small>' + esc(short(l.subject)) + (l.end - l.start > 50 ? ' · до ' + l.be : '') + '</small></span>' +
+        (l.room ? '<span class="hl-room">' + esc(l.room) + '</span>' : '<span class="hl-room none">—</span>') + '</div>';
+    }).join('') + '</div>';
+  }
+  return '<section class="hero hero-big" style="min-height:0"><div class="hero-top"><div class="clock">' + pad(now.getHours()) + ':' + pad(now.getMinutes()) + '</div><div class="date"><b>' + DAYS[now.getDay()] + '</b>' + now.getDate() + ' ' + MONTHS[now.getMonth()] + '</div></div>' +
+    '<div class="now"><div class="now-eb">' + eb + '</div><div class="now-ti">' + ti + '</div>' + (mt ? '<div class="now-me">' + mt + '</div>' : '') + ex + '</div>' + stats + list + '</section>' + tWarn();
+}
+function tWeekHTML(now){
+  var mon = weekMonday(now, weekOffset), d = selDay != null ? selDay : defaultSel(now);
+  var date = addDays(mon, d - 1), isToday = isoDate(date) === isoDate(now), me = tMe(date), m = nowMin(now);
+  var head = '<div class="day-h"><div><b>' + DAYS[date.getDay()] + ', ' + date.getDate() + ' ' + MONTHS[date.getMonth()] + '</b><span class="sub">' + esc(tName()) + '</span></div></div>';
+  var rows = (me ? me.ls : []).map(function(l){
+    var cur = isToday && m >= l.start && m < l.end, past = isToday && m >= l.end;
+    return '<div class="ls' + (cur ? ' cur' : '') + (past ? ' past' : '') + '"><div class="ls-n"><b>' + l.n + '</b><small>' + l.bs + '<br>' + l.be + '</small></div>' +
+      '<div class="ls-m"><div class="ls-s">' + tCls(l) + (l.group ? ' · ' + l.group : '') + '</div><div class="ls-t">' + esc(l.subject) + '</div>' + (cur ? '<div class="tags"><span class="now-tag">Сега</span></div>' : '') + '</div>' +
+      (l.room ? roomChip(l.room, false) : '<span></span>') + '</div>';
+  }).join('');
+  return weekHTML(now, mon, d) + head + '<div class="lessons">' + (rows || '<div class="empty">Няма часове с въведените класове в този ден.</div>') + '</div>' + tWarn();
+}
+function teacherModeHTML(now){
+  if (page === 'hw' || page === 'tests') page = 'now';
+  var body = page === 'week' ? tWeekHTML(now) : page === 'teach' ? teachHTML(now) : installHTML() + tHeroHTML(now);
+  return '<div class="page page-' + page + '">' + body + '</div>';
 }
 function perms(){ return (sess && sess.perms) || []; }
 function isAdmin(){ return perms().indexOf('*') >= 0; }
@@ -1676,6 +1779,11 @@ APP.addEventListener('click', function(ev){
     case 'brand': var tn = Date.now(); if (tn - tapT > 2500) taps = 0; tapT = tn;
       if (++taps >= 5){ taps = 0; editUnlocked = true; sSet('sessionStorage', 'zv-edit', '1'); if (view !== 'teacher'){ view = 'teacher'; tSel.cls = myClass; window.scrollTo(0, 0); render(); permsThenRender(); } } break;
     case 'sb-in': signIn(); break;
+    case 'role-set': wRole = btn.dataset.r === 'teacher' ? 'teacher' : 'student'; render(); break;
+    case 'role-open': pickT = TKEY || ''; sheetOpen = 'role'; render(); break;
+    case 'role-student': ROLE = 'student'; wRole = 'student'; page = 'now'; sSet('localStorage', 'zv-role', null); sheetOpen = false; window.scrollTo(0, 0); render(); recordVisit(); break;
+    case 't-mine': if (pickT && tAll().some(function(t){ return t.key === pickT; })){ ROLE = 'teacher'; TKEY = pickT; sSet('localStorage', 'zv-role', 'teacher'); sSet('localStorage', 'zv-teacher', TKEY); sheetOpen = false; page = 'now'; selDay = null; window.scrollTo(0, 0); render(); recordVisit(); } break;
+    case 'page-off': flash('Скоро и за учители. Трябват програмите на всички класове.'); break;
     case 'hw-done': var hd = hwDone(), hi = hd.indexOf(btn.dataset.id); if (hi >= 0) hd.splice(hi, 1); else hd.push(btn.dataset.id); sSet('localStorage', 'zv-hw-done', JSON.stringify(hd.slice(-300))); render(); break;
     case 'nt-toggle': ntOpen = !ntOpen; render(); break;
     case 'tc-open': tcOpen = tcOpen === btn.dataset.k ? null : btn.dataset.k; teachRefresh(); break;
@@ -1711,6 +1819,7 @@ function onField(ev){
     case 'ev': evForm[el.dataset.k] = el.type === 'checkbox' ? el.checked : el.value; if (el.dataset.k === 'type' && isChange){ evErr = ''; render(); } else saveUI(); break;
     case 'bell': if (isChange) setBell(el); break;
     case 'au': auForm[el.dataset.k] = el.value; break;
+    case 'pickt': pickT = el.value; if (isChange) render(); break;
     case 'tq': if (!isChange){ tq = el.value; teachRefresh(); } break;
     case 'pick': if (el.dataset.k === 'g'){ pick.g = +el.value; pick.p = MINE ? firstPar(pick.g) : ''; } else pick.p = el.value; if (isChange) render(); break;
     case 'acc': accForm[el.dataset.k] = el.value; break;
@@ -1746,6 +1855,8 @@ function start(hot){
   MINE = classInfo(state, mine) ? mine : null;
   if (MINE) CLASS = MINE;
   myClass = CLASS;
+  TKEY = sGet('localStorage', 'zv-teacher') || '';
+  ROLE = sGet('localStorage', 'zv-role') === 'teacher' && tAll().some(function(t){ return t.key === TKEY; }) ? 'teacher' : 'student';
   page = ['now', 'week', 'tests', 'teach', 'hw'].indexOf(ui.page) >= 0 ? ui.page : 'now';
   view = ui.view === 'teacher' && teacherAllowed() ? 'teacher' : 'student';
   tTab = ['tt', 'ev', 'set'].indexOf(ui.tTab) >= 0 ? ui.tTab : 'tt';

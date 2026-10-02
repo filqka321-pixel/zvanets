@@ -1,5 +1,5 @@
 /* Звънец · service worker: приложението се отваря и без интернет (данните идват от Supabase и се пазят на телефона) */
-const VERSION = 'zvanets-sb-14';
+const VERSION = 'zvanets-sb-15';
 const CORE = ['./', 'index.html', 'config.js', 'lib.js', 'manifest.webmanifest', 'favicon.svg', 'icon-192.png', 'icon-512.png', 'apple-touch-icon.png'];
 const SCOPE = self.registration.scope;
 
