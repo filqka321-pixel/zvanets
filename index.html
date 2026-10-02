@@ -465,6 +465,27 @@ button,a,.brand{touch-action:manipulation;-webkit-tap-highlight-color:transparen
 .hw-s{font-weight:700;font-size:15.5px;line-height:1.25}
 .hw-n{font-size:14.5px;line-height:1.4;color:var(--ink-2);margin-top:2px;white-space:pre-wrap;overflow-wrap:anywhere}
 .hw-r.done .hw-s,.hw-r.done .hw-n{text-decoration:line-through;color:var(--muted)}
+/* install guide */
+.insf{background:var(--surface);border:1px solid var(--line);border-radius:24px;padding:26px 18px 18px;display:grid;gap:16px;margin-top:3vh}
+.insf-h{display:grid;gap:10px;justify-items:center;text-align:center}
+.insf-h .mark{width:58px;height:58px;border-radius:17px}
+.insf-h .mark svg{width:30px;height:30px}
+.insf-h h1{font-family:var(--f-display);font-weight:800;font-size:32px;line-height:1}
+.insf-h p{color:var(--ink-2);font-size:15px;max-width:34ch}
+.insf-steps{display:grid;gap:8px;margin:0;padding:0;list-style:none}
+.insf-st{display:grid;grid-template-columns:34px minmax(0,1fr);gap:12px;align-items:center;background:var(--surface-2);border-radius:14px;padding:12px}
+.insf-n{width:34px;height:34px;border-radius:50%;background:var(--hero-bg);color:var(--hero-ink);display:grid;place-items:center;font-family:var(--f-display);font-weight:700;font-size:19px}
+.insf-t{font-size:15px;line-height:1.35}
+.insf-t small{display:block;color:var(--muted);font-size:13px;margin-top:2px}
+.insf-k{display:inline-flex;align-items:center;gap:5px;vertical-align:-5px;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:2px 8px;font-weight:700;max-width:100%;line-height:1.25}
+.insf-st{min-width:0}
+.insf-t{min-width:0}
+.insf-k svg{width:17px;height:17px;color:var(--brand);flex:none}
+.insf .btn.wide{text-decoration:none}
+.insf-later{justify-self:center}
+.insf-arrow{position:fixed;left:50%;bottom:calc(10px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);color:var(--now);animation:insBob 1.2s ease-in-out infinite;pointer-events:none;z-index:30}
+.insf-arrow svg{width:34px;height:34px;display:block}
+@keyframes insBob{0%,100%{transform:translate(-50%,0)}50%{transform:translate(-50%,7px)}}
 </style>
 </head>
 <body>
@@ -661,6 +682,9 @@ var newCls = { name:'', shift:2 };
 var art = null, canEdit = null, readOnly = false, saving = false;
 var SB = window.ZvSB, sess = jparse(sGet('localStorage', 'zv-sess')), auForm = { email:'', password:'' }, auErr = '', auBusy = false;
 var MINE = null;
+var insFull = false;
+var PLUSBOX = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="4.5"/><path d="M12 8.5v7M8.5 12h7"/></svg>';
+var ARROW_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v15M6 13l6 6 6-6"/></svg>';
 var ntOpen = false;
 var tq = '', tcOpen = null;
 var CHART = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M5 20v-7M12 20V5M19 20v-10"/></svg>';
@@ -722,10 +746,11 @@ function render(){
   var h = headerHTML();
   h += view === 'stats' ? '<div class="teacher"><div class="t-head"><div><h1 class="t-title">Статистика</h1><p class="t-sub">Колко устройства отварят Звънец. Анонимно, без имена.</p></div></div>' + statHTML() + '</div>' : view === 'teacher' ? teacherHTML(now) : studentHTML(now);
   h += '<footer class="foot"><span>' + (MINE || view === 'teacher' ? esc(CLASS) + ' · ' : '') + esc(state.school) + '</span><span>·</span><span>Обновено ' + esc(fmtUpdated(state.updated)) + '</span></footer>';
-  if (view === 'student' && MINE) h += tabbarHTML(now);
-  if (view === 'student' && sheetOpen && MINE) h += sheetHTML();
+  var guide = view === 'student' && insFull && insNeeded();
+  if (view === 'student' && MINE && !guide) h += tabbarHTML(now);
+  if (view === 'student' && sheetOpen && MINE && !guide) h += sheetHTML();
   APP.innerHTML = h;
-  APP.classList.toggle('with-tabs', view === 'student' && !!MINE);
+  APP.classList.toggle('with-tabs', view === 'student' && !!MINE && !guide);
   var pill = APP.querySelector('.tb-pill');
   if (pill){ var to = +pill.dataset.to; pill.getBoundingClientRect(); pill.style.transform = pillX(to); tabFrom = to; }
   var cp = APP.querySelector('.cls-pill');
@@ -744,7 +769,7 @@ function headerHTML(){
   if (view === 'stats') right = '<button class="btn primary sm" data-act="to-student">Готово</button>';
   else if (view === 'teacher') right = badge + '<button class="btn primary sm" data-act="to-student">Готово</button>';
   else right = (isAdmin() ? '<button class="icon-b edit" data-act="to-stats" aria-label="Статистика" title="Статистика">' + CHART + '</button>' : '') + (teacherAllowed() ? '<button class="icon-b edit" data-act="to-teacher" aria-label="Редактирай" title="Редактирай">' + PENCIL + '</button>' : '') +
-    (!MINE ? '' : '<button class="cls-btn' + (CLASS !== MINE ? ' peek' : '') + '" data-act="cls-open" aria-label="Друг клас"><small>' + (CLASS !== MINE ? 'Гледаш' : 'Клас') + '</small>' + esc(CLASS) + CHEV + '</button>');
+    (!MINE || (insFull && insNeeded()) ? '' : '<button class="cls-btn' + (CLASS !== MINE ? ' peek' : '') + '" data-act="cls-open" aria-label="Друг клас"><small>' + (CLASS !== MINE ? 'Гледаш' : 'Клас') + '</small>' + esc(CLASS) + CHEV + '</button>');
   return '<header class="top"><div class="brand" data-act="brand"><span class="mark">' + BELL + '</span><div class="brand-txt"><div class="brand-t">Звънец</div><div class="brand-s">Програма</div></div></div><div class="top-r">' + right + '</div></header>';
 }
 
@@ -752,6 +777,7 @@ function headerHTML(){
 function weekMonday(now, off){ var dow = now.getDay(); var base = dow === 0 ? addDays(now, 1) : dow === 6 ? addDays(now, 2) : addDays(now, 1 - dow); return addDays(base, off * 7); }
 function defaultSel(now){ var dow = now.getDay(); return (weekOffset === 0 && dow >= 1 && dow <= 5) ? dow : 1; }
 function studentHTML(now){
+  if (insFull && insNeeded()) return '<div class="page">' + installFullHTML() + '</div>';
   if (!MINE) return '<div class="page">' + welcomeHTML() + '</div>';
   var body;
   if (page === 'week'){
@@ -1513,12 +1539,65 @@ function save(){
 }
 function isIOS(){ return /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1); }
 function isStandalone(){ return navigator.standalone === true || !!(window.matchMedia && matchMedia('(display-mode: standalone)').matches); }
+function uaStr(){ return navigator.userAgent || ''; }
+function isAndroid(){ return /android/i.test(uaStr()); }
+function isMobile(){ return isIOS() || isAndroid(); }
+/* opened inside another app's browser (Messenger, Instagram…): no "Add to Home Screen" there */
+function inAppName(){
+  var u = uaStr();
+  if (/FBAN|FBAV|FB_IAB|FB4A|FBIOS/i.test(u)) return /Messenger|Orca/i.test(u) ? 'Messenger' : 'Facebook';
+  if (/Instagram/i.test(u)) return 'Instagram';
+  if (/musical_ly|Bytedance|TikTok/i.test(u)) return 'TikTok';
+  if (/Snapchat/i.test(u)) return 'Snapchat';
+  if (/Viber/i.test(u)) return 'Viber';
+  if (isIOS() && !/Safari/i.test(u)) return 'друго приложение';
+  if (isAndroid() && /; wv\)/.test(u)) return 'друго приложение';
+  return '';
+}
+function appURL(){ return location.href.split('#')[0].split('?')[0]; }
+function insNeeded(){ return !isStandalone() && isMobile(); }
+function insStep(n, html){ return '<li class="insf-st"><span class="insf-n">' + n + '</span><div class="insf-t">' + html + '</div></li>'; }
+function insKey(icon, text){ return '<span class="insf-k">' + (icon || '') + text + '</span>'; }
+function installFullHTML(){
+  var app = inAppName(), ios = isIOS(), head, body, arrow = '';
+  if (app){
+    var target = ios ? 'Safari' : 'Chrome', u = appURL();
+    var open = ios ? 'x-safari-' + u : 'intent://' + u.replace(/^https?:\/\//, '') + '#Intent;scheme=https;package=com.android.chrome;end';
+    head = '<h1>Отвори в ' + target + '</h1><p>Отворил си линка в ' + esc(app) + '. Оттук Звънец не може да се сложи на началния екран.</p>';
+    body = '<a class="btn primary wide" href="' + esc(open) + '">Отвори в ' + target + '</a>' +
+      '<ol class="insf-steps">' +
+      insStep(1, 'Ако бутонът не сработи, натисни ' + insKey('', ios ? '⋯' : '⋮') + ' <small>Обикновено е горе вдясно или долу вдясно.</small>') +
+      insStep(2, 'Избери ' + insKey('', ios ? 'Отвори в Safari' : 'Отвори в Chrome') + ' <small>Може да пише „Open in ' + (ios ? 'Safari' : 'Chrome') + '“ или „Open in external browser“.</small>') +
+      '</ol><button class="btn wide" data-act="copy-link">Копирай линка</button>';
+  } else if (installEvt){
+    head = '<h1>Инсталирай Звънец</h1><p>Отваря се с едно докосване от началния екран и работи без интернет.</p>';
+    body = '<button class="btn primary wide" data-act="ins-go">Инсталирай</button>';
+  } else if (ios){
+    var chrome = /CriOS|FxiOS|EdgiOS/i.test(uaStr());
+    head = '<h1>Сложи Звънец на началния екран</h1><p>Отнема 10 секунди. После се отваря като обикновено приложение и работи без интернет.</p>';
+    body = '<ol class="insf-steps">' +
+      insStep(1, 'Натисни ' + insKey(SHARE, 'Сподели') + ' <small>' + (chrome ? 'Горе вдясно, в лентата с адреса.' : 'Долу на екрана. Ако го няма, натисни ⋯ и после „Сподели“.') + '</small>') +
+      insStep(2, 'Превърти надолу и избери ' + insKey(PLUSBOX, 'Добави към началния екран') + ' <small>На английски: „Add to Home Screen“.</small>') +
+      insStep(3, 'Натисни ' + insKey('', 'Добави') + ' горе вдясно. <small>После отвори Звънец от иконата със звънеца.</small>') +
+      '</ol>';
+    if (!chrome) arrow = '<span class="insf-arrow" aria-hidden="true">' + ARROW_DOWN + '</span>';
+  } else {
+    head = '<h1>Сложи Звънец на началния екран</h1><p>Отваря се с едно докосване и работи без интернет.</p>';
+    body = '<ol class="insf-steps">' +
+      insStep(1, 'Натисни ' + insKey('', '⋮') + ' горе вдясно в браузъра.') +
+      insStep(2, 'Избери ' + insKey(PLUSBOX, 'Добавяне към началния екран') + ' <small>Може да пише „Инсталиране на приложението“ или „Install app“.</small>') +
+      insStep(3, 'Потвърди с ' + insKey('', 'Инсталиране') + '.') +
+      '</ol>';
+  }
+  return '<section class="insf"><div class="insf-h"><span class="mark">' + BELL + '</span>' + head + '</div>' + body +
+    '<button class="link-btn insf-later" data-act="ins-later">' + (app ? 'Продължи тук' : 'По-късно, продължи в браузъра') + '</button></section>' + arrow;
+}
 function installHTML(){
   if (isStandalone() || sGet('localStorage', 'zv-ins-x') === '1') return '';
+  if (!isMobile() && !installEvt) return '';
   var x = '<button class="icon-b" data-act="ins-x" aria-label="Скрий">×</button>';
-  if (installEvt) return '<div class="ins"><span>Инсталирай Звънец като приложение.</span><div class="ins-a"><button class="btn primary sm" data-act="ins-go">Инсталирай</button>' + x + '</div></div>';
-  if (isIOS()) return '<div class="ins"><span>Сложи Звънец на началния екран: натисни ' + SHARE + ' <b>Сподели</b> и после <b>„Добави към началния екран“</b>.</span>' + x + '</div>';
-  return '';
+  if (installEvt && !inAppName()) return '<div class="ins"><span>Инсталирай Звънец като приложение.</span><div class="ins-a"><button class="btn primary sm" data-act="ins-go">Инсталирай</button>' + x + '</div></div>';
+  return '<div class="ins"><span>Сложи Звънец на началния екран.</span><div class="ins-a"><button class="btn primary sm" data-act="ins-how">Покажи как</button>' + x + '</div></div>';
 }
 function calURL(web){
   var u = (SB ? SB.url : '') + '/functions/v1/calendar?class=' + (window.ZvLib ? ZvLib.slug(myClass) : '');
@@ -1616,6 +1695,9 @@ APP.addEventListener('click', function(ev){
     case 'sb-out': logout(); render(); flash('Излезе от профила на това устройство.'); break;
     case 'copy-cal': var cu = calURL(false); (navigator.clipboard && navigator.clipboard.writeText ? navigator.clipboard.writeText(cu) : Promise.reject()).then(function(){ flash('Адресът е копиран.'); }, function(){ flash(cu); }); break;
     case 'ins-x': sSet('localStorage', 'zv-ins-x', '1'); render(); break;
+    case 'ins-later': insFull = false; sSet('localStorage', 'zv-ins-later', '1'); window.scrollTo(0, 0); render(); break;
+    case 'ins-how': insFull = true; window.scrollTo(0, 0); render(); break;
+    case 'copy-link': var lu = appURL(); (navigator.clipboard && navigator.clipboard.writeText ? navigator.clipboard.writeText(lu) : Promise.reject()).then(function(){ flash('Линкът е копиран. Постави го в Safari или Chrome.'); }, function(){ flash(lu); }); break;
     case 'ins-go': if (installEvt){ var ie = installEvt; installEvt = null; ie.prompt(); render(); } break;
     case 'banner-x': banner = null; render(); break;
   }
@@ -1659,6 +1741,7 @@ function initCaps(){
 function start(hot){
   hot = hot || {};
   var ui = hot.ui || jparse(sGet('sessionStorage', 'zv-ui')) || {};
+  insFull = insNeeded() && view !== 'teacher' && sGet('localStorage', 'zv-ins-later') !== '1' && sGet('localStorage', 'zv-ins-x') !== '1';
   var mine = sGet('localStorage', 'zv-mine');
   MINE = classInfo(state, mine) ? mine : null;
   if (MINE) CLASS = MINE;
@@ -1689,8 +1772,8 @@ function start(hot){
   setInterval(tick, 10000);
   document.addEventListener('visibilitychange', function(){ if (!document.hidden){ tick(true); recordVisit(); if (Date.now() - lastRefresh > 60000) refreshData(); } });
   setInterval(function(){ if (!document.hidden) refreshData(); }, 10 * 60e3);
-  window.addEventListener('beforeinstallprompt', function(e){ e.preventDefault(); installEvt = e; if (view === 'student' && page === 'now') render(); });
-  window.addEventListener('appinstalled', function(){ installEvt = null; render(); });
+  window.addEventListener('beforeinstallprompt', function(e){ e.preventDefault(); installEvt = e; if (view === 'student' && (page === 'now' || insFull)) render(); });
+  window.addEventListener('appinstalled', function(){ installEvt = null; insFull = false; sSet('localStorage', 'zv-ins-later', '1'); render(); flash('Инсталирано. Отвори Звънец от началния екран.'); });
   if (SB && SB.fresh) lastRefresh = Date.now(); else refreshData();
   checkCalendar();
   recordVisit();
