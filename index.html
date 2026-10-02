@@ -480,6 +480,7 @@ button,a,.brand{touch-action:manipulation;-webkit-tap-highlight-color:transparen
 .t-warn b{color:var(--task)}
 .sh-foot2{display:flex;justify-content:center;padding-top:10px}
 .hl-s small{font-weight:500;color:var(--hero-muted);font-size:12.5px}
+.ins a.btn{text-decoration:none}
 </style>
 </head>
 <body>
@@ -1620,7 +1621,10 @@ function inAppName(){
   return '';
 }
 function appURL(){ return location.href.split('#')[0].split('?')[0]; }
-function insNeeded(){ return !isStandalone() && isMobile(); }
+var NEW_HOME = 'https://zvanets.app/';
+function onOldHome(){ return /\.github\.io$/i.test(location.hostname); }
+function movedURL(){ var q = isT() ? 't=' + encodeURIComponent(TKEY) : MINE ? 'c=' + encodeURIComponent(MINE) : ''; return NEW_HOME + (q ? '?' + q : ''); }
+function insNeeded(){ return !onOldHome() && !isStandalone() && isMobile(); }
 function insStep(n, html){ return '<li class="insf-st"><span class="insf-n">' + n + '</span><div class="insf-t">' + html + '</div></li>'; }
 function insKey(icon, text){ return '<span class="insf-k">' + (icon || '') + text + '</span>'; }
 function installFullHTML(){
@@ -1658,6 +1662,10 @@ function installFullHTML(){
     '<button class="link-btn insf-later" data-act="ins-later">' + (app ? 'Продължи тук' : 'По-късно, продължи в браузъра') + '</button></section>' + arrow;
 }
 function installHTML(){
+  if (onOldHome()){
+    if (sGet('localStorage', 'zv-moved-x') === '1') return '';
+    return '<div class="ins"><span>Звънец вече е на <b>zvanets.app</b>. Добави го оттам на началния екран.</span><div class="ins-a"><a class="btn primary sm" href="' + esc(movedURL()) + '" target="_blank" rel="noopener">Отвори</a><button class="icon-b" data-act="moved-x" aria-label="Скрий">×</button></div></div>';
+  }
   if (isStandalone() || sGet('localStorage', 'zv-ins-x') === '1') return '';
   if (!isMobile() && !installEvt) return '';
   var x = '<button class="icon-b" data-act="ins-x" aria-label="Скрий">×</button>';
@@ -1764,6 +1772,7 @@ APP.addEventListener('click', function(ev){
     case 'sb-out': logout(); render(); flash('Излезе от профила на това устройство.'); break;
     case 'copy-cal': var cu = calURL(false); (navigator.clipboard && navigator.clipboard.writeText ? navigator.clipboard.writeText(cu) : Promise.reject()).then(function(){ flash('Адресът е копиран.'); }, function(){ flash(cu); }); break;
     case 'ins-x': sSet('localStorage', 'zv-ins-x', '1'); render(); break;
+    case 'moved-x': sSet('localStorage', 'zv-moved-x', '1'); render(); break;
     case 'ins-later': insFull = false; sSet('localStorage', 'zv-ins-later', '1'); window.scrollTo(0, 0); render(); break;
     case 'ins-how': insFull = true; window.scrollTo(0, 0); render(); break;
     case 'copy-link': var lu = appURL(); (navigator.clipboard && navigator.clipboard.writeText ? navigator.clipboard.writeText(lu) : Promise.reject()).then(function(){ flash('Линкът е копиран. Постави го в Safari или Chrome.'); }, function(){ flash(lu); }); break;
@@ -1811,6 +1820,12 @@ function initCaps(){
 function start(hot){
   hot = hot || {};
   var ui = hot.ui || jparse(sGet('sessionStorage', 'zv-ui')) || {};
+  try {
+    var qp = new URLSearchParams(location.search), qc = qp.get('c'), qt = qp.get('t');
+    if (qc && classInfo(state, qc) && !sGet('localStorage', 'zv-mine')) sSet('localStorage', 'zv-mine', qc);
+    if (qt && !sGet('localStorage', 'zv-teacher')){ sSet('localStorage', 'zv-teacher', qt); sSet('localStorage', 'zv-role', 'teacher'); }
+    if (qc || qt) history.replaceState(null, '', location.pathname + location.hash);
+  } catch (e) {}
   insFull = insNeeded() && view !== 'teacher' && sGet('localStorage', 'zv-ins-later') !== '1' && sGet('localStorage', 'zv-ins-x') !== '1';
   var mine = sGet('localStorage', 'zv-mine');
   MINE = classInfo(state, mine) ? mine : null;
