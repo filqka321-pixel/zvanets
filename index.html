@@ -491,6 +491,32 @@ button,a,.brand{touch-action:manipulation;-webkit-tap-highlight-color:transparen
 .sh-foot2{display:flex;justify-content:center;padding-top:10px}
 .hl-s small{font-weight:500;color:var(--hero-muted);font-size:12.5px}
 .ins a.btn{text-decoration:none}
+textarea{font:inherit;font-size:16px;color:var(--ink);background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:10px;min-width:0;width:100%;min-height:120px;resize:vertical;display:block}
+textarea:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-soft)}
+.foot-x{display:flex;justify-content:center;margin-top:6px}
+.tabs{flex-wrap:wrap;overflow-x:visible}
+.sh-foot2{gap:4px 16px;flex-wrap:wrap}
+.rp-row{display:grid;gap:6px;padding:12px 0;border-top:1px solid var(--line-2)}
+.rp-row:first-child{border-top:0;padding-top:0}
+.rp-meta{display:flex;justify-content:space-between;align-items:center;gap:10px;font-family:var(--f-ui);font-size:12.5px;color:var(--muted)}
+.rp-meta b{color:var(--ink);font-size:14px}
+.rp-msg{font-size:15px;line-height:1.4;white-space:pre-wrap;overflow-wrap:anywhere}
+.acc-b{display:flex;gap:6px;flex:none}
+.acc-row small .rq-c{display:inline;font-size:13px;color:var(--ink);word-break:normal}
+.cls-sel{width:auto;font-family:var(--f-display);font-weight:700;font-size:18px;padding:6px 8px}
+.acc-b .btn,.rp-meta .btn{flex:none}
+.tab-n{display:inline-grid;place-items:center;min-width:18px;height:18px;padding:0 5px;margin-left:6px;border-radius:9px;background:var(--now);color:var(--surface);font-size:11px;font-weight:700;font-style:normal;vertical-align:1px}
+.icon-b.edit{position:relative}
+.icon-b .dot{position:absolute;top:-2px;right:-2px;width:11px;height:11px;border-radius:50%;background:var(--now);border:2px solid var(--bg)}
+.au-alt{font-size:14px;color:var(--ink-2);display:flex;flex-wrap:wrap;align-items:center;gap:2px 6px}
+.info{font-size:14px;line-height:1.4;background:var(--brand-soft);border-radius:10px;padding:10px 12px;color:var(--ink)}
+.st-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:2px}
+.st-bar.sel i{background:var(--now)}
+.st-bar.sel b{color:var(--now)}
+.st-days small.sel{color:var(--now);font-weight:700;opacity:1}
+.st-days small.m1{color:var(--ink);font-weight:700}
+.st-sel{display:flex;justify-content:space-between;align-items:baseline;gap:10px;font-size:14.5px;color:var(--ink-2)}
+.st-sel b{color:var(--ink)}
 </style>
 </head>
 <body>
@@ -684,6 +710,14 @@ var newCls = { name:'', shift:2 };
 var art = null, canEdit = null, readOnly = false, saving = false;
 var SB = window.ZvSB, sess = jparse(sGet('localStorage', 'zv-sess')), auForm = { email:'', password:'' }, auErr = '', auBusy = false;
 var MINE = null;
+var statDay = null, statScroll = null;
+var auMode = 'in', rqForm = { name:'', email:'', password:'', cls:'' }, rqBusy = false, rqErr = '', rqInfo = '';
+var myReq = null, myReqBusy = false, myReqErr = '';
+var reqRows = null, reqBusy = false, reqErr = '';
+var repRows = null, repBusy = false, repErr = '';
+var rpText = '', rpBusy = false, rpErr = '';
+var bk = null, bkBusy = false, bkErr = '';
+var BK_TABLES = [['settings', 'id'], ['classes', 'name'], ['bells', 'shift,idx'], ['lessons', 'class_name,weekday,idx'], ['events', 'date,id'], ['editors', 'email,class_name']];
 var ROLE = 'student', TKEY = '', wRole = 'student', pickT = '';
 var insFull = false;
 var PLUSBOX = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="4.5"/><path d="M12 8.5v7M8.5 12h7"/></svg>';
@@ -748,9 +782,12 @@ function render(){
   h += '<footer class="foot"><span>' + (MINE || view === 'teacher' ? esc(CLASS) + ' · ' : '') + esc(state.school) + '</span><span>·</span><span>Обновено ' + esc(fmtUpdated(state.updated)) + '</span></footer>';
   var guide = view === 'student' && insFull && insNeeded();
   var chosen = !!MINE || isT();
+  if (view === 'student' && chosen && !guide) h += '<div class="foot-x"><button class="link-btn sm" data-act="rp-open">Съобщи за грешка</button></div>';
   if (view === 'student' && chosen && !guide) h += tabbarHTML(now);
   if (view === 'student' && sheetOpen && chosen && !guide) h += sheetHTML();
+  var ss0 = APP.querySelector('.st-scroll'); if (ss0) statScroll = ss0.scrollLeft;
   APP.innerHTML = h;
+  var ss1 = APP.querySelector('.st-scroll'); if (ss1) ss1.scrollLeft = statScroll == null ? ss1.scrollWidth : statScroll;
   APP.classList.toggle('with-tabs', view === 'student' && chosen && !guide);
   var pill = APP.querySelector('.tb-pill');
   if (pill){ var to = +pill.dataset.to; pill.getBoundingClientRect(); pill.style.transform = pillX(to); tabFrom = to; }
@@ -767,9 +804,11 @@ function headerHTML(){
     badge = '<div class="cls-seg" role="group" aria-label="Клас"><i class="cls-pill" data-to="' + to + '" style="width:calc((100% - 6px) / ' + list.length + ');transform:translateX(' + (from * 100) + '%)"></i>' +
       list.map(function(n){ var on = n === CLASS; return '<button class="cls-o' + (on ? ' on' : '') + '" data-act="cls" data-c="' + esc(n) + '" aria-pressed="' + on + '">' + esc(n) + '</button>'; }).join('') + '</div>';
   } else badge = '<span class="cls-badge"><small>Клас</small>' + esc(CLASS) + '</span>';
+  if (view === 'teacher' && (!sess || !sess.perms || !editList().length)) badge = '';
+  else if (view === 'teacher' && list.length > 4) badge = '<select class="cls-sel" data-f="hcls" aria-label="Клас">' + list.map(function(n){ return '<option value="' + esc(n) + '"' + (n === CLASS ? ' selected' : '') + '>' + esc(n) + '</option>'; }).join('') + '</select>';
   if (view === 'stats') right = '<button class="btn primary sm" data-act="to-student">Готово</button>';
   else if (view === 'teacher') right = badge + '<button class="btn primary sm" data-act="to-student">Готово</button>';
-  else right = (isAdmin() ? '<button class="icon-b edit" data-act="to-stats" aria-label="Статистика" title="Статистика">' + CHART + '</button>' : '') + (teacherAllowed() ? '<button class="icon-b edit" data-act="to-teacher" aria-label="Редактирай" title="Редактирай">' + PENCIL + '</button>' : '') +
+  else right = (isAdmin() ? '<button class="icon-b edit" data-act="to-stats" aria-label="Статистика" title="Статистика">' + CHART + '</button>' : '') + (teacherAllowed() ? '<button class="icon-b edit" data-act="to-teacher" aria-label="Редактирай" title="Редактирай">' + PENCIL + (inboxN() ? '<i class="dot"></i>' : '') + '</button>' : '') +
     (isT() && !(insFull && insNeeded()) ? tBtnHTML() : !MINE || (insFull && insNeeded()) ? '' : '<button class="cls-btn' + (CLASS !== MINE ? ' peek' : '') + '" data-act="cls-open" aria-label="Друг клас"><small>' + (CLASS !== MINE ? 'Гледаш' : 'Клас') + '</small>' + esc(CLASS) + CHEV + '</button>');
   return '<header class="top"><div class="brand" data-act="brand"><span class="mark">' + BELL + '</span><div class="brand-txt"><div class="brand-t">Звънец</div><div class="brand-s">Програма</div></div></div><div class="top-r">' + right + '</div></header>';
 }
@@ -963,15 +1002,17 @@ function armBtn(key, cls, act, l0, l1, extra){ return '<button class="' + cls + 
 function teacherHTML(now){
   var tabs = [['tt', 'Програма'], ['ev', 'Тестове, домашни, събития']];
   if (isAdmin()) tabs.push(['set', 'Звънец'], ['acc', 'Достъп']);
+  tabs.push(['rep', 'Сигнали']);
   if (!tabs.some(function(t){ return t[0] === tTab; })) tTab = 'tt';
   if (!sess || !sess.access_token) return '<div class="teacher">' + authHTML() + '</div>';
   if (!sess.perms) return '<div class="teacher">' + authHTML() + '<div class="panel"><div class="empty">Зареждане на правата…</div></div></div>';
-  if (!editList().length) return '<div class="teacher">' + authHTML() + '<div class="panel"><div class="empty">Този профил още няма права за клас. Помоли администратора да ти даде достъп.</div></div></div>';
-  var body = tTab === 'ev' ? evHTML(now) : tTab === 'set' ? setHTML() : tTab === 'acc' ? accHTML() : ttHTML();
+  if (!editList().length) return '<div class="teacher">' + authHTML() + noPermHTML() + '</div>';
+  inboxLoad();
+  var body = tTab === 'ev' ? evHTML(now) : tTab === 'set' ? setHTML() : tTab === 'acc' ? accHTML() : tTab === 'rep' ? repHTML() : ttHTML();
   var b = banner && BANNERS[banner] ? '<div class="banner ' + BANNERS[banner][0] + '" role="status"><p>' + esc(BANNERS[banner][1]) + '</p><button class="btn sm" data-act="banner-x">Разбрах</button></div>' : '';
   return '<div class="teacher">' + b + authHTML() + '<div class="t-head"><div><h1 class="t-title">Редакция · ' + esc(CLASS) + '</h1><p class="t-sub">Съучениците виждат промените, след като натиснеш „Запази“.</p></div><div class="tabs" role="tablist">' +
-    tabs.map(function(t){ return '<button class="tab' + (tTab === t[0] ? ' on' : '') + '" role="tab" aria-selected="' + (tTab === t[0]) + '" data-act="ttab" data-t="' + t[0] + '">' + t[1] + '</button>'; }).join('') +
-    '</div></div>' + body + ((tTab === 'stat' || tTab === 'acc') && !dirty.length ? '' : '<div class="savebar" id="savebar">' + saveBarInner() + '</div>') + datalists() + '</div>';
+    tabs.map(function(t){ return '<button class="tab' + (tTab === t[0] ? ' on' : '') + '" role="tab" aria-selected="' + (tTab === t[0]) + '" data-act="ttab" data-t="' + t[0] + '">' + t[1] + tabN(t[0]) + '</button>'; }).join('') +
+    '</div></div>' + body + ((tTab === 'stat' || tTab === 'acc' || tTab === 'rep') && !dirty.length ? '' : '<div class="savebar" id="savebar">' + saveBarInner() + '</div>') + datalists() + '</div>';
 }
 function datalists(){
   var teach = [], rooms = [], subj = SUBJECTS.slice();
@@ -1105,7 +1146,7 @@ function setBell(el){
 }
 
 function cacheState(s){ sSet('localStorage', 'zv-data', JSON.stringify(s)); }
-function editing(){ var a = document.activeElement; return view === 'teacher' && a && /INPUT|SELECT|TEXTAREA/.test(a.tagName); }
+function editing(){ var a = document.activeElement; return (view === 'teacher' || sheetOpen === 'report') && a && /INPUT|SELECT|TEXTAREA/.test(a.tagName); }
 function refreshData(){
   if (refreshing || !SB) return;
   refreshing = true;
@@ -1129,11 +1170,20 @@ function checkCalendar(){
 }
 function authHTML(){
   if (sess && sess.access_token) return '<div class="gh-ok"><span>Влязъл като <b>' + esc(sess.email || '') + '</b> · ' + esc(permText()) + '</span>' + armBtn('sb-out', 'link-btn sm', 'sb-out', 'Изход', 'Сигурен ли си?') + '</div>';
+  if (auMode === 'req') return '<div class="panel gh" id="login"><div class="form-h"><h3>Стани отговорник на клас</h3></div>' +
+    '<p class="gh-p">Отговорникът въвежда тестовете, домашните и промените в програмата на класа си. Попълни формата и администраторът ще одобри заявката ти.</p>' +
+    '<div class="f-grid"><label class="field"><span>Име и фамилия</span><input data-f="rq" data-k="name" value="' + esc(rqForm.name) + '" autocomplete="name" maxlength="60"></label>' + rqClsSelect() +
+    '<label class="field"><span>Имейл</span><input data-f="rq" data-k="email" type="email" value="' + esc(rqForm.email) + '" autocapitalize="off" autocomplete="username" spellcheck="false"></label>' +
+    '<label class="field"><span>Нова парола</span><input data-f="rq" data-k="password" type="password" value="' + esc(rqForm.password) + '" autocomplete="new-password" placeholder="поне 6 знака"></label></div>' +
+    '<div class="row-actions"><button class="btn primary" data-act="rq-go"' + (rqBusy ? ' disabled' : '') + '>' + (rqBusy ? 'Изпращане…' : 'Изпрати заявка') + '</button>' + (rqErr ? '<span class="err">' + esc(rqErr) + '</span>' : '') + '</div>' +
+    '<p class="hint">Измисли нова парола само за Звънец. Не използвай паролата от имейла си.</p>' +
+    '<div class="au-alt"><span>Вече имаш профил?</span><button class="link-btn sm" data-act="au-mode" data-m="in">Вход</button></div></div>';
   return '<div class="panel gh" id="login"><div class="form-h"><h3>Вход за редакция</h3></div>' +
-    '<p class="gh-p">Влез с профила от Supabase (Authentication → Users). Входът се помни на това устройство.</p>' +
+    (rqInfo ? '<div class="info">' + esc(rqInfo) + '</div>' : '<p class="gh-p">Влез с имейла и паролата си. Входът се помни на това устройство.</p>') +
     '<div class="f-grid"><label class="field"><span>Имейл</span><input data-f="au" data-k="email" type="email" value="' + esc(auForm.email) + '" autocapitalize="off" autocomplete="username" spellcheck="false"></label>' +
     '<label class="field"><span>Парола</span><input data-f="au" data-k="password" type="password" value="' + esc(auForm.password) + '" autocomplete="current-password"></label></div>' +
-    '<div class="row-actions"><button class="btn primary" data-act="sb-in"' + (auBusy ? ' disabled' : '') + '>' + (auBusy ? 'Влизане…' : 'Влез') + '</button>' + (auErr ? '<span class="err">' + esc(auErr) + '</span>' : '') + '</div></div>';
+    '<div class="row-actions"><button class="btn primary" data-act="sb-in"' + (auBusy ? ' disabled' : '') + '>' + (auBusy ? 'Влизане…' : 'Влез') + '</button>' + (auErr ? '<span class="err">' + esc(auErr) + '</span>' : '') + '</div>' +
+    '<div class="au-alt"><span>Искаш да редактираш програмата на класа си?</span><button class="link-btn sm" data-act="au-mode" data-m="req">Стани отговорник</button></div></div>';
 }
 function authReq(grant, body){
   return fetch(SB.url + '/auth/v1/token?grant_type=' + grant, { method:'POST', headers:{ apikey:SB.key, 'Content-Type':'application/json' }, body:JSON.stringify(body) })
@@ -1144,7 +1194,7 @@ function setSession(j){
   sess = { access_token:j.access_token, refresh_token:j.refresh_token, expires_at: j.expires_at || Math.floor(Date.now() / 1000) + (j.expires_in || 3600), email: (j.user && j.user.email) || (sess && sess.email) || '' };
   sSet('localStorage', 'zv-sess', JSON.stringify(sess));
 }
-function logout(){ sess = null; accRows = null; statData = null; sSet('localStorage', 'zv-sess', null); }
+function logout(){ sess = null; accRows = null; statData = null; myReq = null; reqRows = null; repRows = null; bk = null; auMode = 'in'; sSet('localStorage', 'zv-sess', null); }
 function signIn(){
   var email = String(auForm.email || '').trim(), pw = String(auForm.password || '');
   if (!email || !pw){ auErr = 'Напиши имейл и парола.'; render(); return; }
@@ -1154,13 +1204,14 @@ function signIn(){
     return loadPerms().then(function(p){
       auBusy = false; if (banner === 'nologin') banner = null; fitClass(); render();
       flash(p.length ? 'Влезе. Можеш да редактираш: ' + permText() + '.' : 'Влезе, но още нямаш права за клас.');
+      rqInfo = ''; rqPending();
     }, function(e){
       auBusy = false; sess.perms = []; render();
       flash(e && (e.status === 404 || e.code === 'PGRST202') ? 'Правата не се заредиха. Пусни permissions.sql в Supabase.' : 'Правата не се заредиха. Опитай пак.');
     });
   }, function(e){
     auBusy = false;
-    auErr = e.status === 0 ? 'Няма интернет.' : /confirm/i.test(e.message) ? 'Имейлът не е потвърден. В Supabase създай профила с „Auto Confirm User“.' : /invalid/i.test(e.message) ? 'Грешен имейл или парола.' : 'Входът не успя (' + e.message + ').';
+    auErr = e.status === 0 ? 'Няма интернет.' : /confirm/i.test(e.message) ? 'Имейлът още не е потвърден. Отвори линка от имейла за потвърждение и опитай пак.' : /invalid/i.test(e.message) ? 'Грешен имейл или парола.' : 'Входът не успя (' + e.message + ').';
     render();
   });
 }
@@ -1212,11 +1263,12 @@ function welcomeHTML(){
 }
 function sheetHTML(){
   if (sheetOpen === 'role') return roleSheetHTML();
+  if (sheetOpen === 'report') return reportSheetHTML();
   var mine = sheetOpen === 'mine', title = mine ? 'Кой е твоят клас?' : 'Друг клас';
   var body = pickerHTML(mine ? 'pick-mine' : 'pick-go', mine ? 'Запази като мой клас' : 'Покажи програмата');
   var back = !mine && CLASS !== MINE ? '<button class="btn wide" data-act="cls-back">Обратно към ' + esc(MINE) + '</button>' : '';
   var foot = mine ? '<p class="hint">Приложението винаги ще се отваря с програмата на този клас.</p>'
-    : '<div class="sh-foot"><span>Твоят клас: <b>' + esc(MINE) + '</b></span><button class="link-btn sm" data-act="mine-change">Смени</button></div><div class="sh-foot2"><button class="link-btn sm" data-act="role-open">Аз съм учител</button></div>';
+    : '<div class="sh-foot"><span>Твоят клас: <b>' + esc(MINE) + '</b></span><button class="link-btn sm" data-act="mine-change">Смени</button></div><div class="sh-foot2"><button class="link-btn sm" data-act="role-open">Аз съм учител</button>' + (perms().length ? '' : '<button class="link-btn sm" data-act="rq-open">Стани отговорник</button>') + '</div>';
   return '<div class="sheet-wrap" data-act="sheet-x"><div class="sheet" data-act="noop" role="dialog" aria-modal="true" aria-label="' + title + '">' +
     '<div class="sheet-h"><h2>' + title + '</h2><button class="icon-b" data-act="sheet-x" aria-label="Затвори">×</button></div>' +
     '<div class="sh-body">' + body + back + '</div>' + foot + '</div></div>';
@@ -1250,6 +1302,11 @@ function statLoad(){
     if (view === 'stats') render();
   });
 }
+function statDayRows(d, day, today){
+  if (Array.isArray(d.by_day)) return d.by_day.filter(function(x){ return x.day === day; });
+  if (day === today && Array.isArray(d.classes_today)) return d.classes_today;
+  return null;
+}
 function statHTML(){
   if (statData === null && !statBusy) statLoad();
   if (statErr) return '<div class="panel"><div class="empty">' + esc(statErr) + '</div></div>';
@@ -1260,29 +1317,36 @@ function statHTML(){
   }).join('');
   var daily = d.daily || [], max = Math.max.apply(null, [1].concat(daily.map(function(x){ return x.n; })));
   var maxShown = false, last = daily.length - 1;
+  var today = last >= 0 ? daily[last].day : isoDate(new Date());
+  var sel = statDay && daily.some(function(x){ return x.day === statDay; }) ? statDay : today, selN = 0;
+  var cols = 'grid-template-columns:repeat(' + Math.max(1, daily.length) + ',minmax(0,1fr))';
   var bars = daily.map(function(x, i){
-    var dt = parseISO(x.day), lab = dt.getDate() + ' ' + MONTHS[dt.getMonth()] + ': ' + x.n + (x.n === 1 ? ' устройство' : ' устройства');
-    var show = i === last || (x.n === max && x.n > 0 && !maxShown); if (x.n === max && x.n > 0) maxShown = true;
+    var dt = parseISO(x.day), on = x.day === sel, lab = dt.getDate() + ' ' + MONTHS[dt.getMonth()] + ': ' + x.n + (x.n === 1 ? ' устройство' : ' устройства');
+    if (on) selN = x.n;
+    var show = on || i === last || (x.n === max && x.n > 0 && !maxShown); if (x.n === max && x.n > 0) maxShown = true;
     var h = x.n ? Math.max(3, Math.round(x.n / max * 82)) : 0;
-    return '<button class="st-bar" data-act="st-bar" data-l="' + esc(lab) + '" title="' + esc(lab) + '" aria-label="' + esc(lab) + '">' + (show ? '<b>' + x.n + '</b>' : '') + '<i style="height:' + h + '%"></i></button>';
+    return '<button class="st-bar' + (on ? ' sel' : '') + '" data-act="st-bar" data-d="' + esc(x.day) + '" title="' + esc(lab) + '" aria-label="' + esc(lab) + '" aria-pressed="' + on + '">' + (show ? '<b>' + x.n + '</b>' : '') + '<i style="height:' + h + '%"></i></button>';
   }).join('');
-  var days = daily.map(function(x){ var dt = parseISO(x.day), we = dt.getDay() === 0 || dt.getDay() === 6; return '<small' + (we ? ' class="we"' : '') + '>' + dt.getDate() + '</small>'; }).join('');
-  var hasToday = Array.isArray(d.classes_today), cmode = hasToday ? statCls : 'week';
-  var cls = (cmode === 'today' ? d.classes_today : d.classes) || [], cmax = Math.max.apply(null, [1].concat(cls.map(function(x){ return x.n; })));
+  var days = daily.map(function(x){ var dt = parseISO(x.day), we = dt.getDay() === 0 || dt.getDay() === 6; return '<small class="' + (x.day === sel ? 'sel' : dt.getDate() === 1 ? 'm1' : we ? 'we' : '') + '">' + dt.getDate() + '</small>'; }).join('');
+  var sd = parseISO(sel), selShort = sel === today ? 'Днес' : sd.getDate() + ' ' + MONTHS[sd.getMonth()].slice(0, 3);
+  var selLong = DAYS[sd.getDay()] + ', ' + sd.getDate() + ' ' + MONTHS[sd.getMonth()] + (sel === today ? ' (днес)' : '');
+  var dayRows = statDayRows(d, sel, today), cmode = statCls === 'week' ? 'week' : 'today';
+  var cls = (cmode === 'today' ? dayRows : d.classes) || [], cmax = Math.max.apply(null, [1].concat(cls.map(function(x){ return x.n; })));
   var crow = cls.map(function(x){
     return '<div class="st-cls">' + (x.cls ? '<b>' + esc(x.cls) + '</b>' : '<b class="none">без клас</b>') + '<div class="st-track"><i style="width:' + Math.max(2, Math.round(x.n / cmax * 100)) + '%"></i></div><span>' + x.n + '</span></div>';
   }).join('');
+  var none = cmode === 'week' ? 'Още няма посещения.' : dayRows === null ? 'За разбивка по класове за минали дни пусни zvanets-v5.sql в Supabase.' : selN ? 'Няма данни по класове за този ден.' : sel === today ? 'Днес още никой не е влизал.' : 'Никой не е влизал в този ден.';
   var vk = sGet('localStorage', 'zv-visit') || '', verr = sGet('localStorage', 'zv-visit-err');
   var mine = vk.indexOf(isoDate(new Date()) + '|') === 0 ? '<b>✓ Това устройство е отчетено днес.</b>' : verr ? '<b>✗ Това устройство не успя да се отчете:</b> ' + esc(verr) : 'Това устройство още не е отчетено днес.';
   return '<div class="st"><div class="st-tiles">' + tiles + '</div>' + '<p class="st-note">' + mine + '</p>' +
     '<p class="st-note"><b>' + n(d.installed_week) + ' от ' + n(d.week) + '</b> устройства през последните 7 дни отварят Звънец от началния екран.</p>' +
     '<div class="panel"><div class="form-h"><h3>Устройства по дни</h3><button class="link-btn sm" data-act="st-reload">Обнови</button></div>' +
-    '<div><div class="st-bars">' + bars + '</div><div class="st-days">' + days + '</div></div>' +
-    '<p class="hint">Всяко устройство се брои веднъж на ден. Натисни стълбче за точния брой.' + (statAt ? ' Обновено в ' + pad(statAt.getHours()) + ':' + pad(statAt.getMinutes()) + '.' : '') + '</p></div>' +
+    '<div class="st-scroll"><div style="min-width:' + (daily.length * 22) + 'px"><div class="st-bars" style="' + cols + '">' + bars + '</div><div class="st-days" style="' + cols + '">' + days + '</div></div></div>' +
+    '<div class="st-sel"><span><b>' + esc(selLong) + '</b></span><span><b>' + selN + '</b> ' + (selN === 1 ? 'устройство' : 'устройства') + '</span></div>' +
+    '<p class="hint">Натисни ден, за да видиш кои класове са влизали тогава. Всяко устройство се брои веднъж на ден.' + (statAt ? ' Обновено в ' + pad(statAt.getHours()) + ':' + pad(statAt.getMinutes()) + '.' : '') + '</p></div>' +
     '<div class="panel"><div class="form-h"><h3>По класове</h3>' +
-    (hasToday ? '<div class="st-seg" role="group" aria-label="Период">' + [['today', 'Днес'], ['week', '7 дни']].map(function(o){ return '<button class="st-sb' + (cmode === o[0] ? ' on' : '') + '" data-act="st-cls" data-m="' + o[0] + '" aria-pressed="' + (cmode === o[0]) + '">' + o[1] + '</button>'; }).join('') + '</div>' : '<span class="aside">7 дни</span>') + '</div>' +
-    (crow || '<div class="empty">' + (cmode === 'today' ? 'Днес още никой не е влизал.' : 'Още няма посещения.') + '</div>') +
-    (hasToday ? '' : '<p class="hint">За разбивка само за днес пусни visits-v4.sql в Supabase.</p>') + '</div></div>';
+    '<div class="st-seg" role="group" aria-label="Период">' + [['today', selShort], ['week', '7 дни']].map(function(o){ return '<button class="st-sb' + (cmode === o[0] ? ' on' : '') + '" data-act="st-cls" data-m="' + o[0] + '" aria-pressed="' + (cmode === o[0]) + '">' + o[1] + '</button>'; }).join('') + '</div></div>' +
+    (crow || '<div class="empty">' + none + '</div>') + '</div></div>';
 }
 var SEARCH_I = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/></svg>';
 function tNorm(s){ return String(s || '').toLowerCase().replace(/ё/g, 'е').replace(/[.\-]/g, ' ').replace(/\s+/g, ' ').trim(); }
@@ -1491,6 +1555,235 @@ function teacherModeHTML(now){
   var body = page === 'week' ? tWeekHTML(now) : page === 'teach' ? teachHTML(now) : installHTML() + tHeroHTML(now);
   return '<div class="page page-' + page + '">' + body + '</div>';
 }
+function missing(e){ return !!e && (e.status === 404 || e.code === '42P01' || e.code === 'PGRST205' || e.code === 'PGRST202' || e.code === '42883'); }
+function softRender(){ var a = document.activeElement; if (a && /INPUT|SELECT|TEXTAREA/.test(a.tagName)) return; render(); }
+function fmtWhen(iso){ var d = new Date(iso); return isNaN(d) ? '' : d.getDate() + ' ' + MONTHS[d.getMonth()] + ', ' + pad(d.getHours()) + ':' + pad(d.getMinutes()); }
+function dropErr(){ var e = APP.querySelector('.sheet .err, #login .err, .teacher .panel .err'); if (e) e.remove(); }
+function clsNames(){ return state.classes.map(function(c){ return c.name; }).sort(collator.compare); }
+function myMail(){ return String(sess && sess.email || '').toLowerCase(); }
+
+function rpClass(){ return isT() ? 'учител' : CLASS; }
+function reportSheetHTML(){
+  return '<div class="sheet-wrap" data-act="sheet-x"><div class="sheet" data-act="noop" role="dialog" aria-modal="true" aria-label="Съобщи за грешка">' +
+    '<div class="sheet-h"><h2>Съобщи за грешка</h2><button class="icon-b" data-act="sheet-x" aria-label="Затвори">×</button></div>' +
+    '<div class="sh-body"><p class="gh-p">' + (isT() ? 'Сгрешен час, стая или клас? Напиши какво не е наред и ще го оправим.' : 'Сгрешен час, стая или учител в програмата на <b>' + esc(CLASS) + '</b>? Напиши какво не е наред и ще го оправим.') + '</p>' +
+    '<label class="field"><span>Какво не е наред</span><textarea data-f="rp" maxlength="500" placeholder="напр. В сряда третият час е в 305, а не в 401">' + esc(rpText) + '</textarea></label>' +
+    (rpErr ? '<span class="err">' + esc(rpErr) + '</span>' : '') +
+    '<button class="btn primary wide" data-act="rp-send"' + (rpBusy ? ' disabled' : '') + '>' + (rpBusy ? 'Изпращане…' : 'Изпрати') + '</button></div>' +
+    '<p class="hint">Сигналът е анонимен. Виждат го само администраторът и отговорникът на класа.</p></div></div>';
+}
+function rpSend(){
+  var msg = String(rpText || '').trim();
+  if (msg.length < 3){ rpErr = 'Напиши какво не е наред.'; render(); return; }
+  rpBusy = true; rpErr = ''; render();
+  var h = { apikey:SB.key, 'Content-Type':'application/json' };
+  if (/^eyJ/.test(SB.key)) h.Authorization = 'Bearer ' + SB.key;
+  fetch(SB.url + '/rest/v1/rpc/send_report', { method:'POST', headers:h, body:JSON.stringify({ p_class:rpClass(), p_message:msg.slice(0, 500), p_device:devId() }) }).then(function(r){
+    return r.text().then(function(t){
+      rpBusy = false;
+      if (!r.ok){ rpErr = r.status === 404 ? 'Сигналите още не са включени.' : 'Не успя да се изпрати. Опитай пак.'; render(); return; }
+      if (jparse(t) === false){ rpErr = 'Изпратил си твърде много сигнали днес. Опитай пак утре.'; render(); return; }
+      rpText = ''; sheetOpen = false; render(); flash('Благодаря! Сигналът е изпратен.');
+    });
+  }, function(){ rpBusy = false; rpErr = 'Няма интернет. Опитай пак по-късно.'; render(); });
+}
+
+function inboxN(){ return (repRows || []).length + (isAdmin() ? (reqRows || []).length : 0); }
+function inboxLoad(){
+  if (!sess || !perms().length) return;
+  if (repRows === null && !repBusy) repLoad();
+  if (isAdmin() && reqRows === null && !reqBusy) reqLoad();
+}
+function tabN(t){ var k = t === 'rep' ? (repRows || []).length : t === 'acc' ? (reqRows || []).length : 0; return k ? '<i class="tab-n">' + k + '</i>' : ''; }
+function repLoad(){
+  repBusy = true; repErr = '';
+  return ensureSession().then(function(){ return sbw('GET', 'reports?select=id,created_at,class_name,message&order=created_at.desc&limit=200'); }).then(function(r){
+    repRows = r || []; repBusy = false; softRender();
+  }, function(e){
+    repRows = []; repBusy = false;
+    repErr = missing(e) ? 'Сигналите още не са включени. Пусни zvanets-v5.sql в Supabase.' : 'Сигналите не се заредиха (' + e.message + ').';
+    softRender();
+  });
+}
+function repHTML(){
+  var rows = (repRows || []).map(function(r){
+    return '<div class="rp-row"><div class="rp-meta"><span><b>' + esc(r.class_name || 'без клас') + '</b> · ' + esc(fmtWhen(r.created_at)) + '</span>' +
+      armBtn('rep:' + r.id, 'btn ghost sm', 'rep-done', 'Готово', 'Изтрий?', ' data-id="' + esc(r.id) + '"') + '</div><div class="rp-msg">' + esc(r.message) + '</div></div>';
+  }).join('');
+  return '<div class="panel" style="max-width:640px"><div class="form-h"><h3>Сигнали за грешки</h3><button class="link-btn sm" data-act="rep-reload">Обнови</button></div>' +
+    '<p class="gh-p">Изпращат ги ученици и учители от „Съобщи за грешка“ най-долу в приложението. ' + (isAdmin() ? 'Виждаш сигналите за всички класове.' : 'Виждаш сигналите за ' + esc(permText()) + '.') + ' Оправи програмата и натисни „Готово“.</p>' +
+    (repErr ? '<div class="empty">' + esc(repErr) + '</div>' : repRows === null ? '<div class="empty">Зареждане…</div>' : rows ? '<div>' + rows + '</div>' : '<div class="empty">Няма нови сигнали.</div>') + '</div>';
+}
+function repDone(id){
+  ensureSession().then(function(){ return sbw('DELETE', 'reports?id=eq.' + enc(id)); }).then(function(){
+    repRows = (repRows || []).filter(function(r){ return String(r.id) !== String(id); }); render(); flash('Сигналът е затворен.');
+  }, function(e){ flash('Не успя (' + e.message + ').'); });
+}
+
+function reqLoad(){
+  reqBusy = true; reqErr = '';
+  return ensureSession().then(function(){ return sbw('GET', 'editor_requests?select=email,class_name,name,created_at&order=created_at'); }).then(function(r){
+    reqRows = r || []; reqBusy = false; softRender();
+  }, function(e){
+    reqRows = []; reqBusy = false;
+    reqErr = missing(e) ? 'Заявките още не са включени. Пусни zvanets-v5.sql в Supabase.' : 'Заявките не се заредиха (' + e.message + ').';
+    softRender();
+  });
+}
+function reqHTML(){
+  var rows = (reqRows || []).map(function(r){
+    var ex = ' data-e="' + esc(r.email) + '" data-c="' + esc(r.class_name) + '"';
+    return '<div class="acc-row"><div><b>' + esc(r.name || r.email) + '</b><small><b class="rq-c">Клас ' + esc(r.class_name) + '</b><br>' + esc(r.email) + '<br>' + esc(fmtWhen(r.created_at)) + '</small></div>' +
+      '<div class="acc-b"><button class="btn primary sm" data-act="req-ok"' + ex + '>Одобри</button>' + armBtn('req:' + r.email + '|' + r.class_name, 'btn ghost sm danger', 'req-no', 'Откажи', 'Потвърди', ex) + '</div></div>';
+  }).join('');
+  return '<div class="panel"><div class="form-h"><h3>Заявки за достъп</h3><button class="link-btn sm" data-act="req-reload">Обнови</button></div>' +
+    (reqErr ? '<div class="empty">' + esc(reqErr) + '</div>' : reqRows === null ? '<div class="empty">Зареждане…</div>'
+      : rows ? '<div class="acc-list">' + rows + '</div><p class="hint">Одобрявай само хора, които познаваш. След „Одобри“ те могат да редактират програмата, тестовете и домашните на този клас.</p>'
+      : '<div class="empty">Няма нови заявки. Съучениците ти заявяват достъп от бутона с класа горе вдясно → „Стани отговорник“.</div>') + '</div>';
+}
+function reqOk(email, c){
+  if (!classInfo(state, c)){ flash('Няма такъв клас: ' + c + '. Откажи заявката.'); return; }
+  ensureSession().then(function(){ return sbw('POST', 'editors?on_conflict=email,class_name', { email:email, class_name:c }, 'resolution=ignore-duplicates'); })
+    .then(function(){ return sbw('DELETE', 'editor_requests?email=eq.' + enc(email) + '&class_name=eq.' + enc(c)); })
+    .then(function(){ accRows = null; flash(email + ' вече е отговорник на ' + c + '.'); return reqLoad(); }, function(e){ flash('Не успя (' + e.message + ').'); });
+}
+function reqNo(email, c){
+  ensureSession().then(function(){ return sbw('DELETE', 'editor_requests?email=eq.' + enc(email) + '&class_name=eq.' + enc(c)); })
+    .then(function(){ flash('Заявката е отказана.'); return reqLoad(); }, function(e){ flash('Не успя (' + e.message + ').'); });
+}
+
+function authPost(path, body){
+  return fetch(SB.url + '/auth/v1/' + path, { method:'POST', headers:{ apikey:SB.key, 'Content-Type':'application/json' }, body:JSON.stringify(body) })
+    .then(function(r){ return r.text().then(function(t){ var j = jparse(t) || {}; if (!r.ok){ var e = new Error(j.error_description || j.msg || j.message || ('HTTP ' + r.status)); e.status = r.status; e.code = j.error_code || j.error; throw e; } return j; }); },
+      function(){ var e = new Error('offline'); e.status = 0; throw e; });
+}
+function rqMsg(e){
+  var m = String(e && e.message || ''), c = String(e && e.code || '');
+  if (e && e.status === 0) return 'Няма интернет.';
+  if (/invalid/i.test(m + c)) return 'Този имейл вече има профил с друга парола. Натисни „Вход“ отдолу и влез с него.';
+  if (c === 'weak_password' || /password/i.test(m)) return 'Паролата е твърде слаба. Избери по-дълга.';
+  if (c === 'signup_disabled' || /not allowed/i.test(m)) return 'Регистрацията е изключена. Кажи на администратора.';
+  if (e && e.status === 429 || /rate limit/i.test(m)) return 'Твърде много опити. Опитай пак след няколко минути.';
+  if (/not authorized/i.test(m)) return 'Не можа да се прати имейл за потвърждение. Администраторът трябва да изключи „Confirm email“ в Supabase.';
+  if (/confirm/i.test(m)) return 'Имейлът още не е потвърден. Отвори линка от имейла и влез.';
+  if (missing(e)) return 'Заявките още не са включени. Кажи на администратора.';
+  return 'Не успя (' + m + ').';
+}
+function rqClsSelect(){
+  var names = clsNames();
+  if (names.indexOf(rqForm.cls) < 0) rqForm.cls = names.indexOf(MINE) >= 0 ? MINE : (names[0] || '');
+  return '<label class="field"><span>Клас</span><select data-f="rq" data-k="cls">' + names.map(function(n){ return '<option value="' + esc(n) + '"' + (rqForm.cls === n ? ' selected' : '') + '>' + esc(n) + '</option>'; }).join('') + '</select></label>';
+}
+function rqSave(cls, name){
+  return ensureSession().then(function(){
+    return sbw('POST', 'editor_requests?on_conflict=email,class_name', { email:myMail(), class_name:cls, name:String(name || '').slice(0, 60) }, 'resolution=merge-duplicates');
+  }).then(function(){ sSet('localStorage', 'zv-req', null); myReq = null; });
+}
+function rqSent(cls){ rqBusy = false; rqErr = ''; rqInfo = ''; rqForm.password = ''; auMode = 'in'; render(); flash('Заявката за ' + cls + ' е изпратена. Администраторът ще я одобри.'); }
+function rqSubmit(){
+  var name = String(rqForm.name || '').trim(), email = String(rqForm.email || '').trim().toLowerCase(), pw = String(rqForm.password || ''), cls = rqForm.cls;
+  if (name.length < 3){ rqErr = 'Напиши името и фамилията си.'; render(); return; }
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){ rqErr = 'Напиши валиден имейл.'; render(); return; }
+  if (pw.length < 6){ rqErr = 'Паролата трябва да е поне 6 знака.'; render(); return; }
+  if (!cls){ rqErr = 'Избери клас.'; render(); return; }
+  rqBusy = true; rqErr = ''; rqInfo = ''; render();
+  var entered = function(j){ setSession(j); return loadPerms().then(null, function(){ sess.perms = []; }).then(function(){ return 'in'; }); };
+  var viaLogin = function(){ return authReq('password', { email:email, password:pw }).then(entered); };
+  authPost('signup', { email:email, password:pw, data:{ name:name } }).then(function(j){
+    if (j.access_token) return entered(j);
+    var u = j.user || j;
+    if (u && Array.isArray(u.identities) && !u.identities.length) return viaLogin();
+    return 'confirm';
+  }, function(e){
+    if (e.code === 'user_already_exists' || /already/i.test(e.message)) return viaLogin();
+    throw e;
+  }).then(function(how){
+    if (how === 'confirm'){
+      sSet('localStorage', 'zv-req', JSON.stringify({ cls:cls, name:name }));
+      rqBusy = false; auMode = 'in'; auForm.email = email; rqForm.password = '';
+      rqInfo = 'Изпратихме имейл за потвърждение на ' + email + '. Отвори линка в него, после влез тук и заявката ще се изпрати сама.';
+      render(); return;
+    }
+    if (perms().length){ rqBusy = false; auMode = 'in'; fitClass(); render(); flash('Този профил вече има достъп: ' + permText() + '.'); return; }
+    return rqSave(cls, name).then(function(){ rqSent(cls); });
+  }).then(null, function(e){ rqBusy = false; rqErr = rqMsg(e); render(); });
+}
+function rqSubmit2(){
+  var name = String(rqForm.name || '').trim(), cls = rqForm.cls;
+  if (name.length < 3){ rqErr = 'Напиши името и фамилията си.'; render(); return; }
+  if (!cls){ rqErr = 'Избери клас.'; render(); return; }
+  rqBusy = true; rqErr = ''; render();
+  rqSave(cls, name).then(function(){ rqSent(cls); }, function(e){ rqBusy = false; rqErr = rqMsg(e); render(); });
+}
+function rqPending(){
+  var pr = jparse(sGet('localStorage', 'zv-req'));
+  if (!pr || !pr.cls || !sess || perms().length) return;
+  rqSave(pr.cls, pr.name).then(function(){ rqInfo = ''; softRender(); flash('Заявката за ' + pr.cls + ' е изпратена. Администраторът ще я одобри.'); }, function(){});
+}
+function rqCancel(c){
+  ensureSession().then(function(){ return sbw('DELETE', 'editor_requests?email=eq.' + enc(myMail()) + '&class_name=eq.' + enc(c)); })
+    .then(function(){ myReq = null; render(); flash('Заявката е оттеглена.'); }, function(e){ flash('Не успя (' + e.message + ').'); });
+}
+function rqCheck(){
+  myReq = null; render();
+  loadPerms().then(function(p){ fitClass(); render(); flash(p.length ? 'Одобрено! Можеш да редактираш: ' + permText() + '.' : 'Заявката още не е одобрена.'); }, function(){ flash('Няма връзка. Опитай пак.'); });
+}
+function myReqLoad(){
+  myReqBusy = true; myReqErr = '';
+  return ensureSession().then(function(){ return sbw('GET', 'editor_requests?select=class_name,name,created_at&email=eq.' + enc(myMail()) + '&order=created_at'); }).then(function(r){
+    myReq = r || []; myReqBusy = false; softRender();
+  }, function(e){ myReq = []; myReqBusy = false; myReqErr = missing(e) ? 'off' : 'net'; softRender(); });
+}
+function noPermHTML(){
+  if (myReq === null){ if (!myReqBusy) myReqLoad(); return '<div class="panel"><div class="empty">Зареждане…</div></div>'; }
+  if (myReqErr === 'off') return '<div class="panel"><div class="empty">Този профил още няма права за клас. Помоли администратора да ти даде достъп.</div></div>';
+  if (myReq.length) return '<div class="panel"><div class="form-h"><h3>Заявката чака одобрение</h3></div><div class="acc-list">' +
+    myReq.map(function(r){ return '<div class="acc-row"><div><b>Клас ' + esc(r.class_name) + '</b><small>изпратена на ' + esc(fmtWhen(r.created_at)) + '</small></div>' + armBtn('rqx:' + r.class_name, 'btn ghost sm danger', 'rq-cancel', 'Оттегли', 'Потвърди', ' data-c="' + esc(r.class_name) + '"') + '</div>'; }).join('') +
+    '</div><p class="gh-p">Администраторът още не я е одобрил. Щом я одобри, тук ще се появи редакцията на класа.</p>' +
+    '<div class="row-actions"><button class="btn primary" data-act="rq-check">Провери пак</button></div></div>';
+  return '<div class="panel"><div class="form-h"><h3>Заяви достъп за клас</h3></div>' +
+    '<p class="gh-p">Този профил още няма права за клас. Избери класа си и администраторът ще одобри заявката.</p>' +
+    '<div class="f-grid"><label class="field"><span>Име и фамилия</span><input data-f="rq" data-k="name" value="' + esc(rqForm.name) + '" autocomplete="name" maxlength="60"></label>' + rqClsSelect() + '</div>' +
+    '<div class="row-actions"><button class="btn primary" data-act="rq-go2"' + (rqBusy ? ' disabled' : '') + '>' + (rqBusy ? 'Изпращане…' : 'Изпрати заявка') + '</button>' + (rqErr ? '<span class="err">' + esc(rqErr) + '</span>' : '') + '</div></div>';
+}
+
+function bkTable(t, order, off, acc){
+  return sbw('GET', t + '?select=*&order=' + order + '&limit=1000&offset=' + off).then(function(r){
+    r = r || []; acc = acc.concat(r); return r.length === 1000 ? bkTable(t, order, off + 1000, acc) : acc;
+  });
+}
+function bkMake(){
+  bkBusy = true; bkErr = ''; bk = null; render();
+  var out = { app:'zvanets', version:1, created:new Date().toISOString(), tables:{} };
+  ensureSession().then(function(){
+    return BK_TABLES.reduce(function(p, t){ return p.then(function(){ return bkTable(t[0], t[1], 0, []).then(function(rows){ out.tables[t[0]] = rows; }); }); }, Promise.resolve());
+  }).then(function(){
+    var rows = 0; Object.keys(out.tables).forEach(function(k){ rows += out.tables[k].length; });
+    var blob = new Blob([JSON.stringify(out, null, 1)], { type:'application/json' });
+    bk = { blob:blob, name:'zvanets-' + isoDate(new Date()) + '.json', rows:rows, kb:Math.max(1, Math.round(blob.size / 1024)) };
+    bkBusy = false; render();
+  }, function(e){ bkBusy = false; bkErr = e.status === 0 ? 'Няма интернет.' : 'Копието не се направи (' + e.message + ').'; render(); });
+}
+function bkSave(){
+  if (!bk) return;
+  var name = bk.name, done = function(){ sSet('localStorage', 'zv-bk', isoDate(new Date())); render(); };
+  try {
+    var f = new File([bk.blob], name, { type:'application/json' });
+    if (isMobile() && navigator.canShare && navigator.canShare({ files:[f] })){ navigator.share({ files:[f], title:name }).then(done, function(){}); return; }
+  } catch (e) {}
+  var a = document.createElement('a'), u = URL.createObjectURL(bk.blob);
+  a.href = u; a.download = name; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(function(){ URL.revokeObjectURL(u); }, 60000);
+  done(); flash('Файлът ' + name + ' е свален.');
+}
+function bkHTML(){
+  var last = sGet('localStorage', 'zv-bk'), ld = /^\d{4}-\d{2}-\d{2}$/.test(last || '') ? parseISO(last) : null;
+  return '<div class="panel"><div class="form-h"><h3>Резервно копие</h3></div>' +
+    '<p class="gh-p">Един файл с всичко: класове, звънец, програми, тестове, домашни и кой има достъп. Прави копие всяка седмица и преди големи промени. Ако нещо се изтрие, от този файл може да се върне.</p>' +
+    (bk ? '<div class="info">Готово: ' + bk.rows + ' реда, ' + bk.kb + ' KB.</div><div class="row-actions"><button class="btn primary" data-act="bk-save">Запази файла</button></div>'
+        : '<div class="row-actions"><button class="btn primary" data-act="bk-make"' + (bkBusy ? ' disabled' : '') + '>' + (bkBusy ? 'Подготвяне…' : 'Направи резервно копие') + '</button>' + (bkErr ? '<span class="err">' + esc(bkErr) + '</span>' : '') + '</div>') +
+    '<p class="hint">' + (ld ? 'Последно копие от това устройство: ' + ld.getDate() + ' ' + MONTHS[ld.getMonth()] + '.' : 'От това устройство още не е правено копие.') + '</p></div>';
+}
 function perms(){ return (sess && sess.perms) || []; }
 function isAdmin(){ return perms().indexOf('*') >= 0; }
 function canClass(c){ return isAdmin() || perms().indexOf(c) >= 0; }
@@ -1535,15 +1828,15 @@ function accHTML(){
     return '<div class="acc-row"><div><b>' + esc(r.email) + '</b><small>' + (r.class_name === '*' ? 'Всички класове (админ)' : 'Клас ' + esc(r.class_name)) + '</small></div>' +
       (mine ? '<span class="you">ти</span>' : armBtn('acc:' + r.email + '|' + r.class_name, 'btn ghost sm danger', 'acc-del', 'Премахни', 'Потвърди', ' data-e="' + esc(r.email) + '" data-c="' + esc(r.class_name) + '"')) + '</div>';
   }).join('');
-  return '<div class="set-grid">' +
+  return '<div class="set-grid">' + reqHTML() +
     '<div class="panel"><div class="form-h"><h3>Дай достъп</h3></div>' +
-    '<p class="gh-p">1. Създай профила в Supabase → Authentication → Users → Add user (с „Auto Confirm User“).<br>2. Напиши същия имейл тук, избери класа и натисни „Дай достъп“.</p>' +
+    '<p class="gh-p">Най-лесно е съученикът ти сам да заяви достъп от приложението и ти да го одобриш в „Заявки за достъп“. Ръчно: създай профила в Supabase → Authentication → Users → Add user (с „Auto Confirm User“), напиши същия имейл тук и избери класа.</p>' +
     '<div class="f-grid"><label class="field"><span>Имейл</span><input data-f="acc" data-k="email" type="email" value="' + esc(accForm.email) + '" autocapitalize="off" spellcheck="false" placeholder="ime@example.com"></label>' +
     '<label class="field"><span>Клас</span><select data-f="acc" data-k="cls">' + names.map(function(n){ return '<option value="' + esc(n) + '"' + (accForm.cls === n ? ' selected' : '') + '>' + esc(n) + '</option>'; }).join('') +
     '<option value="*"' + (accForm.cls === '*' ? ' selected' : '') + '>Всички (админ)</option></select></label></div>' +
     '<div class="row-actions"><button class="btn primary" data-act="acc-add"' + (accBusy ? ' disabled' : '') + '>Дай достъп</button>' + (accErr ? '<span class="err">' + esc(accErr) + '</span>' : '') + '</div></div>' +
     '<div class="panel"><div class="form-h"><h3>Кой може да редактира</h3><button class="link-btn sm" data-act="acc-reload">Обнови</button></div>' +
-    (accRows === null ? '<div class="empty">Зареждане…</div>' : rows ? '<div class="acc-list">' + rows + '</div>' : '<div class="empty">Още няма никой.</div>') + '</div></div>';
+    (accRows === null ? '<div class="empty">Зареждане…</div>' : rows ? '<div class="acc-list">' + rows + '</div>' : '<div class="empty">Още няма никой.</div>') + '</div>' + bkHTML() + '</div>';
 }
 function accAdd(){
   var email = String(accForm.email || '').trim().toLowerCase(), c = accForm.cls || '*';
@@ -1726,7 +2019,7 @@ APP.addEventListener('click', function(ev){
     case 'day': selDay = +btn.dataset.d; render(); break;
     case 'week': weekOffset = Math.max(-8, Math.min(26, weekOffset + (+btn.dataset.o))); selDay = weekOffset === 0 ? null : 1; render(); break;
     case 'week-now': weekOffset = 0; selDay = null; render(); break;
-    case 'to-teacher': view = 'teacher'; if (!classInfo(draft, tSel.cls)) tSel.cls = myClass; if (canEdit === false){ readOnly = true; banner = 'readonly'; } window.scrollTo(0, 0); render(); permsThenRender(); break;
+    case 'to-teacher': view = 'teacher'; repRows = null; reqRows = null; myReq = null; if (!classInfo(draft, tSel.cls)) tSel.cls = myClass; if (canEdit === false){ readOnly = true; banner = 'readonly'; } window.scrollTo(0, 0); render(); permsThenRender(); break;
     case 'to-student': view = 'student'; window.scrollTo(0, 0); render(); break;
     case 'ttab': tTab = btn.dataset.t; evErr = ''; clsErr = ''; render(); break;
     case 'tsel-day': tSel.day = +btn.dataset.d; render(); break;
@@ -1760,6 +2053,21 @@ APP.addEventListener('click', function(ev){
     case 'brand': var tn = Date.now(); if (tn - tapT > 2500) taps = 0; tapT = tn;
       if (++taps >= 5){ taps = 0; editUnlocked = true; sSet('sessionStorage', 'zv-edit', '1'); if (view !== 'teacher'){ view = 'teacher'; tSel.cls = myClass; window.scrollTo(0, 0); render(); permsThenRender(); } } break;
     case 'sb-in': signIn(); break;
+    case 'au-mode': auMode = btn.dataset.m === 'req' ? 'req' : 'in'; rqErr = ''; auErr = ''; render(); break;
+    case 'rq-go': rqSubmit(); break;
+    case 'rq-go2': rqSubmit2(); break;
+    case 'rq-check': rqCheck(); break;
+    case 'rq-cancel': rqCancel(btn.dataset.c); break;
+    case 'rq-open': auMode = sess ? 'in' : 'req'; rqErr = ''; sheetOpen = false; view = 'teacher'; if (!classInfo(draft, tSel.cls)) tSel.cls = myClass; if (canEdit === false){ readOnly = true; banner = 'readonly'; } window.scrollTo(0, 0); render(); permsThenRender(); break;
+    case 'req-ok': reqOk(btn.dataset.e, btn.dataset.c); break;
+    case 'req-no': reqNo(btn.dataset.e, btn.dataset.c); break;
+    case 'req-reload': reqRows = null; render(); break;
+    case 'rep-reload': repRows = null; render(); break;
+    case 'rep-done': repDone(btn.dataset.id); break;
+    case 'rp-open': rpErr = ''; sheetOpen = 'report'; render(); break;
+    case 'rp-send': rpSend(); break;
+    case 'bk-make': bkMake(); break;
+    case 'bk-save': bkSave(); break;
     case 'role-set': wRole = btn.dataset.r === 'teacher' ? 'teacher' : 'student'; render(); break;
     case 'role-open': pickT = TKEY || ''; sheetOpen = 'role'; render(); break;
     case 'role-student': ROLE = 'student'; wRole = 'student'; page = 'now'; sSet('localStorage', 'zv-role', null); sheetOpen = false; window.scrollTo(0, 0); render(); recordVisit(); break;
@@ -1768,8 +2076,8 @@ APP.addEventListener('click', function(ev){
     case 'hw-done': var hd = hwDone(), hi = hd.indexOf(btn.dataset.id); if (hi >= 0) hd.splice(hi, 1); else hd.push(btn.dataset.id); sSet('localStorage', 'zv-hw-done', JSON.stringify(hd.slice(-300))); render(); break;
     case 'nt-toggle': ntOpen = !ntOpen; render(); break;
     case 'tc-open': tcOpen = tcOpen === btn.dataset.k ? null : btn.dataset.k; teachRefresh(); break;
-    case 'st-bar': flash(btn.dataset.l); break;
-    case 'to-stats': if (isAdmin()){ view = 'stats'; statData = null; sheetOpen = false; window.scrollTo(0, 0); render(); } break;
+    case 'st-bar': statDay = btn.dataset.d; statCls = 'today'; render(); break;
+    case 'to-stats': if (isAdmin()){ view = 'stats'; statData = null; statDay = null; statScroll = null; sheetOpen = false; window.scrollTo(0, 0); render(); } break;
     case 'st-reload': statData = null; render(); break;
     case 'st-cls': statCls = btn.dataset.m === 'week' ? 'week' : 'today'; render(); break;
     case 'cls-open': pickInit(CLASS); sheetOpen = 'view'; render(); break;
@@ -1805,6 +2113,9 @@ function onField(ev){
     case 'tq': if (!isChange){ tq = el.value; teachRefresh(); } break;
     case 'pick': if (el.dataset.k === 'g'){ pick.g = +el.value; pick.p = MINE ? firstPar(pick.g) : ''; } else pick.p = el.value; if (isChange) render(); break;
     case 'acc': accForm[el.dataset.k] = el.value; break;
+    case 'rq': rqForm[el.dataset.k] = el.value; if (rqErr){ rqErr = ''; dropErr(); } break;
+    case 'rp': rpText = el.value; if (rpErr){ rpErr = ''; dropErr(); } break;
+    case 'hcls': if (isChange && classInfo(state, el.value) && el.value !== CLASS){ CLASS = myClass = el.value; sSet('localStorage', 'zv-class', CLASS); tSel.cls = CLASS; if (evForm) evForm.cls = [CLASS]; selDay = null; evErr = ''; render(); } break;
   }
 }
 APP.addEventListener('input', onField);
@@ -1815,7 +2126,7 @@ function tick(force){
   var d = new Date(), mm = d.getHours() * 60 + d.getMinutes();
   if (!force && mm === lastMin) return;
   if (view === 'student' && page === 'teach') teachRefresh();
-  else if (view === 'student' && page !== 'tests') render();
+  else if (view === 'student' && page !== 'tests' && sheetOpen !== 'report') render();
 }
 
 function initCaps(){
@@ -1878,6 +2189,7 @@ function start(hot){
   recordVisit();
   document.addEventListener('keydown', function(e){ if (e.key === 'Escape' && sheetOpen){ sheetOpen = false; render(); } });
   if (view === 'teacher') permsThenRender();
+  if (sess && perms().length) setTimeout(inboxLoad, 1500);
 }
 
 var H = window.claude && window.claude.hot, started = false;
@@ -1892,14 +2204,17 @@ else go((H && H.data) || {});
 var C = window.ZV_CONFIG || {};
 var URL0 = String(C.url || '').trim().replace(/\/+$/, '').replace(/\/rest\/v1$/, '');
 var KEY = String(C.key || '').trim();
-function get(table, query){
+function get(table, query, off, acc){
   var h = { apikey: KEY };
   if (/^eyJ/.test(KEY)) h.Authorization = 'Bearer ' + KEY;
-  return fetch(URL0 + '/rest/v1/' + table + '?' + (query || 'select=*'), { headers: h, cache: 'no-store' }).then(function(r){
+  off = off || 0;
+  return fetch(URL0 + '/rest/v1/' + table + '?' + query + '&limit=1000&offset=' + off, { headers: h, cache: 'no-store' }).then(function(r){
     return r.text().then(function(t){
       var j = null; try { j = JSON.parse(t); } catch (e) {}
       if (!r.ok){ var err = new Error((j && (j.message || j.error || j.msg)) || t || ('HTTP ' + r.status)); err.status = r.status; err.table = table; err.code = j && j.code; throw err; }
-      return j;
+      if (!Array.isArray(j)) return j;
+      acc = (acc || []).concat(j);
+      return j.length === 1000 ? get(table, query, off + 1000, acc) : acc;
     });
   }, function(e){ var err = new Error(String(e && e.message || e)); err.status = 0; err.table = table; throw err; });
 }
@@ -1927,7 +2242,7 @@ function buildState(t){
 function load(){
   if (!C.url || /YOUR-PROJECT|YOUR-/.test(URL0 + KEY)){ var e0 = new Error('config.js'); e0.kind = 'config'; return Promise.reject(e0); }
   if (!/^https:\/\/[^\/]+$/.test(URL0)){ var e1 = new Error('URL: ' + URL0); e1.kind = 'url'; return Promise.reject(e1); }
-  return Promise.all([get('settings'), get('classes', 'select=*&order=name'), get('bells'), get('lessons'), get('events', 'select=*&order=date,period')]).then(function(r){
+  return Promise.all([get('settings', 'select=*&order=id'), get('classes', 'select=*&order=name'), get('bells', 'select=*&order=shift,idx'), get('lessons', 'select=*&order=class_name,weekday,idx'), get('events', 'select=*&order=date,period,id')]).then(function(r){
     if (!r[1].length || !r[2].length || !r[3].length){ var e2 = new Error('classes ' + r[1].length + ', bells ' + r[2].length + ', lessons ' + r[3].length); e2.kind = 'empty'; throw e2; }
     return buildState({ settings:r[0], classes:r[1], bells:r[2], lessons:r[3], events:r[4] });
   });

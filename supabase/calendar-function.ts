@@ -207,9 +207,14 @@ const SB_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || Deno.env.get('SUPABA
 const CORS = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type' };
 
 async function get(table, query) {
-  const r = await fetch(SB_URL + '/rest/v1/' + table + '?' + (query || 'select=*'), { headers: { apikey: SB_KEY, Authorization: 'Bearer ' + SB_KEY } });
-  if (!r.ok) throw new Error(table + ': HTTP ' + r.status + ' ' + (await r.text()));
-  return r.json();
+  const out = [];
+  for (let off = 0; ; off += 1000) {
+    const r = await fetch(SB_URL + '/rest/v1/' + table + '?' + query + '&limit=1000&offset=' + off, { headers: { apikey: SB_KEY, Authorization: 'Bearer ' + SB_KEY } });
+    if (!r.ok) throw new Error(table + ': HTTP ' + r.status + ' ' + (await r.text()));
+    const rows = await r.json();
+    out.push(...rows);
+    if (rows.length < 1000) return out;
+  }
 }
 function text(body, status) {
   return new Response(body, { status, headers: { ...CORS, 'Content-Type': 'text/plain; charset=utf-8' } });
@@ -220,7 +225,7 @@ Deno.serve(async (req) => {
   try {
     const want = new URL(req.url).searchParams.get('class') || '';
     const [settings, classes, bells, lessons, events] = await Promise.all([
-      get('settings'), get('classes', 'select=*&order=name'), get('bells'), get('lessons'), get('events', 'select=*&order=date,period'),
+      get('settings', 'select=*&order=id'), get('classes', 'select=*&order=name'), get('bells', 'select=*&order=shift,idx'), get('lessons', 'select=*&order=class_name,weekday,idx'), get('events', 'select=*&order=date,period,id'),
     ]);
     const s = buildState({ settings, classes, bells, lessons, events });
     const cls = s.classes.find((c) => ZvLib.slug(c.name) === ZvLib.slug(want) || c.name === want);
