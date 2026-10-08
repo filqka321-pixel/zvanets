@@ -2017,7 +2017,7 @@ function pushSecHTML(){
   var h = '<div class="nt-sec"><h4>Известия на телефона</h4>';
   if (pushState === 'on') h += '<p>Включени. Ще ти пишем, когато в ' + esc(MINE) + ' има нов тест, домашно или промяна в програмата.</p>' +
     '<div class="nt-row"><span>Следващият час<small>Предметът и стаята в междучасието, а сутрин 10 мин преди първия час.</small></span><button class="sw' + (pushLessons() ? ' on' : '') + '" data-act="push-lessons" role="switch" aria-checked="' + pushLessons() + '" aria-label="Следващият час"><i></i></button></div>' +
-    '<div class="nt-acts"><button class="btn" data-act="push-test">Пробно известие</button><button class="btn ghost" data-act="push-off"' + (pushBusy ? ' disabled' : '') + '>Изключи</button></div>' +
+    '<div class="nt-acts">' + (isAdmin() ? '<button class="btn" data-act="push-test">Пробно известие</button>' : '') + '<button class="btn ghost" data-act="push-off"' + (pushBusy ? ' disabled' : '') + '>Изключи</button></div>' +
     (pushNote ? '<p class="nt-note">' + esc(pushNote) + '</p>' : '') +
     (isAdmin() ? '<a class="link-btn sm" href="' + esc(SB.url + '/functions/v1/push') + '" target="_blank" rel="noopener">Проверка на сървъра</a>' : '');
   else if (pushState === 'install') h += '<p>На iPhone известията работят само когато Звънец е добавен на началния екран и го отваряш от иконата.</p><div class="nt-acts"><button class="btn primary" data-act="ins-how">Покажи как</button></div>';
