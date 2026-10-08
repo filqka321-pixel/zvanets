@@ -1,4 +1,4 @@
-const VERSION = 'zvanets-sb-23';
+const VERSION = 'zvanets-sb-24';
 const CORE = ['./', 'index.html', 'config.js', 'lib.js', 'manifest.webmanifest', 'favicon.svg', 'icon-192.png', 'icon-512.png', 'apple-touch-icon.png'];
 const SCOPE = self.registration.scope;
 
@@ -68,4 +68,21 @@ self.addEventListener('fetch', (e) => {
   if (url.hostname === 'fonts.googleapis.com' || url.hostname === 'fonts.gstatic.com') {
     e.respondWith(cacheFirst(req));
   }
+});
+
+self.addEventListener('push', (e) => {
+  let d = {};
+  try { d = e.data ? e.data.json() : {}; } catch (_) { d = { body: e.data ? e.data.text() : '' }; }
+  e.waitUntil(self.registration.showNotification(d.title || 'Звънец', { body: d.body || '', tag: d.tag || undefined, icon: 'icon-192.png', lang: 'bg', data: { url: d.url || './' } }));
+});
+
+self.addEventListener('notificationclick', (e) => {
+  e.notification.close();
+  const url = new URL((e.notification.data && e.notification.data.url) || './', SCOPE).href;
+  e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((list) => {
+    for (const c of list) {
+      if (c.url.startsWith(SCOPE) && 'focus' in c) { c.postMessage({ zv: 'open', url }); return c.focus(); }
+    }
+    return self.clients.openWindow(url);
+  }));
 });
