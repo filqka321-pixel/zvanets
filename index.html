@@ -1979,7 +1979,7 @@ function pushOn(){
   }, function(e){
     pushBusy = false;
     if (window.Notification && Notification.permission === 'denied') pushState = 'denied';
-    else pushErr = e && e.cls ? 'Класът не е намерен. Избери класа си отново.' : e && e.status === 404 ? 'Известията още не са включени в Supabase.' : e && e.status === 0 ? 'Няма интернет.' : 'Не успя. Опитай пак.';
+    else pushErr = e && /too many/i.test(e.message || '') ? 'В момента се записват твърде много телефони. Опитай пак по-късно.' : e && e.cls ? 'Класът не е намерен. Избери класа си отново.' : e && e.status === 404 ? 'Известията още не са включени в Supabase.' : e && e.status === 0 ? 'Няма интернет.' : 'Не успя. Опитай пак.';
     render();
   });
 }
@@ -1993,6 +1993,7 @@ function pushOff(){
 function pushExplain(r){
   if (!r) return 'Функцията push не отговаря. Провери, че е качена с име push и че Verify JWT е изключено.';
   var h = r.httpStatus, c = r.status, d = String(r.detail || r.error || r.message || r.msg || '');
+  if (h === 429) return 'Изчакай минута преди следващото пробно известие.';
   if (h === 401) return 'Supabase не пусна заявката до функцията (401). Изключи Verify JWT на функцията push.';
   if (h === 404 && /unknown subscription/.test(d)) return 'Този телефон не е записан в Supabase. Натисни „Изключи“ и после „Включи известията“.';
   if (h === 404) return 'Функцията push не е намерена. Качи я в Supabase с име push.';

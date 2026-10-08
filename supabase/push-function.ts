@@ -277,6 +277,25 @@ async function db(method, path, body) {
   if (!r.ok) throw new Error(path.split('?')[0] + ': HTTP ' + r.status + ' ' + t);
   return t ? JSON.parse(t) : null;
 }
+async function dbPrefer(method, path, body, prefer) {
+  const key = serverKey();
+  const h = { apikey: key, 'Content-Type': 'application/json', Prefer: prefer };
+  if (/^eyJ/.test(key)) h.Authorization = 'Bearer ' + key;
+  const r = await fetch(SB_URL + '/rest/v1/' + path, { method, headers: h, body: body ? JSON.stringify(body) : undefined });
+  const t = await r.text();
+  if (!r.ok) throw new Error(path.split('?')[0] + ': HTTP ' + r.status + ' ' + t);
+  return t ? JSON.parse(t) : [];
+}
+async function dbCount(path) {
+  const key = serverKey();
+  const h = { apikey: key, Prefer: 'count=exact', Range: '0-0' };
+  if (/^eyJ/.test(key)) h.Authorization = 'Bearer ' + key;
+  const r = await fetch(SB_URL + '/rest/v1/' + path, { method: 'GET', headers: h });
+  await r.text();
+  if (!r.ok && r.status !== 206) throw new Error(path.split('?')[0] + ': HTTP ' + r.status);
+  const m = /\/(\d+)$/.exec(r.headers.get('content-range') || '');
+  return m ? +m[1] : null;
+}
 async function dbAll(path) {
   let out = [];
   for (let off = 0; ; off += 1000) {
@@ -370,7 +389,9 @@ async function tick(now) {
   return total;
 }
 
+let healthCache = null;
 async function health() {
+  if (healthCache && Date.now() - healthCache.at < 30e3) return healthCache.out;
   const bad = (k) => [...new Set(k.replace(/[A-Za-z0-9_+\/=-]/g, ''))].join(' ');
   const out = { function: 'push', vapid_keys: !!(VAPID_PUBLIC && VAPID_PRIVATE), vapid_pair_ok: false, cron_secret: !!CRON_SECRET, server_key: !!serverKey(), database: '', subscribers: null,
     keys_from: EMBED_PRIVATE ? 'code' : 'secrets', vapid_public_length: VAPID_PUBLIC.length + ' (трябва 87)', vapid_private_length: VAPID_PRIVATE.length + ' (трябва 43)' };
@@ -384,10 +405,10 @@ async function health() {
     out.vapid_pair_ok = await crypto.subtle.verify({ name: 'ECDSA', hash: 'SHA-256' }, pubKey, sig, data);
   } catch (err) { out.vapid_error = String(err && err.message || err); }
   try {
-    const rows = await dbAll('push_subs?select=class_name,lessons&order=class_name');
-    out.database = 'ok'; out.subscribers = rows.length; out.by_class = {};
-    rows.forEach((r) => { out.by_class[r.class_name] = (out.by_class[r.class_name] || 0) + 1; });
+    out.subscribers = await dbCount('push_subs?select=endpoint');
+    out.database = 'ok';
   } catch (err) { out.database = String(err && err.message || err).slice(0, 300); }
+  healthCache = { at: Date.now(), out };
   return out;
 }
 
@@ -405,7 +426,10 @@ Deno.serve(async (req) => {
       return json(await tick(fake ? new Date(fake) : new Date()));
     }
     if (typeof input.test === 'string') {
-      const subs = await db('GET', 'push_subs?select=endpoint,p256dh,auth&endpoint=eq.' + encodeURIComponent(input.test));
+      const ep = encodeURIComponent(input.test);
+      let subs = await dbPrefer('PATCH', 'push_subs?select=endpoint,p256dh,auth&endpoint=eq.' + ep + '&or=(last_test.is.null,last_test.lt.' + encodeURIComponent(new Date(Date.now() - 60e3).toISOString()) + ')', { last_test: new Date().toISOString() }, 'return=representation').catch(() => null);
+      if (subs === null) subs = await db('GET', 'push_subs?select=endpoint,p256dh,auth&endpoint=eq.' + ep);
+      else if (!subs.length && ((await db('GET', 'push_subs?select=endpoint&endpoint=eq.' + ep)) || []).length) return json({ error: 'too often, wait a minute' }, 429);
       if (!subs || !subs.length) return json({ error: 'unknown subscription' }, 404);
       const res = await sendOne(subs[0], { title: 'Звънец', body: 'Известията работят. Ще получаваш следващия час и стаята, и известие при нов тест, домашно или промяна.', tag: 'zv-test', url: './' });
       return json({ status: res.code, detail: res.detail });
