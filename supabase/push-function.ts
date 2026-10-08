@@ -255,7 +255,7 @@ const VAPID_PRIVATE = (Deno.env.get('VAPID_PRIVATE_KEY') || '').trim();
 const SUBJECT = 'https://zvanets.app/';
 const CRON_SECRET = (Deno.env.get('CRON_SECRET') || '').trim();
 const PUSH_HOST = /^https:\/\/(fcm\.googleapis\.com|android\.googleapis\.com|updates\.push\.services\.mozilla\.com|web\.push\.apple\.com|[a-z0-9.-]+\.push\.apple\.com|[a-z0-9.-]+\.notify\.windows\.com)\//;
-const CORS = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-zv-cron', 'Access-Control-Allow-Methods': 'POST, OPTIONS' };
+const CORS = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-zv-cron', 'Access-Control-Allow-Methods': 'GET, POST, OPTIONS' };
 
 function serverKey() {
   try { const k = JSON.parse(Deno.env.get('SUPABASE_SECRET_KEYS') || '{}'); if (k && k.default) return k.default; } catch (_) {}
@@ -282,7 +282,7 @@ async function dbAll(path) {
   }
 }
 async function sendOne(sub, msg, opt) {
-  if (!PUSH_HOST.test(sub.endpoint)) return 400;
+  if (!PUSH_HOST.test(sub.endpoint)) return { code: 400, detail: 'endpoint not allowed' };
   try {
     const body = await encryptPayload(sub.p256dh, sub.auth, ENC.encode(JSON.stringify(msg)));
     const r = await fetch(sub.endpoint, {
@@ -290,10 +290,10 @@ async function sendOne(sub, msg, opt) {
       headers: { Authorization: await vapidHeader(sub.endpoint, VAPID_PUBLIC, VAPID_PRIVATE, SUBJECT), 'Content-Encoding': 'aes128gcm', 'Content-Type': 'application/octet-stream', TTL: String((opt && opt.ttl) || 86400), Urgency: (opt && opt.urgency) || 'normal' },
       body,
     });
-    await r.arrayBuffer().catch(() => null);
-    return r.status;
-  } catch (_) {
-    return 0;
+    const detail = (await r.text().catch(() => '')).slice(0, 300);
+    return { code: r.status, detail };
+  } catch (err) {
+    return { code: 0, detail: String(err && err.message || err).slice(0, 300) };
   }
 }
 async function sendAll(subs, msg, opt) {
@@ -302,7 +302,7 @@ async function sendAll(subs, msg, opt) {
     const part = subs.slice(i, i + 50);
     const codes = await Promise.all(part.map((s) => sendOne(s, typeof msg === 'function' ? msg(s) : msg, opt)));
     for (let j = 0; j < part.length; j++) {
-      const c = codes[j];
+      const c = codes[j].code;
       if (c >= 200 && c < 300) res.sent++;
       else if (c === 404 || c === 410) {
         res.removed++;
@@ -366,8 +366,26 @@ async function tick(now) {
   return total;
 }
 
+async function health() {
+  const out = { function: 'push', vapid_keys: !!(VAPID_PUBLIC && VAPID_PRIVATE), vapid_pair_ok: false, cron_secret: !!CRON_SECRET, server_key: !!serverKey(), database: '', subscribers: null };
+  try {
+    const pub = b64uDecode(VAPID_PUBLIC), algo = { name: 'ECDSA', namedCurve: 'P-256' }, data = ENC.encode('zvanets');
+    const priv = await crypto.subtle.importKey('jwk', { kty: 'EC', crv: 'P-256', x: b64uEncode(pub.slice(1, 33)), y: b64uEncode(pub.slice(33, 65)), d: VAPID_PRIVATE, ext: true }, algo, false, ['sign']);
+    const pubKey = await crypto.subtle.importKey('raw', pub, algo, false, ['verify']);
+    const sig = await crypto.subtle.sign({ name: 'ECDSA', hash: 'SHA-256' }, priv, data);
+    out.vapid_pair_ok = await crypto.subtle.verify({ name: 'ECDSA', hash: 'SHA-256' }, pubKey, sig, data);
+  } catch (err) { out.vapid_error = String(err && err.message || err); }
+  try {
+    const rows = await dbAll('push_subs?select=class_name,lessons&order=class_name');
+    out.database = 'ok'; out.subscribers = rows.length; out.by_class = {};
+    rows.forEach((r) => { out.by_class[r.class_name] = (out.by_class[r.class_name] || 0) + 1; });
+  } catch (err) { out.database = String(err && err.message || err).slice(0, 300); }
+  return out;
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS });
+  if (req.method === 'GET') return json(await health());
   if (req.method !== 'POST') return json({ error: 'POST only' }, 405);
   if (!VAPID_PUBLIC || !VAPID_PRIVATE) return json({ error: 'Add VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY in Edge Functions → Secrets.' }, 500);
   let input;
@@ -381,8 +399,8 @@ Deno.serve(async (req) => {
     if (typeof input.test === 'string') {
       const subs = await db('GET', 'push_subs?select=endpoint,p256dh,auth&endpoint=eq.' + encodeURIComponent(input.test));
       if (!subs || !subs.length) return json({ error: 'unknown subscription' }, 404);
-      const code = await sendOne(subs[0], { title: 'Звънец', body: 'Известията работят. Ще получаваш следващия час и стаята, и известие при нов тест, домашно или промяна.', tag: 'zv-test', url: './' });
-      return json({ status: code });
+      const res = await sendOne(subs[0], { title: 'Звънец', body: 'Известията работят. Ще получаваш следващия час и стаята, и известие при нов тест, домашно или промяна.', tag: 'zv-test', url: './' });
+      return json({ status: res.code, detail: res.detail });
     }
     const ids = Array.isArray(input.ids) ? input.ids.filter((x) => typeof x === 'string').slice(0, 50) : [];
     if (!ids.length) return json({ events: 0, sent: 0 });
