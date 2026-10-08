@@ -250,8 +250,9 @@ function sofiaClock(now) {
 }
 
 const SB_URL = Deno.env.get('SUPABASE_URL') || '';
-const VAPID_PUBLIC = (Deno.env.get('VAPID_PUBLIC_KEY') || '').trim();
-const VAPID_PRIVATE = (Deno.env.get('VAPID_PRIVATE_KEY') || '').trim();
+function cleanKey(v) { return String(v || '').replace(/[\s"'`]/g, ''); }
+const VAPID_PUBLIC = cleanKey(Deno.env.get('VAPID_PUBLIC_KEY'));
+const VAPID_PRIVATE = cleanKey(Deno.env.get('VAPID_PRIVATE_KEY'));
 const SUBJECT = 'https://zvanets.app/';
 const CRON_SECRET = (Deno.env.get('CRON_SECRET') || '').trim();
 const PUSH_HOST = /^https:\/\/(fcm\.googleapis\.com|android\.googleapis\.com|updates\.push\.services\.mozilla\.com|web\.push\.apple\.com|[a-z0-9.-]+\.push\.apple\.com|[a-z0-9.-]+\.notify\.windows\.com)\//;
@@ -262,7 +263,7 @@ function serverKey() {
   return Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
 }
 function json(o, status) {
-  return new Response(JSON.stringify(o), { status: status || 200, headers: { ...CORS, 'Content-Type': 'application/json' } });
+  return new Response(JSON.stringify(o), { status: status || 200, headers: { ...CORS, 'Content-Type': 'application/json; charset=utf-8' } });
 }
 async function db(method, path, body) {
   const key = serverKey();
@@ -367,7 +368,11 @@ async function tick(now) {
 }
 
 async function health() {
-  const out = { function: 'push', vapid_keys: !!(VAPID_PUBLIC && VAPID_PRIVATE), vapid_pair_ok: false, cron_secret: !!CRON_SECRET, server_key: !!serverKey(), database: '', subscribers: null };
+  const bad = (k) => [...new Set(k.replace(/[A-Za-z0-9_+\/=-]/g, ''))].join(' ');
+  const out = { function: 'push', vapid_keys: !!(VAPID_PUBLIC && VAPID_PRIVATE), vapid_pair_ok: false, cron_secret: !!CRON_SECRET, server_key: !!serverKey(), database: '', subscribers: null,
+    vapid_public_length: VAPID_PUBLIC.length + ' (трябва 87)', vapid_private_length: VAPID_PRIVATE.length + ' (трябва 43)' };
+  if (bad(VAPID_PUBLIC)) out.vapid_public_bad_characters = bad(VAPID_PUBLIC);
+  if (bad(VAPID_PRIVATE)) out.vapid_private_bad_characters = bad(VAPID_PRIVATE);
   try {
     const pub = b64uDecode(VAPID_PUBLIC), algo = { name: 'ECDSA', namedCurve: 'P-256' }, data = ENC.encode('zvanets');
     const priv = await crypto.subtle.importKey('jwk', { kty: 'EC', crv: 'P-256', x: b64uEncode(pub.slice(1, 33)), y: b64uEncode(pub.slice(33, 65)), d: VAPID_PRIVATE, ext: true }, algo, false, ['sign']);
