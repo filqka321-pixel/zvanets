@@ -251,10 +251,13 @@ function sofiaClock(now) {
 
 const SB_URL = Deno.env.get('SUPABASE_URL') || '';
 function cleanKey(v) { return String(v || '').replace(/[\s"'`]/g, ''); }
-const VAPID_PUBLIC = cleanKey(Deno.env.get('VAPID_PUBLIC_KEY'));
-const VAPID_PRIVATE = cleanKey(Deno.env.get('VAPID_PRIVATE_KEY'));
+const EMBED_PUBLIC = '';
+const EMBED_PRIVATE = '';
+const EMBED_CRON = '';
+const VAPID_PUBLIC = EMBED_PUBLIC || cleanKey(Deno.env.get('VAPID_PUBLIC_KEY'));
+const VAPID_PRIVATE = EMBED_PRIVATE || cleanKey(Deno.env.get('VAPID_PRIVATE_KEY'));
 const SUBJECT = 'https://zvanets.app/';
-const CRON_SECRET = (Deno.env.get('CRON_SECRET') || '').trim();
+const CRON_SECRET = EMBED_CRON || cleanKey(Deno.env.get('CRON_SECRET'));
 const PUSH_HOST = /^https:\/\/(fcm\.googleapis\.com|android\.googleapis\.com|updates\.push\.services\.mozilla\.com|web\.push\.apple\.com|[a-z0-9.-]+\.push\.apple\.com|[a-z0-9.-]+\.notify\.windows\.com)\//;
 const CORS = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-zv-cron', 'Access-Control-Allow-Methods': 'GET, POST, OPTIONS' };
 
@@ -370,7 +373,7 @@ async function tick(now) {
 async function health() {
   const bad = (k) => [...new Set(k.replace(/[A-Za-z0-9_+\/=-]/g, ''))].join(' ');
   const out = { function: 'push', vapid_keys: !!(VAPID_PUBLIC && VAPID_PRIVATE), vapid_pair_ok: false, cron_secret: !!CRON_SECRET, server_key: !!serverKey(), database: '', subscribers: null,
-    vapid_public_length: VAPID_PUBLIC.length + ' (трябва 87)', vapid_private_length: VAPID_PRIVATE.length + ' (трябва 43)' };
+    keys_from: EMBED_PRIVATE ? 'code' : 'secrets', vapid_public_length: VAPID_PUBLIC.length + ' (трябва 87)', vapid_private_length: VAPID_PRIVATE.length + ' (трябва 43)' };
   if (bad(VAPID_PUBLIC)) out.vapid_public_bad_characters = bad(VAPID_PUBLIC);
   if (bad(VAPID_PRIVATE)) out.vapid_private_bad_characters = bad(VAPID_PRIVATE);
   try {
