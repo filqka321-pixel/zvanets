@@ -517,6 +517,16 @@ textarea:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 3px var(-
 .st-days small.m1{color:var(--ink);font-weight:700}
 .st-sel{display:flex;justify-content:space-between;align-items:baseline;gap:10px;font-size:14.5px;color:var(--ink-2)}
 .st-sel b{color:var(--ink)}
+.de-q{display:grid;gap:8px}
+.de-q h3{font-family:var(--f-ui);font-size:11.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+.de-opts{display:grid;gap:6px}
+.de-opts.two{grid-template-columns:1fr 1fr}
+.de-o{display:flex;align-items:center;justify-content:space-between;gap:10px;border:1px solid var(--line);background:var(--surface-2);border-radius:12px;padding:12px 14px;font:inherit;font-size:16px;font-weight:600;color:var(--ink);text-align:left;min-height:50px}
+.de-o span{display:grid;gap:2px}
+.de-o small{color:var(--muted);font-weight:500;font-size:13px}
+.de-o svg{width:20px;height:20px;color:var(--brand);flex:none}
+.de-o.on{border-color:var(--brand);background:var(--brand-soft);box-shadow:inset 0 0 0 1px var(--brand)}
+.de-opts.two .de-o{justify-content:center}
 </style>
 </head>
 <body>
@@ -649,7 +659,7 @@ function clsLabel(s, e){
   return out.join(', ');
 }
 
-function dayPlan(s, name, date){
+function dayPlanRaw(s, name, date){
   var bells = bellsFor(s, name), dow = date.getDay();
   var row = (s.tt[name] && s.tt[name][dow]) || [];
   var evs = eventsOn(s, name, isoDate(date));
@@ -710,6 +720,8 @@ var newCls = { name:'', shift:2 };
 var art = null, canEdit = null, readOnly = false, saving = false;
 var SB = window.ZvSB, sess = jparse(sGet('localStorage', 'zv-sess')), auForm = { email:'', password:'' }, auErr = '', auBusy = false;
 var MINE = null;
+var deForm = null, deCache = null;
+var DE_L = /само\s+група\s*1|leistung/i;
 var statDay = null, statScroll = null;
 var auMode = 'in', rqForm = { name:'', email:'', password:'', cls:'' }, rqBusy = false, rqErr = '', rqInfo = '';
 var myReq = null, myReqBusy = false, myReqErr = '';
@@ -1263,12 +1275,13 @@ function welcomeHTML(){
 }
 function sheetHTML(){
   if (sheetOpen === 'role') return roleSheetHTML();
+  if (sheetOpen === 'de') return deSheetHTML();
   if (sheetOpen === 'report') return reportSheetHTML();
   var mine = sheetOpen === 'mine', title = mine ? 'Кой е твоят клас?' : 'Друг клас';
   var body = pickerHTML(mine ? 'pick-mine' : 'pick-go', mine ? 'Запази като мой клас' : 'Покажи програмата');
   var back = !mine && CLASS !== MINE ? '<button class="btn wide" data-act="cls-back">Обратно към ' + esc(MINE) + '</button>' : '';
   var foot = mine ? '<p class="hint">Приложението винаги ще се отваря с програмата на този клас.</p>'
-    : '<div class="sh-foot"><span>Твоят клас: <b>' + esc(MINE) + '</b></span><button class="link-btn sm" data-act="mine-change">Смени</button></div><div class="sh-foot2"><button class="link-btn sm" data-act="role-open">Аз съм учител</button>' + (perms().length ? '' : '<button class="link-btn sm" data-act="rq-open">Стани отговорник</button>') + '</div>';
+    : '<div class="sh-foot"><span>Твоят клас: <b>' + esc(MINE) + '</b></span><button class="link-btn sm" data-act="mine-change">Смени</button></div>' + deFootHTML() + '<div class="sh-foot2"><button class="link-btn sm" data-act="role-open">Аз съм учител</button>' + (perms().length ? '' : '<button class="link-btn sm" data-act="rq-open">Стани отговорник</button>') + '</div>';
   return '<div class="sheet-wrap" data-act="sheet-x"><div class="sheet" data-act="noop" role="dialog" aria-modal="true" aria-label="' + title + '">' +
     '<div class="sheet-h"><h2>' + title + '</h2><button class="icon-b" data-act="sheet-x" aria-label="Затвори">×</button></div>' +
     '<div class="sh-body">' + body + back + '</div>' + foot + '</div></div>';
@@ -1368,7 +1381,7 @@ function teacherDay(date){
   function get(n){ var k = tKey(n), t = map[k] = map[k] || { key:k, name:n, ls:[] }; if (n.length > t.name.length) t.name = n; return t; }
   Object.keys(state.tt).forEach(function(c){ Object.keys(state.tt[c]).forEach(function(d){ (state.tt[c][d] || []).forEach(function(x){ if (x && x.t) splitTeachers(x.t, x.r).forEach(function(p){ get(p.name); }); }); }); });
   state.classes.forEach(function(c){
-    var plan = dayPlan(state, c.name, date); if (plan.off || plan.weekend) return;
+    var plan = dayPlanRaw(state, c.name, date); if (plan.off || plan.weekend) return;
     plan.slots.forEach(function(x){
       if (!x.active || !x.teacher) return;
       splitTeachers(x.teacher, x.room).forEach(function(p){
@@ -1784,6 +1797,98 @@ function bkHTML(){
         : '<div class="row-actions"><button class="btn primary" data-act="bk-make"' + (bkBusy ? ' disabled' : '') + '>' + (bkBusy ? 'Подготвяне…' : 'Направи резервно копие') + '</button>' + (bkErr ? '<span class="err">' + esc(bkErr) + '</span>' : '') + '</div>') +
     '<p class="hint">' + (ld ? 'Последно копие от това устройство: ' + ld.getDate() + ' ' + MONTHS[ld.getMonth()] + '.' : 'От това устройство още не е правено копие.') + '</p></div>';
 }
+function isDE(cell){ return !!cell && /^немски/i.test(cell.s || ''); }
+function deInfo(cls){
+  if (deCache && deCache.s === state && deCache.c === cls) return deCache.v;
+  var tt = state.tt[cls] || {}, cnt = {}, names = {}, order = [], splits = [], lslot = null;
+  Object.keys(tt).forEach(function(d){
+    (tt[d] || []).forEach(function(x, i){
+      if (!isDE(x)) return;
+      if (DE_L.test(x.t || '')){ if (!lslot) lslot = { d:+d, i:i, name:splitTeachers(x.t, x.r).map(function(p){ return p.name; }).join(', ') }; return; }
+      var ps = splitTeachers(x.t, x.r); if (ps.length < 2) return;
+      splits.push({ d:+d, ps:ps });
+      ps.forEach(function(p){ var k = tKey(p.name); if (!cnt[k]){ cnt[k] = 0; order.push(k); } cnt[k]++; if (!names[k] || p.name.length > names[k].length) names[k] = p.name; });
+    });
+  });
+  var v = null;
+  if (splits.length){
+    var size = Math.max.apply(null, splits.map(function(sp){ return sp.ps.length; }));
+    var ranked = order.slice().sort(function(a, b){ return cnt[b] - cnt[a]; });
+    var cut = cnt[ranked[Math.min(size, ranked.length) - 1]];
+    var keys = order.filter(function(k){ return cnt[k] >= cut; });
+    if (keys.length >= 2){
+      var opts = keys.map(function(k){ return { k:k, name:names[k], alias:[] }; });
+      splits.forEach(function(sp){
+        var rest = sp.ps.filter(function(p){ return keys.indexOf(tKey(p.name)) < 0; });
+        var miss = opts.filter(function(o){ return !sp.ps.some(function(p){ return tKey(p.name) === o.k; }); });
+        if (rest.length === 1 && miss.length === 1 && !miss[0].alias.some(function(a){ return a.d === sp.d; })) miss[0].alias.push({ d:sp.d, name:rest[0].name });
+      });
+      if (lslot){ var bl = bellsFor(state, cls)[lslot.i]; lslot.n = bl ? bl.n : null; }
+      v = { opts:opts, leistung:!!lslot, lslot:lslot };
+    }
+  }
+  deCache = { s:state, c:cls, v:v };
+  return v;
+}
+function dePref(){ var p = jparse(sGet('localStorage', 'zv-de')); return p && typeof p === 'object' ? p : null; }
+function deValid(info, p){ return !!info && !!p && info.opts.some(function(o){ return o.k === p.t; }) && (!info.leistung || typeof p.l === 'boolean'); }
+function deNeed(force){ var info = MINE && !isT() ? deInfo(MINE) : null; return !!info && !deValid(info, dePref()) && (force || sGet('localStorage', 'zv-de-x') !== '1'); }
+function deSlot(x, info, p){
+  if (!isDE(x.cell) || (x.ch && x.ch.subject)) return x;
+  var t = x.cell.t || '';
+  if (DE_L.test(t)){
+    if (!info.leistung) return x;
+    if (p.l === false && !x.ch) return Object.assign({}, x, { cell:null, subject:'', room:'', teacher:'', has:false, active:false });
+    if (p.l === true && !x.teacherChanged){ var nm = splitTeachers(t, x.cell.r).map(function(q){ return q.name; }).join(', '); return nm ? Object.assign({}, x, { teacher:nm }) : x; }
+    return x;
+  }
+  var ps = splitTeachers(t, x.cell.r); if (ps.length < 2) return x;
+  var mine = ps.filter(function(q){ return tKey(q.name) === p.t; })[0];
+  if (!mine){
+    var keys = info.opts.map(function(o){ return o.k; });
+    var rest = ps.filter(function(q){ return keys.indexOf(tKey(q.name)) < 0; });
+    var miss = info.opts.filter(function(o){ return !ps.some(function(q){ return tKey(q.name) === o.k; }); });
+    if (rest.length === 1 && miss.length === 1 && miss[0].k === p.t) mine = rest[0];
+  }
+  if (!mine) return x;
+  return Object.assign({}, x, { teacher: x.teacherChanged ? x.teacher : mine.name, room: x.roomChanged ? x.room : (mine.room || x.room) });
+}
+function dayPlan(s, name, date){
+  var plan = dayPlanRaw(s, name, date);
+  if (s !== state || name !== MINE || isT()) return plan;
+  var info = deInfo(name), p = dePref();
+  if (!deValid(info, p)) return plan;
+  plan.slots = plan.slots.map(function(x){ return deSlot(x, info, p); });
+  return plan;
+}
+function deSheetHTML(){
+  var info = deInfo(MINE);
+  if (!info) return '';
+  var f = deForm || (deForm = Object.assign({ t:'', l:null }, dePref() || {}));
+  var ok = info.opts.some(function(o){ return o.k === f.t; }) && (!info.leistung || typeof f.l === 'boolean');
+  var ls = info.lslot, lh = ls ? 'Leistung има допълнителен час в ' + DAYS[ls.d].toLowerCase() + (ls.n != null ? ' (' + ordWord(ls.n) + ' час' + (ls.name ? ', ' + esc(ls.name) : '') + ')' : '') + '.' : '';
+  return '<div class="sheet-wrap" data-act="de-later"><div class="sheet" data-act="noop" role="dialog" aria-modal="true" aria-label="Немски по групи">' +
+    '<div class="sheet-h"><h2>Немски по групи</h2><button class="icon-b" data-act="de-later" aria-label="Затвори">×</button></div>' +
+    '<div class="sh-body"><p class="gh-p">В ' + esc(MINE) + ' немският е по групи. Отговори и Звънец ще показва само твоя учител и твоята стая.</p>' +
+    '<div class="de-q"><h3>При коя госпожа си?</h3><div class="de-opts">' + info.opts.map(function(o){
+      var on = f.t === o.k;
+      return '<button class="de-o' + (on ? ' on' : '') + '" data-act="de-t" data-k="' + esc(o.k) + '" aria-pressed="' + on + '"><span>' + esc(o.name) +
+        (o.alias.length ? '<small>' + o.alias.map(function(a){ return 'в ' + DAYS[a.d].toLowerCase() + ' при ' + esc(a.name); }).join(', ') + '</small>' : '') + '</span>' + (on ? CHECK : '') + '</button>';
+    }).join('') + '</div></div>' +
+    (info.leistung ? '<div class="de-q"><h3>В Leistung ли си?</h3><div class="de-opts two">' + [[true, 'Да'], [false, 'Не']].map(function(o){
+      var on = f.l === o[0];
+      return '<button class="de-o' + (on ? ' on' : '') + '" data-act="de-l" data-v="' + (o[0] ? 1 : 0) + '" aria-pressed="' + on + '">' + o[1] + '</button>';
+    }).join('') + '</div>' + (lh ? '<p class="hint">' + lh + '</p>' : '') + '</div>' : '') +
+    '<button class="btn primary wide" data-act="de-save"' + (ok ? '' : ' disabled') + '>Запази</button></div>' +
+    '<div class="sh-foot2"><button class="link-btn sm" data-act="de-later">Не знам още</button></div></div></div>';
+}
+function deFootHTML(){
+  var info = MINE && !isT() ? deInfo(MINE) : null;
+  if (!info) return '';
+  var p = dePref(), ok = deValid(info, p), o = ok ? info.opts.filter(function(x){ return x.k === p.t; })[0] : null;
+  var w = o ? o.name.split(' ') : [];
+  return '<div class="sh-foot"><span>Немски: <b>' + (o ? esc(w[w.length - 1]) + (info.leistung && p.l ? ' · Leistung' : '') : 'не е избрана група') + '</b></span><button class="link-btn sm" data-act="de-open">' + (o ? 'Смени' : 'Избери') + '</button></div>';
+}
 function perms(){ return (sess && sess.perms) || []; }
 function isAdmin(){ return perms().indexOf('*') >= 0; }
 function canClass(c){ return isAdmin() || perms().indexOf(c) >= 0; }
@@ -2082,10 +2187,15 @@ APP.addEventListener('click', function(ev){
     case 'st-cls': statCls = btn.dataset.m === 'week' ? 'week' : 'today'; render(); break;
     case 'cls-open': pickInit(CLASS); sheetOpen = 'view'; render(); break;
     case 'sheet-x': sheetOpen = false; render(); break;
+    case 'de-t': if (deForm){ deForm.t = btn.dataset.k; render(); } break;
+    case 'de-l': if (deForm){ deForm.l = btn.dataset.v === '1'; render(); } break;
+    case 'de-save': var dinf = deInfo(MINE); if (deForm && deValid(dinf, deForm)){ sSet('localStorage', 'zv-de', JSON.stringify({ t:deForm.t, l: dinf.leistung ? deForm.l : null })); sSet('localStorage', 'zv-de-x', null); deForm = null; sheetOpen = false; render(); flash('Готово. Виждаш само своята група по немски.'); } break;
+    case 'de-later': sSet('localStorage', 'zv-de-x', '1'); deForm = null; sheetOpen = false; render(); break;
+    case 'de-open': deForm = null; sheetOpen = 'de'; render(); break;
     case 'mine-change': pickInit(MINE); sheetOpen = 'mine'; render(); break;
     case 'pick-go': if (hasTT(pick.g + pick.p)){ setClass(pick.g + pick.p); sheetOpen = false; window.scrollTo(0, 0); render(); } break;
     case 'cls-back': setClass(MINE); sheetOpen = false; window.scrollTo(0, 0); render(); break;
-    case 'pick-mine': var nc = pick.g + pick.p; if (hasTT(nc)){ var first = !MINE; MINE = nc; sSet('localStorage', 'zv-mine', MINE); setClass(MINE); sheetOpen = false; window.scrollTo(0, 0); render(); if (!first) flash('Твоят клас вече е ' + MINE + '.'); recordVisit(); } break;
+    case 'pick-mine': var nc = pick.g + pick.p; if (hasTT(nc)){ var first = !MINE; MINE = nc; sSet('localStorage', 'zv-mine', MINE); setClass(MINE); deForm = null; sheetOpen = deNeed(true) ? 'de' : false; window.scrollTo(0, 0); render(); if (!first && !sheetOpen) flash('Твоят клас вече е ' + MINE + '.'); recordVisit(); } break;
     case 'acc-add': accAdd(); break;
     case 'acc-del': accDel(btn.dataset.e, btn.dataset.c); break;
     case 'acc-reload': accRows = null; accErr = ''; render(); break;
@@ -2177,6 +2287,7 @@ function start(hot){
       pendingRev = null; persistWork();
     } else clearWork();
   }
+  if (view === 'student' && !(insFull && insNeeded()) && deNeed()) sheetOpen = 'de';
   render();
   initCaps();
   setInterval(tick, 10000);
