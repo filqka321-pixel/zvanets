@@ -554,6 +554,11 @@ textarea:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 3px var(-
 .news-l span{font-size:14px;line-height:1.4;color:var(--ink-2)}
 .news .btn.wide{margin-top:4px}
 .news-note{font-size:14px;line-height:1.4;color:var(--ink-2)}
+.st-cls.wide{grid-template-columns:64px minmax(0,1fr) 76px}
+.st-cls span small{font-weight:600;color:var(--muted);font-size:12px}
+.st-plat{display:flex;flex-wrap:wrap;gap:6px}
+.st-plat span{font-family:var(--f-ui);font-size:13px;font-weight:600;background:var(--surface-2);border-radius:999px;padding:4px 10px;color:var(--ink-2)}
+.st-plat b{color:var(--ink);font-variant-numeric:tabular-nums}
 </style>
 </head>
 <body>
@@ -747,6 +752,7 @@ var newCls = { name:'', shift:2 };
 var art = null, canEdit = null, readOnly = false, saving = false;
 var SB = window.ZvSB, sess = jparse(sGet('localStorage', 'zv-sess')), auForm = { email:'', password:'' }, auErr = '', auBusy = false;
 var MINE = null;
+var pushStat = null, pushStatBusy = false, pushStatErr = '';
 var VAPID_PUB = 'BNrx9ZYvV8xunI_VqO_kkgQHSfg1FiWGBMWgxQhscZrZKixcZVdq9RHLzMhEUqewHR3Nv_frShZinw0rkg6fH10';
 var swReg = null, pushSub = null, pushState = 'init', pushBusy = false, pushErr = '', pushNote = '', qPage = '';
 var deForm = null, deCache = null;
@@ -1389,7 +1395,7 @@ function statHTML(){
     '<p class="hint">Натисни ден, за да видиш кои класове са влизали тогава. Всяко устройство се брои веднъж на ден.' + (statAt ? ' Обновено в ' + pad(statAt.getHours()) + ':' + pad(statAt.getMinutes()) + '.' : '') + '</p></div>' +
     '<div class="panel"><div class="form-h"><h3>По класове</h3>' +
     '<div class="st-seg" role="group" aria-label="Период">' + [['today', selShort], ['week', '7 дни']].map(function(o){ return '<button class="st-sb' + (cmode === o[0] ? ' on' : '') + '" data-act="st-cls" data-m="' + o[0] + '" aria-pressed="' + (cmode === o[0]) + '">' + o[1] + '</button>'; }).join('') + '</div></div>' +
-    (crow || '<div class="empty">' + none + '</div>') + '</div></div>';
+    (crow || '<div class="empty">' + none + '</div>') + '</div>' + pushStatHTML() + '</div>';
 }
 var SEARCH_I = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/></svg>';
 function tNorm(s){ return String(s || '').toLowerCase().replace(/ё/g, 'е').replace(/[.\-]/g, ' ').replace(/\s+/g, ' ').trim(); }
@@ -2053,6 +2059,35 @@ function newsSheetHTML(){
           : '<button class="btn primary wide" data-act="news-on">Включи известията</button>') +
     '<button class="link-btn" data-act="news-x">Не сега</button></div></div></div>';
 }
+function pushStatLoad(){
+  pushStatBusy = true; pushStatErr = '';
+  return ensureSession().then(function(){ return sbw('POST', 'rpc/push_stats', {}); }).then(function(r){
+    pushStat = r || {}; pushStatBusy = false; if (view === 'stats') softRender();
+  }, function(e){
+    pushStat = {}; pushStatBusy = false;
+    pushStatErr = missing(e) ? 'Пусни push-stats.sql в Supabase, за да виждаш тази статистика.' : 'Не се зареди (' + e.message + ').';
+    if (view === 'stats') softRender();
+  });
+}
+function pushStatHTML(){
+  if (pushStat === null && !pushStatBusy) pushStatLoad();
+  var head = '<div class="panel"><div class="form-h"><h3>Известия</h3><span class="aside">включени телефони</span></div>';
+  if (pushStatErr) return head + '<div class="empty">' + esc(pushStatErr) + '</div></div>';
+  if (pushStat === null) return head + '<div class="empty">Зареждане…</div></div>';
+  var p = pushStat, n = function(v){ return String(v == null ? 0 : v); };
+  var tiles = [['Включени', p.total], ['Следващ час', p.lessons], ['Нови днес', p.today], ['Нови 7 дни', p.week]].map(function(t){
+    return '<div class="st-tile"><small>' + t[0] + '</small><b>' + n(t[1]) + '</b></div>';
+  }).join('');
+  var plat = (p.platforms || []).map(function(x){ return '<span>' + esc(x.p) + ' <b>' + x.n + '</b></span>'; }).join('');
+  var seen = {}; ((statData && statData.classes) || []).forEach(function(x){ seen[x.cls] = x.n; });
+  var cls = p.classes || [], max = Math.max.apply(null, [1].concat(cls.map(function(x){ return x.n; })));
+  var rows = cls.map(function(x){
+    return '<div class="st-cls wide"><b>' + esc(x.cls) + '</b><div class="st-track"><i style="width:' + Math.max(2, Math.round(x.n / max * 100)) + '%"></i></div><span>' + x.n + (seen[x.cls] ? '<small> от ' + seen[x.cls] + '</small>' : '') + '</span></div>';
+  }).join('');
+  return head + '<div class="st-tiles">' + tiles + '</div>' + (plat ? '<div class="st-plat">' + plat + '</div>' : '') +
+    (rows ? '<div>' + rows + '</div>' : '<div class="empty">Още никой не е включил известията.</div>') +
+    '<p class="hint">„от N“ е колко устройства от класа са отваряли Звънец през последните 7 дни. Броят е анонимен: не се пази кой точно си е включил известията.</p></div>';
+}
 function perms(){ return (sess && sess.perms) || []; }
 function isAdmin(){ return perms().indexOf('*') >= 0; }
 function canClass(c){ return isAdmin() || perms().indexOf(c) >= 0; }
@@ -2350,8 +2385,8 @@ APP.addEventListener('click', function(ev){
     case 'nt-toggle': ntOpen = !ntOpen; render(); break;
     case 'tc-open': tcOpen = tcOpen === btn.dataset.k ? null : btn.dataset.k; teachRefresh(); break;
     case 'st-bar': statDay = btn.dataset.d; statCls = 'today'; render(); break;
-    case 'to-stats': if (isAdmin()){ view = 'stats'; statData = null; statDay = null; statScroll = null; sheetOpen = false; window.scrollTo(0, 0); render(); } break;
-    case 'st-reload': statData = null; render(); break;
+    case 'to-stats': if (isAdmin()){ view = 'stats'; statData = null; pushStat = null; statDay = null; statScroll = null; sheetOpen = false; window.scrollTo(0, 0); render(); } break;
+    case 'st-reload': statData = null; pushStat = null; render(); break;
     case 'st-cls': statCls = btn.dataset.m === 'week' ? 'week' : 'today'; render(); break;
     case 'cls-open': pickInit(CLASS); sheetOpen = 'view'; render(); break;
     case 'sheet-x': sheetOpen = false; render(); break;
