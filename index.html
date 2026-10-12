@@ -1327,16 +1327,21 @@ function devId(){
   if (!d){ d = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : rid() + rid() + rid(); sSet('localStorage', 'zv-dev', d); }
   return d;
 }
+function devPlatform(){ return isIOS() ? 'iphone' : isAndroid() ? 'android' : 'other'; }
 function recordVisit(){
-  var day = isoDate(new Date()), key = day + '|' + vClass();
+  var day = isoDate(new Date()), key = day + '|' + vClass() + '|p';
   if (!SB || !vClass() || sGet('localStorage', 'zv-visit') === key) return;
   var h = { apikey:SB.key, 'Content-Type':'application/json' };
   if (/^eyJ/.test(SB.key)) h.Authorization = 'Bearer ' + SB.key;
-  fetch(SB.url + '/rest/v1/rpc/log_visit', { method:'POST', headers:h, body:JSON.stringify({ p_device:devId(), p_class:vClass(), p_installed:isStandalone() }) })
-    .then(function(r){
-      if (r.ok){ sSet('localStorage', 'zv-visit', key); sSet('localStorage', 'zv-visit-err', null); return; }
-      return r.text().then(function(t){ var j = jparse(t) || {}; sSet('localStorage', 'zv-visit-err', 'HTTP ' + r.status + (j.message ? ' · ' + j.message : '')); });
-    }, function(){ sSet('localStorage', 'zv-visit-err', 'няма връзка'); });
+  var body = { p_device:devId(), p_class:vClass(), p_installed:isStandalone(), p_platform:devPlatform() };
+  var send = function(b){ return fetch(SB.url + '/rest/v1/rpc/log_visit', { method:'POST', headers:h, body:JSON.stringify(b) }); };
+  send(body).then(function(r){
+    if (r.status !== 404) return r;
+    var old = Object.assign({}, body); delete old.p_platform; return send(old);
+  }).then(function(r){
+    if (r.ok){ sSet('localStorage', 'zv-visit', key); sSet('localStorage', 'zv-visit-err', null); return; }
+    return r.text().then(function(t){ var j = jparse(t) || {}; sSet('localStorage', 'zv-visit-err', 'HTTP ' + r.status + (j.message ? ' · ' + j.message : '')); });
+  }, function(){ sSet('localStorage', 'zv-visit-err', 'няма връзка'); });
 }
 function statLoad(){
   statBusy = true; statErr = '';
@@ -1391,7 +1396,7 @@ function statHTML(){
     '<p class="st-note"><b>' + n(d.installed_week) + ' от ' + n(d.week) + '</b> устройства през последните 7 дни отварят Звънец от началния екран.</p>' +
     '<div class="panel"><div class="form-h"><h3>Устройства по дни</h3><button class="link-btn sm" data-act="st-reload">Обнови</button></div>' +
     '<div class="st-scroll"><div style="min-width:' + (daily.length * 22) + 'px"><div class="st-bars" style="' + cols + '">' + bars + '</div><div class="st-days" style="' + cols + '">' + days + '</div></div></div>' +
-    '<div class="st-sel"><span><b>' + esc(selLong) + '</b></span><span><b>' + selN + '</b> ' + (selN === 1 ? 'устройство' : 'устройства') + '</span></div>' +
+    '<div class="st-sel"><span><b>' + esc(selLong) + '</b></span><span><b>' + selN + '</b> ' + (selN === 1 ? 'устройство' : 'устройства') + '</span></div>' + statPlatHTML(d, sel) +
     '<p class="hint">Натисни ден, за да видиш кои класове са влизали тогава. Всяко устройство се брои веднъж на ден.' + (statAt ? ' Обновено в ' + pad(statAt.getHours()) + ':' + pad(statAt.getMinutes()) + '.' : '') + '</p></div>' +
     '<div class="panel"><div class="form-h"><h3>По класове</h3>' +
     '<div class="st-seg" role="group" aria-label="Период">' + [['today', selShort], ['week', '7 дни']].map(function(o){ return '<button class="st-sb' + (cmode === o[0] ? ' on' : '') + '" data-act="st-cls" data-m="' + o[0] + '" aria-pressed="' + (cmode === o[0]) + '">' + o[1] + '</button>'; }).join('') + '</div></div>' +
@@ -2087,6 +2092,13 @@ function pushStatHTML(){
   return head + '<div class="st-tiles">' + tiles + '</div>' + (plat ? '<div class="st-plat">' + plat + '</div>' : '') +
     (rows ? '<div>' + rows + '</div>' : '<div class="empty">Още никой не е включил известията.</div>') +
     '<p class="hint">„от N“ е колко устройства от класа са отваряли Звънец през последните 7 дни. Броят е анонимен: не се пази кой точно си е включил известията.</p></div>';
+}
+var PLAT_NAMES = { iphone:'iPhone', android:'Android', other:'Компютър и други', '':'Неизвестно' };
+function statPlatHTML(d, day){
+  if (!Array.isArray(d.platforms_by_day)) return '';
+  var rows = d.platforms_by_day.filter(function(x){ return x.day === day && x.n > 0; });
+  if (!rows.length) return '';
+  return '<div class="st-plat">' + rows.map(function(x){ return '<span>' + esc(PLAT_NAMES[x.p] || x.p) + ' <b>' + x.n + '</b></span>'; }).join('') + '</div>';
 }
 function perms(){ return (sess && sess.perms) || []; }
 function isAdmin(){ return perms().indexOf('*') >= 0; }
