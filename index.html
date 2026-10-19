@@ -649,8 +649,8 @@ textarea:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 3px var(-
 @media (min-width:640px){.sheet-wrap.sh-in .sheet{animation-name:shPop}.sheet-wrap.sh-out .sheet{animation-name:shPopOut}}
 .day,.segm-b,.role-b,.tab,.cls-o,.po-add,.btn{transition:background-color .22s var(--ez-out),color .22s var(--ez-out),border-color .22s var(--ez-out),box-shadow .22s var(--ez-out),transform .15s var(--ez-out)}
 .day:active,.segm-b:active,.role-b:active,.tab:active,.po-add:active,.btn:active{transform:scale(.96)}
-#app.with-tabs,.page{touch-action:pan-y pinch-zoom}
-.page.swiping{will-change:transform,opacity}
+#app.with-tabs,.pg-wrap,.page{touch-action:pan-y pinch-zoom}
+.pg-wrap.swiping{will-change:transform,opacity}
 .anim-sr{animation:navSR .38s var(--ez-out)}
 .anim-sl{animation:navSL .38s var(--ez-out)}
 @keyframes navSR{from{opacity:0;transform:translate3d(56px,0,0)}}
@@ -922,11 +922,12 @@ function render(){
   clearTimeout(armTimer); armed = null;
   var now = new Date(); lastMin = now.getHours() * 60 + now.getMinutes();
   var h = headerHTML();
-  h += view === 'stats' ? '<div class="teacher"><div class="t-head"><div><h1 class="t-title">Статистика</h1><p class="t-sub">Колко устройства отварят Звънец. Анонимно, без имена.</p></div></div>' + statHTML() + '</div>' : view === 'teacher' ? teacherHTML(now) : studentHTML(now);
+  h += view === 'stats' ? '<div class="teacher"><div class="t-head"><div><h1 class="t-title">Статистика</h1><p class="t-sub">Колко устройства отварят Звънец. Анонимно, без имена.</p></div></div>' + statHTML() + '</div>' : view === 'teacher' ? teacherHTML(now) : '<div class="pg-wrap">' + studentHTML(now);
   h += '<footer class="foot"><span>' + (MINE || view === 'teacher' ? esc(CLASS) + ' · ' : '') + esc(state.school) + '</span><span>·</span><span>Обновено ' + esc(fmtUpdated(state.updated)) + '</span></footer>';
   var guide = view === 'student' && insFull && insNeeded();
   var chosen = !!MINE || isT();
   if (view === 'student' && chosen && !guide) h += '<div class="foot-x"><button class="link-btn sm" data-act="rp-open">Съобщи за грешка</button></div>';
+  if (view === 'student') h += '</div>';
   if (view === 'student' && chosen && !guide) h += tabbarHTML(now);
   if (view === 'student' && sheetOpen && chosen && !guide) h += sheetHTML();
   var ss0 = APP.querySelector('.st-scroll'); if (ss0) statScroll = ss0.scrollLeft;
@@ -2862,7 +2863,7 @@ function swStart(e){
   var t = e.touches[0], tg = e.target;
   if (!tg.closest || !APP.querySelector('.page') || tg.closest('input,textarea,select,[contenteditable],.tabbar,.sheet-wrap') || swHScroll(tg)) return;
   if (t.clientX < 20 || t.clientX > window.innerWidth - 20) return;
-  swp = { x:t.clientX, y:t.clientY, t:Date.now(), dx:0, lock:'', el:APP.querySelector('.page'), pill:APP.querySelector('.tb-pill') };
+  swp = { x:t.clientX, y:t.clientY, t:Date.now(), dx:0, lock:'', el:APP.querySelector('.pg-wrap'), pill:APP.querySelector('.tb-pill') };
 }
 function swGeom(dx){
   var list = swPages(), i = list.indexOf(page), n = i + (dx < 0 ? 1 : -1), ok = i >= 0 && n >= 0 && n < list.length;
@@ -2904,7 +2905,7 @@ function swEnd(){
     }
     setTimeout(function(){
       swOut = false; swLater = false;
-      page = g.list[g.n]; navTo('.page', 's' + dir); window.scrollTo(0, 0); render();
+      page = g.list[g.n]; navTo('.pg-wrap', 's' + dir); window.scrollTo(0, 0); render();
     }, anim ? 160 : 0);
     return;
   }
@@ -3155,13 +3156,13 @@ APP.addEventListener('click', function(ev){
   if (btn.dataset.arm && !confirmClick(btn)) return;
   var d, c, id, list;
   switch (act){
-    case 'page': var pg0 = pageIdx(page); page = btn.dataset.p; navTo('.page', dirOf(pg0, pageIdx(page))); window.scrollTo(0, 0); render(); break;
+    case 'page': var pg0 = pageIdx(page); page = btn.dataset.p; navTo('.pg-wrap', dirOf(pg0, pageIdx(page))); window.scrollTo(0, 0); render(); break;
     case 'cls': if (classInfo(state, btn.dataset.c) && btn.dataset.c !== CLASS){ var cl0 = editList(); navTo('.t-body', dirOf(cl0.indexOf(CLASS), cl0.indexOf(btn.dataset.c))); CLASS = myClass = btn.dataset.c; sSet('localStorage', 'zv-class', CLASS); tSel.cls = CLASS; if (evForm) evForm.cls = [CLASS]; selDay = null; evErr = ''; render(); } break;
     case 'day': var dd0 = selDay != null ? selDay : defaultSel(new Date()); selDay = +btn.dataset.d; navTo('.day-p', dirOf(dd0, selDay)); render(); break;
     case 'week': var wo0 = weekOffset; weekOffset = Math.max(-8, Math.min(26, weekOffset + (+btn.dataset.o))); selDay = weekOffset === 0 ? null : 1; navTo('.days, .day-p', dirOf(wo0, weekOffset)); render(); break;
     case 'week-now': navTo('.days, .day-p', dirOf(weekOffset, 0)); weekOffset = 0; selDay = null; render(); break;
-    case 'to-teacher': view = 'teacher'; repRows = null; reqRows = null; ppl = null; myReq = null; if (!classInfo(draft, tSel.cls)) tSel.cls = myClass; if (canEdit === false){ readOnly = true; banner = 'readonly'; } navTo('.teacher', 'o'); window.scrollTo(0, 0); render(); permsThenRender(); break;
-    case 'to-student': view = 'student'; navTo('.page', 'f'); window.scrollTo(0, 0); render(); break;
+    case 'to-teacher': view = 'teacher'; repRows = null; reqRows = null; ppl = null; myReq = null; if (!classInfo(draft, tSel.cls)) tSel.cls = myClass; if (canEdit === false){ readOnly = true; banner = 'readonly'; } navTo('.teacher, .foot', 'o'); window.scrollTo(0, 0); render(); permsThenRender(); break;
+    case 'to-student': view = 'student'; navTo('.pg-wrap', 'f'); window.scrollTo(0, 0); render(); break;
     case 'ttab': var tl0 = ['tt', 'ev', 'cls', 'imp', 'ppl', 'rep']; navTo('.t-body', dirOf(tl0.indexOf(tTab), tl0.indexOf(btn.dataset.t))); tTab = btn.dataset.t; evErr = ''; clsErr = ''; render(); break;
     case 'tsel-day': navTo('.tt-edit', dirOf(tSel.day, +btn.dataset.d)); tSel.day = +btn.dataset.d; render(); break;
     case 'tt-clear':
@@ -3211,14 +3212,14 @@ APP.addEventListener('click', function(ev){
     case 'bk-save': bkSave(); break;
     case 'role-set': wRole = btn.dataset.r === 'teacher' ? 'teacher' : 'student'; render(); break;
     case 'role-open': pickT = TKEY || ''; sheetOpen = 'role'; render(); break;
-    case 'role-student': ROLE = 'student'; wRole = 'student'; page = 'now'; sSet('localStorage', 'zv-role', null); sheetOpen = false; navTo('.page', 'f'); window.scrollTo(0, 0); render(); recordVisit(); break;
-    case 't-mine': if (pickT && tAll().some(function(t){ return t.key === pickT; })){ ROLE = 'teacher'; TKEY = pickT; sSet('localStorage', 'zv-role', 'teacher'); sSet('localStorage', 'zv-teacher', TKEY); sheetOpen = false; page = 'now'; selDay = null; navTo('.page', 'f'); window.scrollTo(0, 0); render(); recordVisit(); } break;
+    case 'role-student': ROLE = 'student'; wRole = 'student'; page = 'now'; sSet('localStorage', 'zv-role', null); sheetOpen = false; navTo('.pg-wrap', 'f'); window.scrollTo(0, 0); render(); recordVisit(); break;
+    case 't-mine': if (pickT && tAll().some(function(t){ return t.key === pickT; })){ ROLE = 'teacher'; TKEY = pickT; sSet('localStorage', 'zv-role', 'teacher'); sSet('localStorage', 'zv-teacher', TKEY); sheetOpen = false; page = 'now'; selDay = null; navTo('.pg-wrap', 'f'); window.scrollTo(0, 0); render(); recordVisit(); } break;
     case 'page-off': flash('Скоро и за учители. Трябват програмите на всички класове.'); break;
     case 'hw-done': var hd = hwDone(), hi = hd.indexOf(btn.dataset.id); if (hi >= 0) hd.splice(hi, 1); else hd.push(btn.dataset.id); sSet('localStorage', 'zv-hw-done', JSON.stringify(hd.slice(-300))); render(); break;
     case 'nt-toggle': ntOpen = !ntOpen; render(); break;
     case 'tc-open': tcOpen = tcOpen === btn.dataset.k ? null : btn.dataset.k; teachRefresh(); var tcd = APP.querySelector('.tc.open .tc-day'); if (tcd && motionOK()) tcd.classList.add('anim-f'); break;
     case 'st-bar': statDay = btn.dataset.d; statCls = 'today'; render(); break;
-    case 'to-stats': if (isAdmin()){ view = 'stats'; statData = null; pushStat = null; statDay = null; statScroll = null; sheetOpen = false; navTo('.teacher', 'o'); window.scrollTo(0, 0); render(); } break;
+    case 'to-stats': if (isAdmin()){ view = 'stats'; statData = null; pushStat = null; statDay = null; statScroll = null; sheetOpen = false; navTo('.teacher, .foot', 'o'); window.scrollTo(0, 0); render(); } break;
     case 'st-reload': statData = null; pushStat = null; render(); break;
     case 'st-cls': statCls = btn.dataset.m === 'week' ? 'week' : 'today'; render(); break;
     case 'cls-open': pickInit(CLASS); sheetOpen = 'view'; render(); break;
@@ -3237,9 +3238,9 @@ APP.addEventListener('click', function(ev){
     case 'de-later': sSet('localStorage', 'zv-de-x', '1'); deForm = null; sheetOpen = newsNeed() ? 'news' : false; render(); break;
     case 'de-open': deForm = null; sheetOpen = 'de'; render(); break;
     case 'mine-change': pickInit(MINE); sheetOpen = 'mine'; render(); break;
-    case 'pick-go': if (hasTT(pick.g + pick.p)){ setClass(pick.g + pick.p); sheetOpen = false; navTo('.page', 'f'); window.scrollTo(0, 0); render(); } break;
-    case 'cls-back': setClass(MINE); sheetOpen = false; navTo('.page', 'f'); window.scrollTo(0, 0); render(); break;
-    case 'pick-mine': var nc = pick.g + pick.p; if (hasTT(nc)){ var first = !MINE; MINE = nc; sSet('localStorage', 'zv-mine', MINE); setClass(MINE); deForm = null; pushSync(); sheetOpen = deNeed(true) ? 'de' : newsNeed() ? 'news' : false; navTo('.page', 'f'); window.scrollTo(0, 0); render(); if (!first && !sheetOpen) flash('Твоят клас вече е ' + MINE + '.'); recordVisit(); } break;
+    case 'pick-go': if (hasTT(pick.g + pick.p)){ setClass(pick.g + pick.p); sheetOpen = false; navTo('.pg-wrap', 'f'); window.scrollTo(0, 0); render(); } break;
+    case 'cls-back': setClass(MINE); sheetOpen = false; navTo('.pg-wrap', 'f'); window.scrollTo(0, 0); render(); break;
+    case 'pick-mine': var nc = pick.g + pick.p; if (hasTT(nc)){ var first = !MINE; MINE = nc; sSet('localStorage', 'zv-mine', MINE); setClass(MINE); deForm = null; pushSync(); sheetOpen = deNeed(true) ? 'de' : newsNeed() ? 'news' : false; navTo('.pg-wrap', 'f'); window.scrollTo(0, 0); render(); if (!first && !sheetOpen) flash('Твоят клас вече е ' + MINE + '.'); recordVisit(); } break;
     case 'acc-add': accAdd(); break;
     case 'acc-del': accDel(btn.dataset.e, btn.dataset.c); break;
     case 'acc-reload': accRows = null; accErr = ''; render(); break;
