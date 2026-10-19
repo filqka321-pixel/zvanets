@@ -326,6 +326,9 @@ input[type=checkbox]{width:18px;height:18px;padding:0;accent-color:var(--brand);
 html{-webkit-text-size-adjust:100%}
 button,a,.brand{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 html,body{touch-action:manipulation}
+body{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+.teacher,.hw-n,.rp-msg,code,input,textarea,[contenteditable]{-webkit-user-select:text;user-select:text;-webkit-touch-callout:default}
+button,.tab,.tabs{-webkit-user-select:none;user-select:none}
 @media (pointer:coarse){input,select,textarea,.sh-sel,.imp-t select,.cls-item select{font-size:16px}}
 .brand,.tabbar,.cls-seg{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 .nt{margin-top:14px;background:var(--surface);border:1px solid var(--line);border-radius:22px;padding:16px;display:grid;gap:14px}
