@@ -325,6 +325,8 @@ input[type=checkbox]{width:18px;height:18px;padding:0;accent-color:var(--brand);
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 html{-webkit-text-size-adjust:100%}
 button,a,.brand{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+html,body{touch-action:manipulation}
+@media (pointer:coarse){input,select,textarea,.sh-sel,.imp-t select,.cls-item select{font-size:16px}}
 .brand,.tabbar,.cls-seg{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 .nt{margin-top:14px;background:var(--surface);border:1px solid var(--line);border-radius:22px;padding:16px;display:grid;gap:14px}
 .nt-top{display:grid;grid-template-columns:40px minmax(0,1fr);gap:12px;align-items:start}
