@@ -620,18 +620,18 @@ textarea:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 3px var(-
 .tb{padding:8px 1px 7px;transition:color .25s var(--ez-out)}
 .tb svg{transition:transform .18s var(--ez-out)}
 .tb:active svg{transform:scale(.86)}
-.tb-pill{transition:transform .46s var(--ez-spring)}
-.tb-pill.moving{animation:tbStretch .46s var(--ez-out)}
+.tb-pill{transition:transform .55s var(--ez-spring)}
+.tb-pill.moving{animation:tbStretch .55s var(--ez-out)}
 @keyframes tbStretch{0%{scale:1 1}30%{scale:1.3 .86}65%{scale:.97 1.03}100%{scale:1 1}}
 .toast.up{bottom:calc(84px + max(12px, env(safe-area-inset-bottom,0px)))}
 .toast:not([hidden]){animation:toastIn .34s var(--ez-spring)}
 @keyframes toastIn{from{opacity:0;transform:translate(-50%,14px) scale(.96)}}
-.anim-r{animation:navR .34s var(--ez-out)}
-.anim-l{animation:navL .34s var(--ez-out)}
-.anim-f{animation:navF .3s var(--ez-out)}
+.anim-r{animation:navR .5s var(--ez-out)}
+.anim-l{animation:navL .5s var(--ez-out)}
+.anim-f{animation:navF .4s var(--ez-out)}
 .anim-o{animation:navO .24s ease-out}
-@keyframes navR{from{opacity:0;transform:translate3d(34px,0,0)}}
-@keyframes navL{from{opacity:0;transform:translate3d(-34px,0,0)}}
+@keyframes navR{from{opacity:0;transform:translate3d(56px,0,0)}}
+@keyframes navL{from{opacity:0;transform:translate3d(-56px,0,0)}}
 @keyframes navF{from{opacity:0;transform:translate3d(0,12px,0)}}
 @keyframes navO{from{opacity:0}}
 .past[open]>.up{animation:pastIn .28s var(--ez-out)}
@@ -650,7 +650,11 @@ textarea:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 3px var(-
 .day,.segm-b,.role-b,.tab,.cls-o,.po-add,.btn{transition:background-color .22s var(--ez-out),color .22s var(--ez-out),border-color .22s var(--ez-out),box-shadow .22s var(--ez-out),transform .15s var(--ez-out)}
 .day:active,.segm-b:active,.role-b:active,.tab:active,.po-add:active,.btn:active{transform:scale(.96)}
 #app.with-tabs,.page{touch-action:pan-y pinch-zoom}
-.page.swiping{will-change:transform}
+.page.swiping{will-change:transform,opacity}
+.anim-sr{animation:navSR .5s var(--ez-out)}
+.anim-sl{animation:navSL .5s var(--ez-out)}
+@keyframes navSR{from{opacity:0;transform:translate3d(72px,0,0)}}
+@keyframes navSL{from{opacity:0;transform:translate3d(-72px,0,0)}}
 </style>
 </head>
 <body>
@@ -914,6 +918,7 @@ function flash(msg){
 }
 
 function render(){
+  if (swHold()){ swLater = true; return; }
   clearTimeout(armTimer); armed = null;
   var now = new Date(); lastMin = now.getHours() * 60 + now.getMinutes();
   var h = headerHTML();
@@ -2840,8 +2845,10 @@ var navAnim = null, lastSheet = false;
 function motionOK(){ try { return !window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { return true; } }
 function navTo(sel, dir){ navAnim = dir ? { sel:sel, dir:dir } : null; }
 function dirOf(a, b){ return b > a ? 'r' : b < a ? 'l' : ''; }
-var swp = null;
+var swp = null, swOut = false, swLater = false;
 function swPages(){ return PAGES.map(function(p){ return p[0]; }).filter(function(p){ return !(isT() && (p === 'hw' || p === 'tests')); }); }
+function swHold(){ return swOut || (!!swp && swp.lock === 'x' && Date.now() - swp.t < 20000); }
+function swFlush(){ if (swLater && !swHold()){ swLater = false; render(); } }
 function swHScroll(el){
   for (; el && el !== APP; el = el.parentElement){
     if (el.scrollWidth > el.clientWidth + 2){ var o = getComputedStyle(el).overflowX; if (o === 'auto' || o === 'scroll') return true; }
@@ -2849,12 +2856,17 @@ function swHScroll(el){
   return false;
 }
 function swStart(e){
+  if (swOut) return;
   swp = null;
   if (e.touches.length !== 1 || view !== 'student' || sheetOpen || (insFull && insNeeded()) || !(MINE || isT())) return;
   var t = e.touches[0], tg = e.target;
   if (!tg.closest || !APP.querySelector('.page') || tg.closest('input,textarea,select,[contenteditable],.tabbar,.sheet-wrap') || swHScroll(tg)) return;
   if (t.clientX < 20 || t.clientX > window.innerWidth - 20) return;
-  swp = { x:t.clientX, y:t.clientY, t:Date.now(), dx:0, lock:'', el:APP.querySelector('.page') };
+  swp = { x:t.clientX, y:t.clientY, t:Date.now(), dx:0, lock:'', el:APP.querySelector('.page'), pill:APP.querySelector('.tb-pill') };
+}
+function swGeom(dx){
+  var list = swPages(), i = list.indexOf(page), n = i + (dx < 0 ? 1 : -1), ok = i >= 0 && n >= 0 && n < list.length;
+  return { list:list, i:i, n:n, ok:ok, pi:pageIdx(page), pn: ok ? pageIdx(list[n]) : pageIdx(page) };
 }
 function swMove(e){
   if (!swp || e.touches.length !== 1) return;
@@ -2862,30 +2874,52 @@ function swMove(e){
   if (!swp.lock){
     if (Math.abs(dx) < 10 && Math.abs(dy) < 10) return;
     swp.lock = Math.abs(dx) > Math.abs(dy) * 1.2 ? 'x' : 'y';
+    if (swp.lock === 'x' && swp.el) swp.el.classList.remove('anim-r', 'anim-l', 'anim-f', 'anim-o', 'anim-sr', 'anim-sl');
   }
   if (swp.lock !== 'x' || !swp.el) return;
-  var list = swPages(), i = list.indexOf(page), end = (dx > 0 && i <= 0) || (dx < 0 && i >= list.length - 1);
-  var off = end ? dx * 0.22 : dx * 0.9;
+  var g = swGeom(dx), w = window.innerWidth, off = g.ok ? dx * 0.9 : dx * 0.2;
   swp.dx = dx;
   if (!motionOK()) return;
   swp.el.classList.add('swiping'); swp.el.style.transition = 'none';
   swp.el.style.transform = 'translate3d(' + off + 'px,0,0)';
-  swp.el.style.opacity = String(1 - Math.min(Math.abs(off) / window.innerWidth, 0.6) * 0.7);
+  swp.el.style.opacity = String(1 - Math.min(Math.abs(off) / w, 0.6) * 0.75);
+  if (swp.pill){
+    var f = Math.min(Math.abs(dx) / (w * 0.6), 1) * (g.ok ? 1 : 0.12);
+    swp.pill.style.transition = 'none'; swp.pill.classList.remove('moving');
+    swp.pill.style.transform = pillX(g.pi + (g.pn - g.pi) * f + (g.ok ? 0 : (dx < 0 ? f : -f)));
+  }
 }
 function swEnd(){
   var s = swp; swp = null;
-  if (!s || s.lock !== 'x') return;
-  var list = swPages(), i = list.indexOf(page), dx = s.dx, fast = Math.abs(dx) > 45 && Math.abs(dx) / Math.max(1, Date.now() - s.t) > 0.35;
-  var to = i + (dx < 0 ? 1 : -1);
-  if ((Math.abs(dx) > window.innerWidth * 0.25 || fast) && i >= 0 && to >= 0 && to < list.length){
-    page = list[to]; navTo('.page', dx < 0 ? 'r' : 'l'); window.scrollTo(0, 0); render();
+  if (!s || s.lock !== 'x'){ swFlush(); return; }
+  var g = swGeom(s.dx), dx = s.dx, w = window.innerWidth, fast = Math.abs(dx) > 45 && Math.abs(dx) / Math.max(1, Date.now() - s.t) > 0.35;
+  if ((Math.abs(dx) > w * 0.25 || fast) && g.ok){
+    var dir = dx < 0 ? 'r' : 'l', anim = motionOK() && s.el && s.el.isConnected;
+    swOut = true;
+    if (s.pill){ s.pill.style.transition = ''; s.pill.style.transform = pillX(g.pn); tabFrom = g.pn; }
+    Array.prototype.forEach.call(APP.querySelectorAll('.tabbar .tb'), function(b){ b.classList.toggle('on', b.dataset.p === g.list[g.n]); });
+    if (anim){
+      s.el.style.transition = 'transform .24s cubic-bezier(.4,0,.9,.6), opacity .24s ease-in';
+      s.el.style.transform = 'translate3d(' + (dir === 'r' ? -0.5 : 0.5) * w + 'px,0,0)'; s.el.style.opacity = '0';
+    }
+    setTimeout(function(){
+      swOut = false; swLater = false;
+      page = g.list[g.n]; navTo('.page', 's' + dir); window.scrollTo(0, 0); render();
+    }, anim ? 230 : 0);
     return;
   }
+  if (s.pill){ s.pill.style.transition = ''; s.pill.style.transform = pillX(g.pi); }
   if (s.el && s.el.isConnected){
-    s.el.style.transition = 'transform .32s var(--ez-spring), opacity .25s ease-out';
+    s.el.style.transition = 'transform .38s var(--ez-spring), opacity .3s ease-out';
     s.el.style.transform = ''; s.el.style.opacity = '';
-    setTimeout(function(){ if (s.el){ s.el.classList.remove('swiping'); s.el.style.transition = ''; } }, 340);
-  }
+    setTimeout(function(){ if (s.el){ s.el.classList.remove('swiping'); s.el.style.transition = ''; } swFlush(); }, 400);
+  } else swFlush();
+}
+function swCancel(){
+  var s = swp; swp = null;
+  if (s && s.el){ s.el.style.transition = ''; s.el.style.transform = ''; s.el.style.opacity = ''; s.el.classList.remove('swiping'); }
+  if (s && s.pill){ s.pill.style.transition = ''; s.pill.style.transform = pillX(pageIdx(page)); }
+  swFlush();
 }
 function perms(){ return (sess && sess.perms) || []; }
 function isAdmin(){ return perms().indexOf('*') >= 0; }
@@ -3281,7 +3315,7 @@ APP.addEventListener('input', onField);
 APP.addEventListener('touchstart', swStart, { passive:true });
 APP.addEventListener('touchmove', swMove, { passive:true });
 APP.addEventListener('touchend', swEnd, { passive:true });
-APP.addEventListener('touchcancel', function(){ swp = null; var pg = APP.querySelector('.page'); if (pg){ pg.style.transform = ''; pg.style.opacity = ''; pg.classList.remove('swiping'); } }, { passive:true });
+APP.addEventListener('touchcancel', swCancel, { passive:true });
 APP.addEventListener('change', onField);
 
 function tick(force){
