@@ -1,9 +1,9 @@
-const VERSION = 'zvanets-sb-27';
+const VERSION = 'zvanets-sb-28';
 const CORE = ['./', 'index.html', 'config.js', 'lib.js', 'manifest.webmanifest', 'favicon.svg', 'icon-192.png', 'icon-512.png', 'apple-touch-icon.png'];
 const SCOPE = self.registration.scope;
 
 self.addEventListener('install', (e) => {
-  e.waitUntil(caches.open(VERSION).then((c) => c.addAll(CORE)).then(() => self.skipWaiting()));
+  e.waitUntil(caches.open(VERSION).then((c) => c.addAll(CORE.map((u) => new Request(u, { cache: 'reload' })))).then(() => self.skipWaiting()));
 });
 
 self.addEventListener('activate', (e) => {
@@ -23,7 +23,7 @@ function withTimeout(p, ms) {
 
 async function networkFirst(req, key, ms) {
   const cache = await caches.open(VERSION);
-  const net = fetch(req).then((res) => {
+  const net = fetch(new Request(req.url, { cache: 'no-cache', credentials: 'same-origin' })).then((res) => {
     if (res && res.ok) cache.put(key, res.clone());
     return res;
   });
