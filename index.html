@@ -649,6 +649,8 @@ textarea:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 3px var(-
 @media (min-width:640px){.sheet-wrap.sh-in .sheet{animation-name:shPop}.sheet-wrap.sh-out .sheet{animation-name:shPopOut}}
 .day,.segm-b,.role-b,.tab,.cls-o,.po-add,.btn{transition:background-color .22s var(--ez-out),color .22s var(--ez-out),border-color .22s var(--ez-out),box-shadow .22s var(--ez-out),transform .15s var(--ez-out)}
 .day:active,.segm-b:active,.role-b:active,.tab:active,.po-add:active,.btn:active{transform:scale(.96)}
+#app.with-tabs,.page{touch-action:pan-y pinch-zoom}
+.page.swiping{will-change:transform}
 </style>
 </head>
 <body>
@@ -2838,6 +2840,53 @@ var navAnim = null, lastSheet = false;
 function motionOK(){ try { return !window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { return true; } }
 function navTo(sel, dir){ navAnim = dir ? { sel:sel, dir:dir } : null; }
 function dirOf(a, b){ return b > a ? 'r' : b < a ? 'l' : ''; }
+var swp = null;
+function swPages(){ return PAGES.map(function(p){ return p[0]; }).filter(function(p){ return !(isT() && (p === 'hw' || p === 'tests')); }); }
+function swHScroll(el){
+  for (; el && el !== APP; el = el.parentElement){
+    if (el.scrollWidth > el.clientWidth + 2){ var o = getComputedStyle(el).overflowX; if (o === 'auto' || o === 'scroll') return true; }
+  }
+  return false;
+}
+function swStart(e){
+  swp = null;
+  if (e.touches.length !== 1 || view !== 'student' || sheetOpen || (insFull && insNeeded()) || !(MINE || isT())) return;
+  var t = e.touches[0], tg = e.target;
+  if (!tg.closest || !APP.querySelector('.page') || tg.closest('input,textarea,select,[contenteditable],.tabbar,.sheet-wrap') || swHScroll(tg)) return;
+  if (t.clientX < 20 || t.clientX > window.innerWidth - 20) return;
+  swp = { x:t.clientX, y:t.clientY, t:Date.now(), dx:0, lock:'', el:APP.querySelector('.page') };
+}
+function swMove(e){
+  if (!swp || e.touches.length !== 1) return;
+  var t = e.touches[0], dx = t.clientX - swp.x, dy = t.clientY - swp.y;
+  if (!swp.lock){
+    if (Math.abs(dx) < 10 && Math.abs(dy) < 10) return;
+    swp.lock = Math.abs(dx) > Math.abs(dy) * 1.2 ? 'x' : 'y';
+  }
+  if (swp.lock !== 'x' || !swp.el) return;
+  var list = swPages(), i = list.indexOf(page), end = (dx > 0 && i <= 0) || (dx < 0 && i >= list.length - 1);
+  var off = end ? dx * 0.22 : dx * 0.9;
+  swp.dx = dx;
+  if (!motionOK()) return;
+  swp.el.classList.add('swiping'); swp.el.style.transition = 'none';
+  swp.el.style.transform = 'translate3d(' + off + 'px,0,0)';
+  swp.el.style.opacity = String(1 - Math.min(Math.abs(off) / window.innerWidth, 0.6) * 0.7);
+}
+function swEnd(){
+  var s = swp; swp = null;
+  if (!s || s.lock !== 'x') return;
+  var list = swPages(), i = list.indexOf(page), dx = s.dx, fast = Math.abs(dx) > 45 && Math.abs(dx) / Math.max(1, Date.now() - s.t) > 0.35;
+  var to = i + (dx < 0 ? 1 : -1);
+  if ((Math.abs(dx) > window.innerWidth * 0.25 || fast) && i >= 0 && to >= 0 && to < list.length){
+    page = list[to]; navTo('.page', dx < 0 ? 'r' : 'l'); window.scrollTo(0, 0); render();
+    return;
+  }
+  if (s.el && s.el.isConnected){
+    s.el.style.transition = 'transform .32s var(--ez-spring), opacity .25s ease-out';
+    s.el.style.transform = ''; s.el.style.opacity = '';
+    setTimeout(function(){ if (s.el){ s.el.classList.remove('swiping'); s.el.style.transition = ''; } }, 340);
+  }
+}
 function perms(){ return (sess && sess.perms) || []; }
 function isAdmin(){ return perms().indexOf('*') >= 0; }
 function canClass(c){ return isAdmin() || perms().indexOf(c) >= 0; }
@@ -3229,6 +3278,10 @@ function onField(ev){
   }
 }
 APP.addEventListener('input', onField);
+APP.addEventListener('touchstart', swStart, { passive:true });
+APP.addEventListener('touchmove', swMove, { passive:true });
+APP.addEventListener('touchend', swEnd, { passive:true });
+APP.addEventListener('touchcancel', function(){ swp = null; var pg = APP.querySelector('.page'); if (pg){ pg.style.transform = ''; pg.style.opacity = ''; pg.classList.remove('swiping'); } }, { passive:true });
 APP.addEventListener('change', onField);
 
 function tick(force){
