@@ -1,4 +1,4 @@
-const VERSION = 'zvanets-sb-34';
+const VERSION = 'zvanets-sb-35';
 const CORE = ['./', 'index.html', 'config.js', 'lib.js', 'manifest.webmanifest', 'favicon.svg', 'icon-192.png', 'icon-512.png', 'apple-touch-icon.png'];
 const SCOPE = self.registration.scope;
 
@@ -73,7 +73,10 @@ self.addEventListener('fetch', (e) => {
 self.addEventListener('push', (e) => {
   let d = {};
   try { d = e.data ? e.data.json() : {}; } catch (_) { d = { body: e.data ? e.data.text() : '' }; }
-  e.waitUntil(self.registration.showNotification(d.title || 'Звънец', { body: d.body || '', tag: d.tag || undefined, icon: 'icon-192.png', lang: 'bg', data: { url: d.url || './' } }));
+  const show = self.registration.showNotification(d.title || 'Звънец', { body: d.body || '', tag: d.tag || undefined, icon: 'icon-192.png', lang: 'bg', data: { url: d.url || './' } });
+  // Open copies of the app reload the timetable right away, so a change shows up without waiting for the next poll.
+  const tell = self.clients.matchAll({ type: 'window' }).then((list) => list.forEach((c) => c.postMessage({ zv: 'refresh' })));
+  e.waitUntil(Promise.all([show, tell.catch(() => {})]));
 });
 
 self.addEventListener('notificationclick', (e) => {

@@ -24,6 +24,7 @@
 <meta name="apple-mobile-web-app-title" content="Звънец">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="format-detection" content="telephone=no">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-f07KdodgcWQijC8EQLs8M/ygrvnjNcBpb14g1yqR6Ek=' 'sha256-wGiiMX8Tjq0vAP+LUd4oZnvmt0CYYGxjzxqtSrJQyTg=' 'sha256-/WVFdSREZYcuOAY46upMW7YExstGz6zVs/exweV7ers='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://*.supabase.co wss://*.supabase.co; worker-src 'self'; manifest-src 'self'; base-uri 'self'; form-action 'self'; object-src 'none'">
 <style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sofia+Sans:wght@400;500;600;700&family=Sofia+Sans+Extra+Condensed:wght@600;700;800&family=Sofia+Sans+Semi+Condensed:wght@500;600;700&display=swap">
 <style id="app-style">
@@ -665,6 +666,9 @@ textarea:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 3px var(-
 .anim-sl{animation:navSL .38s var(--ez-out)}
 @keyframes navSR{from{opacity:0;transform:translate3d(56px,0,0)}}
 @keyframes navSL{from{opacity:0;transform:translate3d(-56px,0,0)}}
+#net{position:fixed;left:50%;top:calc(env(safe-area-inset-top,0px) + 8px);transform:translate(-50%,-160%);z-index:60;max-width:calc(100% - 32px);padding:7px 14px;border-radius:999px;background:var(--ink);color:var(--surface);font-family:var(--f-ui);font-size:13px;font-weight:600;box-shadow:var(--shadow);transition:transform .3s var(--ez-out);pointer-events:none;text-align:center}
+#net.on{transform:translate(-50%,0)}
+@media (prefers-reduced-motion:reduce){#net{transition:none}}
 </style>
 </head>
 <body>
@@ -1310,18 +1314,31 @@ function setBell(el){
 
 function cacheState(s){ sSet('localStorage', 'zv-data', JSON.stringify(s)); }
 function editing(){ var a = document.activeElement; return (view === 'teacher' || sheetOpen === 'report' || sheetOpen === 'acct' || sheetOpen === 'post') && a && /INPUT|SELECT|TEXTAREA/.test(a.tagName); }
+function syncTime(){ var t = parseInt(sGet('localStorage', 'zv-sync') || '0', 10); return t > 0 ? new Date(t) : null; }
+function netBanner(){
+  var el = document.getElementById('net');
+  if (!el){ el = document.createElement('div'); el.id = 'net'; el.setAttribute('role', 'status'); el.setAttribute('aria-live', 'polite'); document.body.appendChild(el); }
+  return el;
+}
+function setNet(ok){
+  if (ok) sSet('localStorage', 'zv-sync', String(Date.now()));
+  var el = netBanner(), t = syncTime(), now0 = new Date(), when = '';
+  if (t) when = (isoDate(t) === isoDate(now0) ? 'от ' : 'от ' + t.getDate() + '.' + pad(t.getMonth() + 1) + ' ') + pad(t.getHours()) + ':' + pad(t.getMinutes());
+  el.textContent = ok ? '' : 'Няма връзка · програмата е запазена ' + (when || 'по-рано');
+  el.className = ok ? '' : 'on';
+}
 function refreshData(){
   if (refreshing || !SB) return;
   refreshing = true;
   SB.load().then(function(net){
-    refreshing = false; lastRefresh = Date.now();
+    refreshing = false; lastRefresh = Date.now(); setNet(true);
     net = normalize(net);
     if (JSON.stringify(net) === JSON.stringify(state)) return;
     state = net; cacheState(net);
     if (dirty.length){ var d = clone(net); dirty.forEach(function(k){ setVal(d, k, getVal(draft, k)); }); draft = d; }
     else draft = clone(net);
     if (!saving && !editing()) render();
-  }, function(){ refreshing = false; });
+  }, function(e){ refreshing = false; if (!e || !e.status) setNet(false); });
 }
 function checkCalendar(){
   if (!SB || !window.ZvLib) return;
@@ -3394,11 +3411,15 @@ function start(hot){
   setInterval(function(){ if (!document.hidden) refreshData(); }, 10 * 60e3);
   window.addEventListener('beforeinstallprompt', function(e){ e.preventDefault(); installEvt = e; if (view === 'student' && (page === 'now' || insFull)) render(); });
   window.addEventListener('appinstalled', function(){ installEvt = null; insFull = false; sSet('localStorage', 'zv-ins-later', '1'); render(); flash('Инсталирано. Отвори Звънец от началния екран.'); });
-  if (SB && SB.fresh) lastRefresh = Date.now(); else refreshData();
+  if (SB && SB.fresh){ lastRefresh = Date.now(); setNet(true); } else refreshData();
+  window.addEventListener('offline', function(){ setNet(false); });
+  window.addEventListener('online', function(){ refreshData(); });
+  setInterval(function(){ if (!document.hidden && document.getElementById('net') && document.getElementById('net').className === 'on') refreshData(); }, 30e3);
   checkCalendar();
   pushInit();
   if (navigator.serviceWorker) navigator.serviceWorker.addEventListener('message', function(ev){
     var d = ev.data || {}, p = '';
+    if (d.zv === 'refresh'){ refreshData(); return; }
     if (d.zv !== 'open') return;
     try { p = new URL(d.url, location.href).searchParams.get('p') || ''; } catch (x) {}
     if (['now', 'week', 'tests', 'teach', 'hw'].indexOf(p) >= 0){ page = p; view = 'student'; sheetOpen = false; window.scrollTo(0, 0); render(); }
@@ -3436,6 +3457,28 @@ function get(table, query, off, acc){
     });
   }, function(e){ var err = new Error(String(e && e.message || e)); err.status = 0; err.table = table; throw err; });
 }
+// Only recent and upcoming events are downloaded; older ones stay in the database (and in the admin backup).
+var EVENT_DAYS = 120;
+function since(days){ var d = new Date(Date.now() - days * 864e5); return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
+// Crash reports: JS errors are sent to the reports table (shown to the admin as class "JS"), max 3 per session and once per message per day.
+(function(){
+  var sent = 0, seen = {};
+  function report(msg, where){
+    msg = String(msg || '').slice(0, 300);
+    if (!msg || /^Script error\.?$/.test(msg) || /extension:\/\//.test(where || '') || sent >= 3 || !URL0 || !KEY) return;
+    var day = new Date().toISOString().slice(0, 10), k = 'zv-err-' + day;
+    try { seen = JSON.parse(localStorage.getItem(k) || '{}'); } catch (e) { seen = {}; }
+    if (seen[msg]) return; seen[msg] = 1; sent++;
+    try { localStorage.setItem(k, JSON.stringify(seen)); } catch (e) {}
+    var dev = ''; try { dev = (localStorage.getItem('zv-dev') || 'anon').slice(0, 40) + '-js'; } catch (e) { dev = 'anon-js'; }
+    var ua = navigator.userAgent.replace(/^Mozilla\/5\.0 /, '').slice(0, 120);
+    var h = { apikey: KEY, 'Content-Type': 'application/json' }; if (/^eyJ/.test(KEY)) h.Authorization = 'Bearer ' + KEY;
+    try { fetch(URL0 + '/rest/v1/rpc/send_report', { method:'POST', headers:h, keepalive:true, body:JSON.stringify({ p_class:'JS', p_message:('[грешка] ' + msg + (where ? ' @ ' + where : '') + ' · ' + ua).slice(0, 500), p_device:dev }) }).catch(function(){}); } catch (e) {}
+  }
+  window.addEventListener('error', function(e){ if (e && e.message) report(e.message, (e.filename || '').split('/').pop() + ':' + (e.lineno || 0)); });
+  window.addEventListener('unhandledrejection', function(e){ var r = e && e.reason; if (r && r.status !== undefined) return; report(r && (r.stack || r.message) || r, 'promise'); });
+  window.ZvReport = report;
+})();
 function hhmm(t){ return String(t || '').slice(0, 5); }
 function buildState(t){
   var st = t.settings[0] || {};
@@ -3461,7 +3504,7 @@ function buildState(t){
 function load(){
   if (!C.url || /YOUR-PROJECT|YOUR-/.test(URL0 + KEY)){ var e0 = new Error('config.js'); e0.kind = 'config'; return Promise.reject(e0); }
   if (!/^https:\/\/[^\/]+$/.test(URL0)){ var e1 = new Error('URL: ' + URL0); e1.kind = 'url'; return Promise.reject(e1); }
-  return Promise.all([get('settings', 'select=*&order=id'), get('classes', 'select=*&order=name'), get('bells', 'select=*&order=shift,idx'), get('lessons', 'select=*&order=class_name,weekday,idx'), get('events', 'select=*&order=date,period,id')]).then(function(r){
+  return Promise.all([get('settings', 'select=*&order=id'), get('classes', 'select=*&order=name'), get('bells', 'select=*&order=shift,idx'), get('lessons', 'select=*&order=class_name,weekday,idx'), get('events', 'select=*&date=gte.' + since(EVENT_DAYS) + '&order=date,period,id')]).then(function(r){
     if (!r[1].length || !r[2].length || !r[3].length){ var e2 = new Error('classes ' + r[1].length + ', bells ' + r[2].length + ', lessons ' + r[3].length); e2.kind = 'empty'; throw e2; }
     return buildState({ settings:r[0], classes:r[1], bells:r[2], lessons:r[3], events:r[4] });
   });

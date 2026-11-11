@@ -1,0 +1,29 @@
+name: Tests
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+jobs:
+  app:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install
+        run: |
+          pip install pytest==8.3.3 playwright==1.48.0
+          python -m playwright install --with-deps chromium
+      - name: index.html matches src/
+        run: python tools/build.py --check
+      - name: App tests
+        run: python -m pytest -q tests
+  database:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Migrations apply on a fresh database, twice
+        run: bash tools/db-check.sh
