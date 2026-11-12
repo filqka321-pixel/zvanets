@@ -383,8 +383,7 @@ function heroHTML(now){
     var lbl = todayLive ? 'Остава днес' : (k === 1 ? 'Утре' : DAYS[focusDate.getDay()]) + ' · ' + focusDate.getDate() + ' ' + MONTHS[focusDate.getMonth()];
     list = '<div class="hl"><div class="hl-h"><span class="alert-h">' + esc(lbl) + '</span><span class="hl-c">' + rows.length + (rows.length === 1 ? ' час' : ' часа') + '</span></div>' + rows.map(function(x){
       var cur = todayLive && m >= x.start && m < x.end;
-      return '<div class="hl-r' + (cur ? ' cur' : '') + (x.cancelled ? ' cxl' : '') + '"><span class="hl-t">' + x.b.start + '</span><span class="hl-s">' + esc(short(x.subject) || 'Час') + (x.marks.length ? '<i class="hl-dot" title="Тест"></i>' : '') + '</span>' +
-        (x.room && !x.cancelled ? '<span class="hl-room">' + esc(x.room) + '</span>' : '<span class="hl-room none">—</span>') + '</div>';
+      return '<div class="hl-r' + (cur ? ' cur' : '') + (x.cancelled ? ' cxl' : '') + '"><span class="hl-t">' + x.b.start + '</span>' + hlRoom(x.room && !x.cancelled ? x.room : '') + '<span class="hl-s">' + esc(short(x.subject) || 'Час') + (x.marks.length ? '<i class="hl-dot" title="Тест"></i>' : '') + '</span></div>';
     }).join('') + '</div>';
   }
 
@@ -420,6 +419,10 @@ function weekHTML(now, mon, d){
   }).join('');
   return '<div class="h"><h2>Програма</h2><div class="wk"><button class="icon-b" data-act="week" data-o="-1" aria-label="Предишна седмица">‹</button><span class="wk-l">' + mon.getDate() + ' ' + MS[mon.getMonth()] + ' – ' + fri.getDate() + ' ' + MS[fri.getMonth()] + '<small>' + cap0 + '</small></span><button class="icon-b" data-act="week" data-o="1" aria-label="Следваща седмица">›</button></div></div><div class="days" role="group" aria-label="Ден от седмицата">' + tabs + '</div>';
 }
+function hlRoom(r){
+  if (!r) return '<span class="hl-room none">—</span>';
+  return '<span class="hl-room' + (String(r).length > 4 ? ' sm' : '') + '">' + esc(r) + '</span>';
+}
 function roomChip(r, changed){
   if (isNumRoom(r)) return '<div class="room' + (changed ? ' chg' : '') + '"><small>' + (changed ? 'нова' : 'стая') + '</small><b>' + esc(r) + '</b></div>';
   return '<div class="room txt' + (changed ? ' chg' : '') + '"><b>' + esc(r) + '</b></div>';
@@ -438,7 +441,7 @@ function lessonRow(x, isToday, m){
   var subj = x.has ? esc(x.subject || 'Час') : 'Свободен час';
   var who = x.has && x.teacher ? '<div class="ls-t">' + esc(x.teacher) + (x.teacherChanged ? ' · заместник' : '') + '</div>' : '';
   var room = x.has && x.room && !x.cancelled ? roomChip(x.room, x.roomChanged) : '<span></span>';
-  return '<div class="' + cls + '">' + num + '<div class="ls-m"><div class="ls-s">' + subj + '</div>' + who + (tags.length ? '<div class="tags">' + tags.join('') + '</div>' : '') + (notes.length ? '<div class="ls-note">' + notes.map(esc).join(' · ') + '</div>' : '') + '</div>' + room + '</div>';
+  return '<div class="' + cls + '">' + num + room + '<div class="ls-m"><div class="ls-s">' + subj + '</div>' + who + (tags.length ? '<div class="tags">' + tags.join('') + '</div>' : '') + (notes.length ? '<div class="ls-note">' + notes.map(esc).join(' · ') + '</div>' : '') + '</div></div>';
 }
 function dayHTML(plan, date, isToday, now){
   var ci = classInfo(state, myClass);
@@ -1036,8 +1039,7 @@ function tHeroHTML(now){
     var lbl = live ? 'Остава днес' : (k === 1 ? 'Утре' : DAYS[fDate.getDay()]) + ' · ' + fDate.getDate() + ' ' + MONTHS[fDate.getMonth()];
     list = '<div class="hl"><div class="hl-h"><span class="alert-h">' + esc(lbl) + '</span><span class="hl-c">' + esc(tName()) + '</span></div>' + rows.map(function(l){
       var c = live && m >= l.start && m < l.end;
-      return '<div class="hl-r' + (c ? ' cur' : '') + '"><span class="hl-t">' + l.bs + '</span><span class="hl-s">' + tCls(l) + ' <small>' + esc(short(l.subject)) + (l.end - l.start > 50 ? ' · до ' + l.be : '') + '</small></span>' +
-        (l.room ? '<span class="hl-room">' + esc(l.room) + '</span>' : '<span class="hl-room none">—</span>') + '</div>';
+      return '<div class="hl-r' + (c ? ' cur' : '') + '"><span class="hl-t">' + l.bs + '</span>' + hlRoom(l.room) + '<span class="hl-s">' + tCls(l) + ' <small>' + esc(short(l.subject)) + (l.end - l.start > 50 ? ' · до ' + l.be : '') + '</small></span></div>';
     }).join('') + '</div>';
   }
   return '<section class="hero hero-big" style="min-height:0"><div class="hero-top"><div class="clock">' + pad(now.getHours()) + ':' + pad(now.getMinutes()) + '</div><div class="date"><b>' + DAYS[now.getDay()] + '</b>' + now.getDate() + ' ' + MONTHS[now.getMonth()] + '</div></div>' +
@@ -1049,9 +1051,8 @@ function tWeekHTML(now){
   var head = '<div class="day-h"><div><b>' + DAYS[date.getDay()] + ', ' + date.getDate() + ' ' + MONTHS[date.getMonth()] + '</b><span class="sub">' + esc(tName()) + '</span></div></div>';
   var rows = (me ? me.ls : []).map(function(l){
     var cur = isToday && m >= l.start && m < l.end, past = isToday && m >= l.end;
-    return '<div class="ls' + (cur ? ' cur' : '') + (past ? ' past' : '') + '"><div class="ls-n"><b>' + l.n + '</b><small>' + l.bs + '<br>' + l.be + '</small></div>' +
-      '<div class="ls-m"><div class="ls-s">' + tCls(l) + (l.group ? ' · ' + l.group : '') + '</div><div class="ls-t">' + esc(l.subject) + '</div>' + (cur ? '<div class="tags"><span class="now-tag">Сега</span></div>' : '') + '</div>' +
-      (l.room ? roomChip(l.room, false) : '<span></span>') + '</div>';
+    return '<div class="ls' + (cur ? ' cur' : '') + (past ? ' past' : '') + '"><div class="ls-n"><b>' + l.n + '</b><small>' + l.bs + '<br>' + l.be + '</small></div>' + (l.room ? roomChip(l.room, false) : '<span></span>') +
+      '<div class="ls-m"><div class="ls-s">' + tCls(l) + (l.group ? ' · ' + l.group : '') + '</div><div class="ls-t">' + esc(l.subject) + '</div>' + (cur ? '<div class="tags"><span class="now-tag">Сега</span></div>' : '') + '</div></div>';
   }).join('');
   return weekHTML(now, mon, d) + '<div class="day-p">' + head + '<div class="lessons">' + (rows || '<div class="empty">Няма часове с въведените класове в този ден.</div>') + '</div></div>' + tWarn();
 }
