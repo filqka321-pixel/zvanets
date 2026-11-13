@@ -1,4 +1,4 @@
-const VERSION = 'zvanets-sb-42';
+const VERSION = 'zvanets-sb-43';
 const CORE = ['./', 'index.html', 'config.js', 'lib.js', 'manifest.webmanifest', 'favicon.svg', 'icon-192.png', 'icon-512.png', 'apple-touch-icon.png'];
 const SCOPE = self.registration.scope;
 

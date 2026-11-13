@@ -251,9 +251,12 @@ def test_subject_names_are_cleaned(app):
     for l in app.data['lessons']:
         if l['class_name'] == '10е' and l['idx'] == 0: l['subject'] = 'Математика - ООП'
         if l['class_name'] == '10е' and l['idx'] == 1: l['subject'] = 'Английски език (ПП)'
+        if l['class_name'] == '10е' and l['idx'] == 2: l['subject'] = 'Модул1 - Устно общуване ФЕ 2ри ЧЕ - ПП/зад.модул'
+        if l['class_name'] == '10е' and l['idx'] == 3: l['subject'] = 'Френски език - РП/УП-А /8-10е,ж/'
     pg = pick_class(app)
     txt = pg.inner_text('.hero')
     assert 'ООП' not in txt and 'Математика' in txt and 'Английски език · ПП' in txt, txt
+    assert 'Устно общуване ФЕ · ПП' in txt and 'Френски език · РП' in txt and 'Модул' not in txt and '/8-10' not in txt, txt
 
 
 def test_open_lists_stay_open_and_sheet_survives_text_selection(app):

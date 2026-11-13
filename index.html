@@ -24,7 +24,7 @@
 <meta name="apple-mobile-web-app-title" content="Звънец">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="format-detection" content="telephone=no">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-j+HEKOAG5I4p/6rxJFD3BdKuQ+z+lTcQoB2uc+c7iXg=' 'sha256-io9GfJg4xDIKy0DEFY1lTMVMdAn7JDn2pH+B6bKYgCQ=' 'sha256-/WVFdSREZYcuOAY46upMW7YExstGz6zVs/exweV7ers='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://*.supabase.co wss://*.supabase.co; worker-src 'self'; manifest-src 'self'; base-uri 'self'; form-action 'self'; object-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-j+HEKOAG5I4p/6rxJFD3BdKuQ+z+lTcQoB2uc+c7iXg=' 'sha256-ip5r4df1PGMUeymeUxTouv1zKIyZooZvpItJk6vXhdo=' 'sha256-/WVFdSREZYcuOAY46upMW7YExstGz6zVs/exweV7ers='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://*.supabase.co wss://*.supabase.co; worker-src 'self'; manifest-src 'self'; base-uri 'self'; form-action 'self'; object-src 'none'">
 <style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sofia+Sans:wght@400;500;600;700&family=Sofia+Sans+Extra+Condensed:wght@600;700;800&family=Sofia+Sans+Semi+Condensed:wght@500;600;700&display=swap">
 <style id="app-style">
@@ -3677,16 +3677,29 @@ function since(days){ var d = new Date(Date.now() - days * 864e5); return d.getF
   window.addEventListener('unhandledrejection', function(e){ var r = e && e.reason; if (r && r.status !== undefined) return; report(r && (r.stack || r.message) || r, 'promise'); });
   window.ZvReport = report;
 })();
-// Subject names from aSc: drop "ООП" (regular lessons) and turn "- ПП", "(РП)" etc. into a short tag: "Математика · ПП".
+// Subject names from aSc: drop "ООП"/"ЗУЧ" (regular lessons), aSc's class lists ("/8-12е,ж/") and module numbers,
+// and turn "- ПП", "РП/УП-А", "(ИУЧ)" etc. into one short tag: "Математика · РП".
 function subjClean(s){
   s = String(s == null ? '' : s).replace(/\s+/g, ' ').trim();
   if (!s) return s;
   return s.split(/\s+\/\s+/).map(function(p){
-    p = p.replace(/\s*\(?\s*общообразователна подготовка\s*\)?/gi, '');
-    p = p.replace(/\s*[-–—,]?\s*\(?\s*ООП\s*\)?(?=\s*$)/g, '');
-    p = p.replace(/^(.*\S)\s*(?:[-–—,]\s*|\(\s*)([А-Я]{2,4})\s*\)?$/, '$1 · $2');
-    p = p.replace(/^(.*[а-я])\s+(ПП|РП|ИУЧ|ФУЧ|ПрП|ОбП)$/, '$1 · $2');
-    return p.replace(/\s*[-–—,]\s*$/, '').trim();
+    var tags = [], m, E = '(?=\\s|$|[-–—,/()])';
+    p = p.replace(/\s*\(?\s*общообразователна подготовка\s*\)?/gi, ' ООП');
+    p = p.replace(/^Поток\s*(\d)/, 'Поток $1');
+    // class lists at the end: "/8-12е,ж/", "/10в,г,д/", "/12Г/", "/11клас/", " 12клас", "/10/", "(10)"
+    for (var k = 0; k < 2; k++) p = p
+      .replace(/\s*\/\s*\d{1,2}(?:\s*[-,]\s*\d{1,2})*\s*[а-яА-Я]?(?:\s*,\s*[а-яА-Я])*\s*(?:клас)?\s*\/?\s*$/, '')
+      .replace(/\s+\d{1,2}\s*клас\s*$/, '')
+      .replace(/\s*\(\s*\d{1,2}[^)]*\)\s*$/, '');
+    p = p.replace(/^Модул\s*\d+\s*-\s*/i, '').replace(/^(?:Втори\s+)?чужд език\s*-\s*/i, '');
+    p = p.replace(new RegExp('\\s+2-?ри\\s+ЧЕ' + E, 'g'), '');
+    p = p.replace(/РП\/УП(?:-[А-Я])?/g, 'РП').replace(/ДП\/ЧЕ/g, 'ДП').replace(/ПП\/(?:зад|изб)\.?\s*модул/g, 'ПП').replace(/ООП-\d*[А-Я]?/g, 'ООП')
+         .replace(new RegExp('-?ЗУЧ' + E, 'g'), ' ООП').replace(/^(.*\S)-(ИУЧ|ФУЧ|ООП)$/, '$1 $2');
+    // peel tags off the end: "X - ФУЧ - ДП" -> X + [ФУЧ, ДП]
+    while ((m = /^(.*\S)\s*(?:[-–—,]\s*|\(\s*|\s)(ООП|ПП|РП|ДП|ИУЧ|ФУЧ|ПрП|ОбП)\s*\)?\s*$/.exec(p))){ tags.unshift(m[2]); p = m[1].replace(/\s*[-–—,]\s*$/, ''); }
+    p = p.replace(/\s*[-–—,]\s*$/, '').trim();
+    tags = tags.filter(function(t){ return t !== 'ООП'; });
+    return tags.length ? p + ' · ' + tags[0] : p;
   }).join(' / ');
 }
 window.zvSubj = subjClean;
