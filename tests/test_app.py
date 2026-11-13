@@ -339,3 +339,41 @@ def test_import_term_and_week_lessons(app, tmp_path):
     term2 = 2 <= dt.date.today().month <= 8  # Feb..Aug
     assert subj[0] == ('Български език и литература' if term2 else 'Музика'), subj
     assert subj[1] == 'Химия (седм. А) / Физика (седм. Б)', subj
+
+
+def test_group_lessons_pick_your_own(app):
+    for l in app.data['lessons']:
+        if l['class_name'] == '10е' and l['weekday'] in (1, 2, 3, 4, 5) and l['idx'] == 2:
+            l['subject'] = 'Поток 1'; l['teacher'] = 'Дора Илиева · Ирина Йорданова · Петя Костадинова'; l['room'] = '305/306/405'
+    pg = pick_class(app)
+    pg.click('.tb:has-text("Програма")'); pg.wait_for_selector('.grp-pick')
+    row = pg.locator('.ls:has-text("Поток 1")').first
+    assert '3 групи' in row.inner_text() and '305/306' not in row.inner_text()
+    row.locator('.grp-pick').click(); pg.wait_for_selector('.grp-o')
+    pg.click('.grp-o:has-text("Ирина Йорданова")'); pg.wait_for_selector('.sheet', state='detached')
+    row = pg.locator('.ls:has-text("Поток 1")').first
+    txt = row.inner_text()
+    assert 'Ирина Йорданова' in txt and '306' in txt and 'Дора' not in txt, txt
+    pg.reload(); pg.click('.tb:has-text("Програма")'); pg.wait_for_selector('.ls')
+    assert '306' in pg.locator('.ls:has-text("Поток 1")').first.inner_text()  # remembered on this phone
+    assert app.errors == [], app.errors
+
+
+def test_people_list_loads_more_than_1000(app):
+    app.perms = ['*']
+    app.data['editors'] = [{'email': 'boss@example.com', 'class_name': '*'}]
+    app.data['members'] = [{'user_id': 'u%d' % i, 'email': 's%d@x.bg' % i, 'role': 'student', 'name': 'Ученик %d' % i, 'class_name': '10е',
+                            'teacher_name': '', 'teacher_key': '', 'status': 'active', 'created_at': '2026-11-01T10:00:00Z'} for i in range(1500)]
+    real = app._sb
+    def paged(route):
+        import urllib.parse as up
+        u = up.urlparse(route.request.url)
+        if u.path.endswith('/members') and route.request.method == 'GET':
+            q = up.parse_qs(u.query); off = int(q.get('offset', ['0'])[0]); lim = min(int(q.get('limit', ['1000'])[0]), 1000)
+            return route.fulfill(content_type='application/json', body=json.dumps(app.data['members'][off:off + lim]))
+        return real(route)
+    app.page.route('https://test.supabase.co/**', paged)
+    pg = _login(app)
+    pg.click('[data-act="to-teacher"]'); pg.click('.tab:has-text("Хора")')
+    pg.wait_for_selector('text=Ученици')
+    assert '1500' in pg.inner_text('.panel:has-text("Ученици") .aside')

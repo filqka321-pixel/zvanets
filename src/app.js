@@ -338,7 +338,13 @@ function tabbarHTML(now){
     return '<button class="tb' + (on ? ' on' : '') + (off ? ' off' : '') + (on && from !== to ? ' just' : '') + '" data-act="' + (off ? 'page-off' : 'page') + '" data-p="' + p[0] + '"' + (on ? ' aria-current="page"' : '') + '>' + ICONS[p[0]] + '<span>' + p[1] + '</span>' + (p[0] === 'tests' && n ? '<i class="tb-badge">' + n + '</i>' : '') + (p[0] === 'hw' && !isT() && hwOpen(now) ? '<i class="tb-badge">' + hwOpen(now) + '</i>' : '') + '</button>';
   }).join('') + '</div></nav>';
 }
-function metaInline(x){ var p = ''; if (x.room) p += ' · <b>' + esc(roomLabel(x.room)) + '</b>'; if (x.teacher) p += ' · ' + esc(x.teacher); return p; }
+function metaInline(x){
+  var p = '';
+  if (x.grp && !x.grp.chosen) return p + (x.room ? ' · <b>' + esc(roomLabel(x.room)) + '</b>' : '') + ' · ' + x.grp.n + ' групи';
+  if (x.room && !manyRooms(x.room)) p += ' · <b>' + esc(roomLabel(x.room)) + '</b>';
+  if (x.teacher) p += ' · ' + esc(x.teacher);
+  return p;
+}
 function heroHTML(now){
   var st = getStatus(state, myClass, now), plan = st.plan, eb = '', ti = '', me = '', ex = '';
   function nextTitle(n){ return n ? cap(dayWord(n.date, now)) + ' от ' + n.slot.b.start : 'Няма насрочени часове'; }
@@ -346,7 +352,9 @@ function heroHTML(now){
   switch (st.kind){
     case 'in':
       eb = 'Сега · ' + ordWord(st.slot.n) + ' час'; ti = esc(st.slot.subject || 'Час');
-      me = [st.slot.room ? '<b>' + esc(roomLabel(st.slot.room)) + '</b>' + (st.slot.roomChanged ? ' <span class="chg">нова стая</span>' : '') : '', st.slot.teacher ? esc(st.slot.teacher) + (st.slot.teacherChanged ? ' <span class="chg">заместник</span>' : '') : ''].filter(Boolean).join(' · ');
+      me = [st.slot.room && !manyRooms(st.slot.room) ? '<b>' + esc(roomLabel(st.slot.room)) + '</b>' + (st.slot.roomChanged ? ' <span class="chg">нова стая</span>' : '') : '',
+        st.slot.grp && !st.slot.grp.chosen && !st.slot.grp.all ? '<button class="grp-pick hero" data-act="grp-open" data-s="' + esc(st.slot.subject) + '">' + st.slot.grp.n + ' групи · <u>избери своята</u></button>'
+        : st.slot.teacher ? esc(st.slot.teacher) + (st.slot.teacherChanged ? ' <span class="chg">заместник</span>' : '') : ''].filter(Boolean).join(' · ');
       ex = '<div class="prog-row"><div class="progress"><i style="width:' + Math.round(st.pct * 100) + '%"></i></div><span class="left">остават ' + dur(st.left) + '</span></div>' +
         (st.next ? '<div class="now-next">След това: <b>' + esc(st.next.subject || 'Час') + '</b> в ' + st.next.b.start + (st.next.room ? ' · ' + esc(roomLabel(st.next.room)) : '') + '</div>' : '<div class="now-next">Това е последният час за днес.</div>');
       break;
@@ -428,9 +436,12 @@ function weekHTML(now, mon, d){
 }
 function hlRoom(r){
   if (!r) return '<span class="hl-room none">—</span>';
+  if (manyRooms(r)) return '<span class="hl-room sm">групи</span>';
   return '<span class="hl-room' + (String(r).length > 4 ? ' sm' : '') + '">' + esc(r) + '</span>';
 }
+function manyRooms(r){ return String(r || '').split('/').length >= 3; }
 function roomChip(r, changed){
+  if (manyRooms(r)) return '<div class="room txt"><b>групи</b></div>';
   if (isNumRoom(r)) return '<div class="room' + (changed ? ' chg' : '') + '"><small>' + (changed ? 'нова' : 'стая') + '</small><b>' + esc(r) + '</b></div>';
   return '<div class="room txt' + (changed ? ' chg' : '') + '"><b>' + esc(r) + '</b></div>';
 }
@@ -448,6 +459,12 @@ function lessonRow(x, isToday, m){
   var subj = x.has ? esc(x.subject || 'Час') : 'Свободен час';
   var who = x.has && x.teacher ? '<div class="ls-t">' + esc(x.teacher) + (x.teacherChanged ? ' · заместник' : '') + '</div>' : '';
   var room = x.has && x.room && !x.cancelled ? roomChip(x.room, x.roomChanged) : '<span></span>';
+  if (x.grp && !x.cancelled){
+    var sd = ' data-act="grp-open" data-s="' + esc(x.subject) + '"';
+    if (x.grp.chosen) who = '<div class="ls-t">' + esc(x.teacher) + ' · <button class="link-btn xs"' + sd + '>смени групата</button></div>';
+    else if (!x.grp.all){ who = '<button class="grp-pick"' + sd + '>' + x.grp.n + ' групи · <u>избери своята</u></button>'; if (!x.room) room = '<button class="room txt grp-r"' + sd + ' aria-label="Избери група"><b>?</b></button>'; }
+    else who = '<div class="ls-t">' + esc(x.teacher) + ' · <button class="link-btn xs"' + sd + '>избери група</button></div>';
+  }
   return '<div class="' + cls + '">' + num + room + '<div class="ls-m"><div class="ls-s">' + subj + '</div>' + who + (tags.length ? '<div class="tags">' + tags.join('') + '</div>' : '') + (notes.length ? '<div class="ls-note">' + notes.map(esc).join(' · ') + '</div>' : '') + '</div></div>';
 }
 function dayHTML(plan, date, isToday, now){
@@ -773,6 +790,7 @@ function sheetHTML(){
   if (sheetOpen === 'role') return roleSheetHTML();
   if (sheetOpen === 'news') return newsSheetHTML();
   if (sheetOpen === 'de') return deSheetHTML();
+  if (sheetOpen === 'grp') return grpSheetHTML();
   if (sheetOpen === 'report') return reportSheetHTML();
   if (sheetOpen === 'acct') return acctSheetHTML();
   if (sheetOpen === 'post') return postSheetHTML();
@@ -1359,9 +1377,46 @@ function dayPlan(s, name, date){
   var plan = dayPlanRaw(s, name, date);
   if (s !== state || name !== MINE || isT()) return plan;
   var info = deInfo(name), p = dePref();
-  if (!deValid(info, p)) return plan;
-  plan.slots = plan.slots.map(function(x){ return deSlot(x, info, p); });
+  if (deValid(info, p)) plan.slots = plan.slots.map(function(x){ return deSlot(x, info, p); });
+  var gp = grpPref()[name] || {};
+  plan.slots = plan.slots.map(function(x){ return grpSlot(x, gp); });
   return plan;
+}
+// ---------- group lessons: several teachers at once (profile groups, "Поток", languages) ----------
+// The student picks their own teacher once per subject; it is remembered on this phone.
+function grpPref(){ var p = jparse(sGet('localStorage', 'zv-grp')); return p && typeof p === 'object' ? p : {}; }
+function grpParts(t, room){
+  var ps = splitTeachers(t, ''); if (ps.length < 2) return null;
+  var rs = String(room || '').split('/').map(function(r){ return r.trim(); }).filter(Boolean);
+  ps.forEach(function(p, i){ if (!p.room) p.room = rs.length === ps.length ? rs[i] : rs.length === 1 ? rs[0] : ''; });
+  return ps;
+}
+function grpSlot(x, gp){
+  if (!x.has || x.teacherChanged || !x.teacher) return x;
+  var ps = grpParts(x.teacher, x.room); if (!ps) return x;
+  var want = gp[x.subject], pick = null;
+  if (want === '*') return Object.assign({}, x, { grp:{ n:ps.length, all:true } });
+  ps.forEach(function(p){ if (want && tKey(p.name) === want) pick = p; });
+  if (pick) return Object.assign({}, x, { teacher:pick.name, room: x.roomChanged ? x.room : pick.room, grp:{ n:ps.length, chosen:true } });
+  var rooms = ps.map(function(p){ return p.room; }).filter(function(r, i, a){ return r && a.indexOf(r) === i; });
+  return Object.assign({}, x, { room: rooms.length === 1 ? rooms[0] : '', grp:{ n:ps.length } });
+}
+function grpOptions(subject){
+  var tt = state.tt[MINE] || {}, seen = {}, out = [];
+  Object.keys(tt).forEach(function(d){ (tt[d] || []).forEach(function(c){
+    if (!c || c.s !== subject) return;
+    (grpParts(c.t, c.r) || []).forEach(function(p){ var k = tKey(p.name); if (!seen[k]){ seen[k] = 1; out.push({ k:k, name:p.name, room:p.room, group:p.group }); } });
+  }); });
+  return out;
+}
+var grpSubj = '';
+function grpSheetHTML(){
+  var opts = grpOptions(grpSubj), cur = (grpPref()[MINE] || {})[grpSubj];
+  var body = '<p class="gh-p">В този час класът е разделен на групи. Избери учителя си и ще виждаш само своята стая. Запазва се на този телефон.</p><div class="grp-opts">' +
+    opts.map(function(o){ return '<button class="grp-o' + (cur === o.k ? ' on' : '') + '" data-act="grp-set" data-k="' + esc(o.k) + '"><b>' + esc(o.name) + '</b><small>' + (o.room ? (isNumRoom(o.room) ? 'стая ' : '') + esc(o.room) : 'без стая') + (o.group ? ' · ' + esc(o.group) : '') + '</small></button>'; }).join('') +
+    '</div><button class="link-btn" data-act="grp-set" data-k="*">' + (cur === '*' ? '✓ ' : '') + 'Не съм в група – покажи всички</button>';
+  return '<div class="sheet-wrap" data-act="sheet-x"><div class="sheet" data-act="noop" role="dialog" aria-modal="true" aria-label="Твоята група">' +
+    '<div class="sheet-h"><h2>' + esc(short(grpSubj) || 'Твоята група') + '</h2><button class="icon-b" data-act="sheet-x" aria-label="Затвори">×</button></div>' + body + '</div></div>';
 }
 function deSheetHTML(){
   var info = deInfo(MINE);
@@ -1666,6 +1721,7 @@ function acStatusHTML(m){
   if (isAdmin()) return '<div class="info">Ти си администратор: променяш програмата, класовете и звънеца от молива горе и одобряваш учителите.</div>' +
     '<button class="btn primary wide" data-act="po-new">' + PLUS + 'Тест или домашно</button>';
   if (m.status === 'blocked') return '<div class="info warn">Профилът е спрян от администратора.</div>';
+  if (m.status === 'pending' && m.role === 'student') return '<div class="info">Смени класа си на <b>' + esc(m.class_name) + '</b>. Администраторът трябва да го потвърди, преди да добавяш домашни.</div><button class="btn wide" data-act="ac-check">Провери пак</button>';
   if (m.status === 'pending') return '<div class="info">Чакаш одобрение. Администраторът трябва да потвърди, че си <b>' + esc(m.teacher_name) + '</b>. Щом го направи, тук ще можеш да добавяш тестове и домашни.</div><button class="btn wide" data-act="ac-check">Провери пак</button>';
   if (m.role === 'teacher'){
     var cl = postClasses();
@@ -1999,7 +2055,7 @@ function poSave(){
     poBusy = false;
     var m = String(e && e.message || '');
     if (e && e.status === 401){ logout(); acOpen(null, f.type); flash('Входът изтече. Влез отново.'); return; }
-    poErr = e.status === 0 ? 'Няма интернет. Опитай пак.' : /too many/i.test(m) ? 'Днес вече добави 30 записа. Опитай утре.'
+    poErr = e.status === 0 ? 'Няма интернет. Опитай пак.' : /too many/i.test(m) ? 'Днес вече добави 30 записа. Опитай утре.' : /too long/i.test(m) ? 'Текстът е твърде дълъг (до 500 знака).'
       : (e.status === 403 || e.code === '42501' || /row-level|policy|rights/i.test(m)) ? 'Нямаш права да публикуваш за ' + f.cls + '.' : 'Не успя (' + m + ').';
     render();
   });
@@ -2031,7 +2087,9 @@ function tPostHTML(now){
 function pendingN(){ return (ppl || []).filter(function(r){ return r.status === 'pending'; }).length; }
 function pplLoad(){
   pplBusy = true; pplErr = '';
-  return ensureSession().then(function(){ return sbw('GET', 'members?select=*&order=created_at.desc&limit=3000'); }).then(function(r){ ppl = r || []; pplBusy = false; softRender(); },
+  // the server returns at most 1000 rows at a time, so a big school is loaded in pages
+  function page(off, acc){ return sbw('GET', 'members?select=*&order=created_at.desc,user_id&limit=1000&offset=' + off).then(function(r){ acc = acc.concat(r || []); return r && r.length === 1000 && off < 20000 ? page(off + 1000, acc) : acc; }); }
+  return ensureSession().then(function(){ return page(0, []); }).then(function(r){ ppl = r || []; pplBusy = false; softRender(); },
     function(e){ ppl = []; pplBusy = false; pplErr = missing(e) ? 'Профилите още не са включени. Пусни school.sql в Supabase.' : 'Списъкът не се зареди (' + e.message + ').'; softRender(); });
 }
 function tClassesOf(key){
@@ -2127,8 +2185,8 @@ function pplHTML(){
     (pplErr ? '<div class="empty">' + esc(pplErr) + '</div>' : ppl === null ? '<div class="empty">Зареждане…</div>'
       : pend.length ? '<div class="acc-list">' + pend.map(function(r){
           return '<div class="acc-row"><div>' + who(r, (r.role === 'teacher' ? tcl(r) + ' · ' : '') + esc(fmtWhen(r.created_at))) + '</div><div class="acc-b"><button class="btn primary sm" data-act="pp-ok"' + ex(r) + '>Одобри</button>' +
-            armBtn('ppno:' + r.user_id, 'btn ghost sm danger', 'pp-no', 'Откажи', 'Потвърди', ex(r)) + '</div></div>'; }).join('') + '</div><p class="hint">Одобрявай само учители, които познаваш. Провери, че името и имейлът са на човека.</p>'
-      : '<div class="empty">Няма нови учители. Учителите се регистрират от приложението: „Вход“ → „Нов профил“ → „Учител“.</div>') + '</div>';
+            armBtn('ppno:' + r.user_id, 'btn ghost sm danger', 'pp-no', 'Откажи', 'Потвърди', ex(r)) + '</div></div>'; }).join('') + '</div><p class="hint">Учители: одобрявай само хора, които познаваш. Ученици тук чакат, защото са сменили класа си – провери, че е истинският им клас.</p>'
+      : '<div class="empty">Няма чакащи. Учителите се регистрират от приложението: „Вход“ → „Нов профил“ → „Учител“.</div>') + '</div>';
   h += '<div class="panel"><div class="form-h"><h3>Учители</h3><span class="aside">' + tch.length + '</span></div>' + (tch.length ? '<div class="acc-list">' + tch.map(function(r){
       return '<div class="acc-row"><div>' + who(r, tcl(r)) + '</div><div class="acc-b">' + roleBtn(r) + armBtn('ppb:' + r.user_id, 'btn ghost sm danger', 'pp-block', 'Спри', 'Потвърди', ex(r)) + '</div></div>' + roleEd(r); }).join('') + '</div>'
     : '<div class="empty">Още няма одобрени учители.</div>') + '</div>';
@@ -2780,6 +2838,8 @@ APP.addEventListener('click', function(ev){
     case 'ac-role': acForm.role = btn.dataset.r === 'teacher' ? 'teacher' : 'student'; acErr = ''; render(); break;
     case 'ac-in': acSignIn(); break;
     case 'ac-verify': acVerify(); break;
+    case 'grp-open': grpSubj = btn.dataset.s || ''; sheetOpen = 'grp'; render(); break;
+    case 'grp-set': var gp0 = grpPref(); gp0[MINE] = gp0[MINE] || {}; gp0[MINE][grpSubj] = btn.dataset.k; sSet('localStorage', 'zv-grp', JSON.stringify(gp0)); sheetOpen = false; render(); flash(btn.dataset.k === '*' ? 'Показвам всички групи.' : 'Запазено. Виждаш само своята група.'); break;
     case 'ac-pw': acForm.mode = 'pw'; acForm.password = ''; acForm.password2 = ''; acErr = ''; render(); break;
     case 'ac-pw-x': acForm.mode = 'in'; acForm.password = ''; acForm.password2 = ''; acErr = ''; render(); break;
     case 'ac-pw-save': acPwSave(); break;

@@ -55,3 +55,14 @@ alter table classes  enable row level security;
 alter table bells    enable row level security;
 alter table lessons  enable row level security;
 alter table events   enable row level security;
+
+-- всеки (и без вход) може да чете програмата и записите
+do $$
+declare t text;
+begin
+  foreach t in array array['settings', 'classes', 'bells', 'lessons', 'events'] loop
+    if not exists (select 1 from pg_policies where schemaname = 'public' and tablename = t and cmd = 'SELECT') then
+      execute format('create policy "public read" on %I for select using (true)', t);
+    end if;
+  end loop;
+end $$;
