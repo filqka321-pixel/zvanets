@@ -245,3 +245,33 @@ def test_import_keeps_rooms_when_the_file_has_none(app, tmp_path):
     pg.wait_for_timeout(800)
     rooms = {l['subject']: l['room'] for l in seen['p_lessons']}
     assert rooms == {'Математика': '101', 'Химия': ''}, rooms
+
+
+def test_subject_names_are_cleaned(app):
+    for l in app.data['lessons']:
+        if l['class_name'] == '10е' and l['idx'] == 0: l['subject'] = 'Математика - ООП'
+        if l['class_name'] == '10е' and l['idx'] == 1: l['subject'] = 'Английски език (ПП)'
+    pg = pick_class(app)
+    txt = pg.inner_text('.hero')
+    assert 'ООП' not in txt and 'Математика' in txt and 'Английски език · ПП' in txt, txt
+
+
+def test_open_lists_stay_open_and_sheet_survives_text_selection(app):
+    import datetime as dt
+    app.data['events'].append({'id': 'old', 'type': 'project', 'date': (dt.date.today() - dt.timedelta(days=3)).isoformat(), 'period': None,
+                               'subject': 'Математика', 'note': 'стара', 'classes': ['10е'], 'all_school': False, 'cancel': False, 'room': '', 'substitute': ''})
+    pg = pick_class(app)
+    pg.click('.tb:has-text("Домашни")'); pg.wait_for_selector('details[data-k="past-hw"]')
+    pg.click('details[data-k="past-hw"] summary')
+    pg.evaluate("document.querySelector('[data-act=\"page\"]') && 0")
+    pg.click('.tb:has-text("Домашни")')  # any redraw
+    assert pg.evaluate("document.querySelector('details[data-k=\"past-hw\"]').open")
+    # select text in a field and release the mouse outside the sheet: the sheet must stay open
+    pg.click('[data-act="acct-open"]')
+    box = pg.locator('[data-f="ac"][data-k="email"]').bounding_box()
+    pg.mouse.move(box['x'] + 5, box['y'] + 5); pg.mouse.down()
+    pg.mouse.move(5, 5); pg.mouse.up()
+    pg.wait_for_timeout(200)
+    assert pg.locator('.sheet').count() == 1
+    pg.mouse.click(5, 5)  # a real tap on the backdrop still closes it
+    pg.wait_for_selector('.sheet', state='detached')

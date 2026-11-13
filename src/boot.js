@@ -38,6 +38,19 @@ function since(days){ var d = new Date(Date.now() - days * 864e5); return d.getF
   window.addEventListener('unhandledrejection', function(e){ var r = e && e.reason; if (r && r.status !== undefined) return; report(r && (r.stack || r.message) || r, 'promise'); });
   window.ZvReport = report;
 })();
+// Subject names from aSc: drop "ООП" (regular lessons) and turn "- ПП", "(РП)" etc. into a short tag: "Математика · ПП".
+function subjClean(s){
+  s = String(s == null ? '' : s).replace(/\s+/g, ' ').trim();
+  if (!s) return s;
+  return s.split(/\s+\/\s+/).map(function(p){
+    p = p.replace(/\s*\(?\s*общообразователна подготовка\s*\)?/gi, '');
+    p = p.replace(/\s*[-–—,]?\s*\(?\s*ООП\s*\)?(?=\s*$)/g, '');
+    p = p.replace(/^(.*\S)\s*(?:[-–—,]\s*|\(\s*)([А-Я]{2,4})\s*\)?$/, '$1 · $2');
+    p = p.replace(/^(.*[а-я])\s+(ПП|РП|ИУЧ|ФУЧ|ПрП|ОбП)$/, '$1 · $2');
+    return p.replace(/\s*[-–—,]\s*$/, '').trim();
+  }).join(' / ');
+}
+window.zvSubj = subjClean;
 function hhmm(t){ return String(t || '').slice(0, 5); }
 function buildState(t){
   var st = t.settings[0] || {};
@@ -49,10 +62,10 @@ function buildState(t){
   t.lessons.slice().sort(function(a, b){ return a.class_name < b.class_name ? -1 : a.class_name > b.class_name ? 1 : a.weekday - b.weekday || a.idx - b.idx; }).forEach(function(l){
     var c = s.tt[l.class_name] = s.tt[l.class_name] || {}, row = c[String(l.weekday)] = c[String(l.weekday)] || [];
     while (row.length < l.idx) row.push(null);
-    row[l.idx] = { s:l.subject, r:l.room, t:l.teacher };
+    row[l.idx] = { s:subjClean(l.subject), r:l.room, t:l.teacher };
   });
   t.events.forEach(function(e){
-    var x = { id:e.id, type:e.type, date:e.date, p:e.period, subject:e.subject, note:e.note, cls:e.classes || [] };
+    var x = { id:e.id, type:e.type, date:e.date, p:e.period, subject:subjClean(e.subject), note:e.note, cls:e.classes || [] };
     if (e.all_school) x.all = true; if (e.cancel) x.cancel = true; if (e.room) x.room = e.room; if (e.substitute) x.sub = e.substitute;
     if (e.created_by) x.by = e.created_by; if (e.author) x.au = e.author; if (e.author_role) x.ar = e.author_role;
     s.events.push(x);

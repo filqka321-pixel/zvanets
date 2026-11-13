@@ -27,7 +27,12 @@ var BELL = '<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><
 var CHEV = '<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M4 6l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 
 var SHORT = {'Химия и опазване на околната среда':'Химия','Физика и астрономия':'Физика','Биология и здравно образование':'Биология','Български език и литература':'Български език','Физическо възпитание и спорт':'Физическо','География и икономика':'География','История и цивилизации':'История','Информационни технологии':'ИТ'};
-function short(s){ return SHORT[s] || s || ''; }
+var subjClean = window.zvSubj || function(s){ return s; };
+function short(s){
+  if (!s) return '';
+  var m = /^(.*) · ([А-Яа-я]{2,4})$/.exec(s);
+  return m ? (SHORT[m[1]] || m[1]) + ' · ' + m[2] : SHORT[s] || s;
+}
 function durS(m){ m = Math.max(1, Math.ceil(m)); return m < 60 ? m + ' мин' : Math.floor(m / 60) + ':' + pad(m % 60) + ' ч'; }
 var ICONS = {
   hw:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 6.5c-2.4-1.5-5.2-1.6-8-.6v12.6c2.8-1 5.6-.9 8 .6 2.4-1.5 5.2-1.6 8-.6V5.9c-2.8-1-5.6-.9-8 .6Z"/><path d="M12 6.5v12.6"/></svg>',
@@ -267,7 +272,9 @@ function render(){
   if (view === 'student' && sheetOpen && chosen && !guide) h += sheetHTML();
   var ss0 = APP.querySelector('.st-scroll'); if (ss0) statScroll = ss0.scrollLeft;
   var oldSheet = APP.querySelector('.sheet-wrap:not(.sh-out)');
+  var openD = {}; APP.querySelectorAll('details[data-k][open]').forEach(function(d){ openD[d.dataset.k] = 1; });
   APP.innerHTML = h;
+  APP.querySelectorAll('details[data-k]').forEach(function(d){ if (openD[d.dataset.k]) d.open = true; });
   if (navAnim){ if (motionOK()) Array.prototype.forEach.call(APP.querySelectorAll(navAnim.sel), function(el){ el.classList.add('anim-' + navAnim.dir); }); navAnim = null; }
   var newSheet = APP.querySelector('.sheet-wrap');
   if (newSheet && sheetOpen !== lastSheet && motionOK()) newSheet.classList.add('sh-in');
@@ -480,7 +487,7 @@ function testsHTML(now){
     });
     h += groups.map(function(g){ return '<div class="grp">' + g.name + '</div><div class="up">' + g.items.map(function(e){ return evRow(e, now, bells); }).join('') + '</div>'; }).join('');
   }
-  if (past.length) h += '<details class="past"><summary>Минали (' + past.length + ')</summary><div class="up">' + past.map(function(e){ return evRow(e, now, bells); }).join('') + '</div></details>';
+  if (past.length) h += '<details class="past" data-k="past-ev"><summary>Минали (' + past.length + ')</summary><div class="up">' + past.map(function(e){ return evRow(e, now, bells); }).join('') + '</div></details>';
   return h;
 }
 var BANNERS = {
@@ -978,7 +985,7 @@ function hwHTML(now){
     }).join('');
     h += '<p class="tc-note">Отметките се пазят само на твоя телефон.</p>';
   }
-  if (past.length) h += '<details class="past"><summary>Минали (' + past.length + ')</summary><div class="up">' + past.map(function(e){ return hwRow(e, done); }).join('') + '</div></details>';
+  if (past.length) h += '<details class="past" data-k="past-hw"><summary>Минали (' + past.length + ')</summary><div class="up">' + past.map(function(e){ return hwRow(e, done); }).join('') + '</div></details>';
   return h;
 }
 function isT(){ return ROLE === 'teacher' && !!TKEY; }
@@ -2127,7 +2134,7 @@ function pplHTML(){
     : '<div class="empty">Още няма одобрени учители.</div>') + '</div>';
   var byC = {}; stu.forEach(function(r){ (byC[r.class_name] = byC[r.class_name] || []).push(r); });
   h += '<div class="panel"><div class="form-h"><h3>Ученици</h3><span class="aside">' + stu.length + '</span></div>' + (stu.length ? Object.keys(byC).sort(collator.compare).map(function(c){
-      return '<details class="pp-c"' + (ppRole && byC[c].some(function(r){ return r.user_id === ppRole.id; }) ? ' open' : '') + '><summary>' + esc(c) + ' · ' + byC[c].length + '</summary><div class="acc-list">' + byC[c].map(function(r){
+      return '<details class="pp-c" data-k="pp-' + esc(c) + '"' + (ppRole && byC[c].some(function(r){ return r.user_id === ppRole.id; }) ? ' open' : '') + '><summary>' + esc(c) + ' · ' + byC[c].length + '</summary><div class="acc-list">' + byC[c].map(function(r){
         return '<div class="acc-row"><div><b>' + esc(r.name) + (adm[String(r.email || '').toLowerCase()] ? ' <span class="you">админ</span>' : '') + '</b><small>' + esc(r.email) + '</small></div><div class="acc-b">' + roleBtn(r) + armBtn('ppb:' + r.user_id, 'btn ghost sm danger', 'pp-block', 'Спри', 'Потвърди', ex(r)) + '</div></div>' + roleEd(r); }).join('') + '</div></details>'; }).join('')
     : '<div class="empty">Още няма ученици с профил.</div>') +
     '<p class="hint">Учениците добавят домашни само за своя клас. Ако някой пише глупости, спри профила му и изтрий записите му от „Домашни“.</p></div>';
@@ -2269,7 +2276,7 @@ function impBuild(){
       var row = gi[s.d] = gi[s.d] || [];
       row[i] = (row[i] || []).concat(s.items);
     });
-    Object.keys(gi).forEach(function(d){ tt[d] = []; gi[d].forEach(function(items, i){ if (!items) return; var c = impCell(items);
+    Object.keys(gi).forEach(function(d){ tt[d] = []; gi[d].forEach(function(items, i){ if (!items) return; var c = impCell(items); c.s = subjClean(c.s);
       // The file has no room for this lesson: keep the room that is already in Звънец for the same lesson.
       if (!c.r && c.s){ var was = (old[d] || [])[i]; if (was && was.r && impSame(was.s, c.s)){ c = Object.assign({}, c, { r:was.r }); kept++; } else noRoom++; }
       tt[d][i] = c; cells++; L.push({ class_name:n, weekday:+d, idx:i, subject:c.s || '', room:c.r || '', teacher:c.t || '' }); }); });
@@ -2654,6 +2661,8 @@ function confirmClick(btn){
   disarm(); armed = key; btn.textContent = btn.dataset.l1; btn.classList.add('armed');
   armTimer = setTimeout(disarm, 4000); return false;
 }
+var downEl = null;
+APP.addEventListener('pointerdown', function(ev){ downEl = ev.target; }, true);
 APP.addEventListener('click', function(ev){
   var btn = ev.target.closest('[data-act]');
   if (!btn || !APP.contains(btn)) return;
@@ -2728,7 +2737,7 @@ APP.addEventListener('click', function(ev){
     case 'st-reload': statData = null; pushStat = null; render(); break;
     case 'st-cls': statCls = btn.dataset.m === 'week' ? 'week' : 'today'; render(); break;
     case 'cls-open': pickInit(CLASS); sheetOpen = 'view'; render(); break;
-    case 'sheet-x': sheetOpen = false; render(); break;
+    case 'sheet-x': if (btn.classList.contains('sheet-wrap') && (ev.target !== btn || downEl !== btn)) break; sheetOpen = false; render(); break;
     case 'news-on': sSet('localStorage', 'zv-news-push', '1'); sheetOpen = false; pushOn(); break;
     case 'news-x': sSet('localStorage', 'zv-news-push', '1'); sSet('localStorage', 'zv-push-x', '1'); sheetOpen = false; render(); break;
     case 'news-ins': sSet('localStorage', 'zv-news-push', '1'); sheetOpen = false; insFull = true; window.scrollTo(0, 0); render(); break;
