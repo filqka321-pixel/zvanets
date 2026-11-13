@@ -296,7 +296,7 @@ function headerHTML(){
   if (view === 'teacher' && (!sess || !sess.perms || !editList().length)) badge = '';
   else if (view === 'teacher' && list.length > 4) badge = '<select class="cls-sel" data-f="hcls" aria-label="Клас">' + list.map(function(n){ return '<option value="' + esc(n) + '"' + (n === CLASS ? ' selected' : '') + '>' + esc(n) + '</option>'; }).join('') + '</select>';
   if (view === 'stats') right = '<button class="btn primary sm" data-act="to-student">Готово</button>';
-  else if (view === 'teacher') right = badge + '<button class="btn primary sm" data-act="to-student">Готово</button>';
+  else if (view === 'teacher') right = badge + (isAdmin() ? '<button class="icon-b edit" data-act="to-stats" aria-label="Статистика" title="Статистика">' + CHART + '</button>' : '') + '<button class="btn primary sm" data-act="to-student">Готово</button>';
   else right = (adminEntry() ? '<button class="icon-b edit" data-act="to-teacher" aria-label="Редактирай" title="Редактирай">' + PENCIL + (inboxN() ? '<i class="dot"></i>' : '') + '</button>' : '') + (!isT() ? '<button class="icon-b edit' + (sess ? ' on' : '') + '" data-act="acct-open" aria-label="' + (sess ? 'Моят профил' : 'Вход') + '" title="' + (sess ? 'Моят профил' : 'Вход') + '">' + PERSON + '</button>' : '') +
     (isT() && !(insFull && insNeeded()) ? tBtnHTML() : !MINE || (insFull && insNeeded()) ? '' : '<button class="cls-btn' + (CLASS !== MINE ? ' peek' : '') + '" data-act="cls-open" aria-label="Друг клас"><small>' + (CLASS !== MINE ? 'Гледаш' : 'Клас') + '</small>' + esc(CLASS) + CHEV + '</button>');
   return '<header class="top"><div class="brand" data-act="brand"><span class="mark">' + BELL + '</span><div class="brand-txt"><div class="brand-t">Звънец</div><div class="brand-s">Програма</div></div></div><div class="top-r">' + right + '</div></header>';
@@ -2755,7 +2755,7 @@ APP.addEventListener('click', function(ev){
     case 'ac-pw': acForm.mode = 'pw'; acForm.password = ''; acForm.password2 = ''; acErr = ''; render(); break;
     case 'ac-pw-x': acForm.mode = 'in'; acForm.password = ''; acForm.password2 = ''; acErr = ''; render(); break;
     case 'ac-pw-save': acPwSave(); break;
-    case 'ac-to-stats': sheetOpen = false; render(); var sb = document.createElement('button'); sb.dataset.act = 'to-stats'; sb.hidden = true; APP.appendChild(sb); sb.click(); sb.remove(); break;
+    case 'ac-to-stats': if (isAdmin()){ view = 'stats'; statData = null; pushStat = null; statDay = null; statScroll = null; sheetOpen = false; window.scrollTo(0, 0); render(); } break;
     case 'ac-to-admin': sheetOpen = false; view = 'teacher'; ppl = null; window.scrollTo(0, 0); render(); permsThenRender(); break;
     case 'ac-resend': acResend(); break;
     case 'ac-forgot': acForm.mode = 'reset'; acForm.password = ''; acErr = ''; acInfo = ''; render(); break;

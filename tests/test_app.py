@@ -192,3 +192,18 @@ def test_change_password_when_logged_in(app):
     pg.wait_for_selector('[data-act="ac-pw-save"]', state='detached')
     put = [r for r in app.requests if r['path'].endswith('/auth/v1/user') and r['method'] == 'PUT']
     assert put and json.loads(put[-1]['body']) == {'password': 'newpass1'}
+
+
+def test_admin_can_reach_statistics(app):
+    app.perms = ['*']
+    app.data['editors'] = [{'email': 'boss@example.com', 'class_name': '*'}]
+    pg = _login(app)
+    pg.click('[data-act="to-teacher"]')
+    pg.click('header [data-act="to-stats"]')
+    pg.wait_for_selector('header:has-text("Готово")')
+    pg.click('[data-act="to-student"]')
+    pg.click('[data-act="acct-open"]')
+    pg.click('[data-act="ac-to-stats"]')
+    pg.wait_for_selector('.sheet', state='detached')
+    assert pg.locator('header [data-act="to-student"]').count() == 1
+    assert app.errors == [], app.errors
