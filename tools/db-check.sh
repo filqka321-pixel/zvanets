@@ -8,7 +8,7 @@ D="$(mktemp -d)"; PORT=55432
 cleanup(){ pg_ctl -D "$D/data" -m immediate stop >/dev/null 2>&1 || true; rm -rf "$D"; }
 trap cleanup EXIT
 if [ "$(id -u)" = 0 ]; then chown -R postgres "$D"; RUN="runuser -u postgres --"; else RUN=""; fi
-$RUN initdb -D "$D/data" -U postgres -A trust >/dev/null
+$RUN initdb -D "$D/data" -U postgres -A trust -E UTF8 --locale=C.UTF-8 >/dev/null
 $RUN pg_ctl -D "$D/data" -o "-p $PORT -k $D -c listen_addresses=''" -l "$D/log" start -w >/dev/null
 q(){ psql -h "$D" -p $PORT -U postgres -d postgres -v ON_ERROR_STOP=1 -q "$@" < /dev/null; }
 q -f "$ROOT/supabase/local/supabase-stubs.sql"

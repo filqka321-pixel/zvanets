@@ -207,3 +207,41 @@ def test_admin_can_reach_statistics(app):
     pg.wait_for_selector('.sheet', state='detached')
     assert pg.locator('header [data-act="to-student"]').count() == 1
     assert app.errors == [], app.errors
+
+
+NOROOM_XML = """<?xml version="1.0" encoding="UTF-8"?>
+<timetable>
+ <periods><period period="1" starttime="8:00" endtime="8:40"/><period period="2" starttime="8:50" endtime="9:30"/></periods>
+ <subjects><subject id="S1" name="Математика"/><subject id="S2" name="Химия"/></subjects>
+ <teachers><teacher id="T1" firstname="Мария" lastname="Кръстева"/></teachers>
+ <classrooms></classrooms>
+ <classes><class id="C1" name="10е"/></classes>
+ <groups><group id="G1" classid="C1" name="Цял клас" entireclass="1"/></groups>
+ <lessons>
+  <lesson id="L1" classids="C1" subjectid="S1" teacherids="T1" groupids="G1" periodspercard="1"/>
+  <lesson id="L2" classids="C1" subjectid="S2" teacherids="T1" groupids="G1" periodspercard="1"/>
+ </lessons>
+ <cards>
+  <card lessonid="L1" days="10000" period="1" classroomids=""/>
+  <card lessonid="L2" days="10000" period="2" classroomids=""/>
+ </cards>
+</timetable>"""
+
+
+def test_import_keeps_rooms_when_the_file_has_none(app, tmp_path):
+    app.perms = ['*']
+    app.data['editors'] = [{'email': 'boss@example.com', 'class_name': '*'}]
+    seen = {}
+    pg = _login(app)
+    pg.route('**/rpc/import_timetable', lambda r: (seen.update(json.loads(r.request.post_data)), r.fulfill(content_type='application/json', body='{"classes":1,"lessons":2}')))
+    pg.click('[data-act="to-teacher"]')
+    pg.click('.tab:has-text("Импорт")')
+    f = tmp_path / 'a.xml'; f.write_text(NOROOM_XML, encoding='utf-8')
+    pg.set_input_files('input[data-f="impfile"]', str(f))
+    pg.wait_for_selector('text=Запазваме стаите')
+    assert 'нито във файла' in pg.content()  # Химия has no room anywhere
+    pg.click('[data-act="imp-go"]')  # first tap arms the button, second confirms
+    pg.click('[data-act="imp-go"]')
+    pg.wait_for_timeout(800)
+    rooms = {l['subject']: l['room'] for l in seen['p_lessons']}
+    assert rooms == {'Математика': '101', 'Химия': ''}, rooms

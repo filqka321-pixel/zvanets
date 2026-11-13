@@ -2254,21 +2254,29 @@ function impCell(items){
   items.forEach(function(i){ if (!i.t) return; var x = (one && i.g ? 'Гр. ' + i.g + ' ' : '') + i.t + (rooms.length > 1 && i.r ? ' (' + i.r + ')' : ''); if (ts.indexOf(x) < 0) ts.push(x); });
   return { s:subs.join(' / '), r:rooms.join('/'), t:ts.join(' · ') };
 }
+function impSame(a, b){
+  function k(x){ return String(x || '').toLowerCase().replace(/[^a-zа-я0-9]+/g, ' ').trim(); }
+  a = k(a); b = k(b);
+  return !!a && !!b && (a === b || a.indexOf(b) === 0 || b.indexOf(a) === 0 || a.split(' ')[0] === b.split(' ')[0]);
+}
 function impBuild(){
   var L = [], info = {};
   Object.keys(imp.cls).forEach(function(n){
-    var o = imp.cls[n], bells = state.bells[String(o.shift)] || [], gi = {}, un = 0, cells = 0, tt = {};
+    var o = imp.cls[n], bells = state.bells[String(o.shift)] || [], gi = {}, un = 0, cells = 0, tt = {}, old = state.tt[n] || {}, kept = 0, noRoom = 0;
     Object.keys(o.slots).forEach(function(k){
       var s = o.slots[k], i = impMatch(s.p, bells);
       if (i < 0){ un++; return; }
       var row = gi[s.d] = gi[s.d] || [];
       row[i] = (row[i] || []).concat(s.items);
     });
-    Object.keys(gi).forEach(function(d){ tt[d] = []; gi[d].forEach(function(items, i){ if (!items) return; var c = impCell(items); tt[d][i] = c; cells++; L.push({ class_name:n, weekday:+d, idx:i, subject:c.s || '', room:c.r || '', teacher:c.t || '' }); }); });
+    Object.keys(gi).forEach(function(d){ tt[d] = []; gi[d].forEach(function(items, i){ if (!items) return; var c = impCell(items);
+      // The file has no room for this lesson: keep the room that is already in Звънец for the same lesson.
+      if (!c.r && c.s){ var was = (old[d] || [])[i]; if (was && was.r && impSame(was.s, c.s)){ c = Object.assign({}, c, { r:was.r }); kept++; } else noRoom++; }
+      tt[d][i] = c; cells++; L.push({ class_name:n, weekday:+d, idx:i, subject:c.s || '', room:c.r || '', teacher:c.t || '' }); }); });
     var ch = 0, cur = state.tt[n] || {};
     function sig(x){ return x && (x.s || x.r || x.t) ? [x.s || '', x.r || '', x.t || ''].join('|') : ''; }
     for (var d = 1; d <= 5; d++){ var a = tt[d] || [], b = cur[d] || [], mx = Math.max(a.length, b.length); for (var i = 0; i < mx; i++) if (sig(a[i]) !== sig(b[i])) ch++; }
-    info[n] = { tt:tt, un:un, cells:cells, ch:ch };
+    info[n] = { tt:tt, un:un, cells:cells, ch:ch, kept:kept, noRoom:noRoom };
   });
   return { lessons:L, info:info };
 }
@@ -2308,6 +2316,9 @@ function impHTML(){
   var warns = [];
   names.forEach(function(n){ var o = imp.cls[n]; if (o.bad) warns.push('Класът „' + o.raw + '“ не е от вида 10в. Провери името му в aSc.');
     if (b.info[n].un) warns.push(n + ': ' + b.info[n].un + ' часа не паснаха на звънеца за ' + shiftName(o.shift) + '. Провери смяната или звънеца.'); });
+  var tKept = 0, tNo = 0; names.forEach(function(n){ tKept += b.info[n].kept; tNo += b.info[n].noRoom; });
+  if (tKept) warns.push(tKept + ' часа нямат стая във файла. Запазваме стаите, които вече са в Звънец.');
+  if (tNo) warns.push(tNo + ' часа нямат стая нито във файла, нито в Звънец. Те ще са без стая – провери дали в aSc стаите са разпределени.');
   if (W.weeks) warns.push(W.weeks + ' часа са през седмица (А/Б). Звънец ги показва на едно място.');
   if (W.terms) warns.push(W.terms + ' часа са само за единия срок. Провери ги след импорта.');
   if (W.weekend) warns.push('Часовете в събота и неделя са пропуснати.');
