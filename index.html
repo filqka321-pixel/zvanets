@@ -24,7 +24,7 @@
 <meta name="apple-mobile-web-app-title" content="Звънец">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="format-detection" content="telephone=no">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-j+HEKOAG5I4p/6rxJFD3BdKuQ+z+lTcQoB2uc+c7iXg=' 'sha256-ip5r4df1PGMUeymeUxTouv1zKIyZooZvpItJk6vXhdo=' 'sha256-/WVFdSREZYcuOAY46upMW7YExstGz6zVs/exweV7ers='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://*.supabase.co wss://*.supabase.co; worker-src 'self'; manifest-src 'self'; base-uri 'self'; form-action 'self'; object-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-j+HEKOAG5I4p/6rxJFD3BdKuQ+z+lTcQoB2uc+c7iXg=' 'sha256-VpuYxz0P4l418rFZcqr2yFVb5qEw1kLdY8kvevOYw/c=' 'sha256-/WVFdSREZYcuOAY46upMW7YExstGz6zVs/exweV7ers='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://*.supabase.co wss://*.supabase.co; worker-src 'self'; manifest-src 'self'; base-uri 'self'; form-action 'self'; object-src 'none'">
 <style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sofia+Sans:wght@400;500;600;700&family=Sofia+Sans+Extra+Condensed:wght@600;700;800&family=Sofia+Sans+Semi+Condensed:wght@500;600;700&display=swap">
 <style id="app-style">
@@ -677,6 +677,7 @@ textarea:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 3px var(-
 .pp-role .chk input{margin-top:2px;width:18px;height:18px;flex:none}
 .icon-b.edit.on{color:var(--accent,currentColor)}
 @media (max-width:400px){.top-r{gap:6px}.top-r .icon-b{width:40px;height:40px}.brand-txt{min-width:0;overflow:hidden}.brand-t,.brand-s{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}}
+@media (max-width:350px){.hs{gap:6px}.hs-i{padding:9px 8px}.hs-i b{font-size:20px}.hs-i small{letter-spacing:.04em}.brand-t{font-size:22px}.brand-s{display:none}.tb{font-size:10.5px}.cls-btn small{display:none}}
 </style>
 </head>
 <body>
@@ -3696,8 +3697,8 @@ function subjClean(s){
     p = p.replace(/РП\/УП(?:-[А-Я])?/g, 'РП').replace(/ДП\/ЧЕ/g, 'ДП').replace(/ПП\/(?:зад|изб)\.?\s*модул/g, 'ПП').replace(/ООП-\d*[А-Я]?/g, 'ООП')
          .replace(new RegExp('-?ЗУЧ' + E, 'g'), ' ООП').replace(/^(.*\S)-(ИУЧ|ФУЧ|ООП)$/, '$1 $2');
     // peel tags off the end: "X - ФУЧ - ДП" -> X + [ФУЧ, ДП]
-    while ((m = /^(.*\S)\s*(?:[-–—,]\s*|\(\s*|\s)(ООП|ПП|РП|ДП|ИУЧ|ФУЧ|ПрП|ОбП)\s*\)?\s*$/.exec(p))){ tags.unshift(m[2]); p = m[1].replace(/\s*[-–—,]\s*$/, ''); }
-    p = p.replace(/\s*[-–—,]\s*$/, '').trim();
+    while ((m = /^(.*\S)\s*(?:[-–—,·]\s*|\(\s*|\s)(ООП|ПП|РП|ДП|ИУЧ|ФУЧ|ПрП|ОбП)\s*\)?\s*$/.exec(p))){ tags.unshift(m[2]); p = m[1].replace(/\s*[-–—,·]\s*$/, ''); }
+    p = p.replace(/\s*[-–—,·]\s*$/, '').trim();
     tags = tags.filter(function(t){ return t !== 'ООП'; });
     return tags.length ? p + ' · ' + tags[0] : p;
   }).join(' / ');

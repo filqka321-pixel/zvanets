@@ -259,6 +259,25 @@ def test_subject_names_are_cleaned(app):
     assert 'Устно общуване ФЕ · ПП' in txt and 'Френски език · РП' in txt and 'Модул' not in txt and '/8-10' not in txt, txt
 
 
+def test_clean_subject_names_stay_the_same_when_cleaned_again(app):
+    for l in app.data['lessons']:
+        if l['class_name'] == '10е' and l['idx'] == 0: l['subject'] = 'Френски език · РП'  # already clean in the database
+    pg = pick_class(app)
+    txt = pg.inner_text('.hero')
+    assert 'Френски език · РП' in txt and '· ·' not in txt, txt
+
+
+def test_narrow_phone_shows_full_times(browser, server):
+    from conftest import App
+    a = App(browser, server, viewport={'width': 320, 'height': 640})
+    try:
+        pg = pick_class(a)
+        cut = pg.eval_on_selector_all('.hs-i b', 'els => els.filter(e => e.scrollWidth > e.clientWidth + 1).map(e => e.textContent)')
+        assert cut == [], cut
+    finally:
+        a.ctx.close()
+
+
 def test_open_lists_stay_open_and_sheet_survives_text_selection(app):
     import datetime as dt
     app.data['events'].append({'id': 'old', 'type': 'project', 'date': (dt.date.today() - dt.timedelta(days=3)).isoformat(), 'period': None,

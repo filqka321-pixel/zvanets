@@ -647,3 +647,4 @@ textarea:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 3px var(-
 .pp-role .chk input{margin-top:2px;width:18px;height:18px;flex:none}
 .icon-b.edit.on{color:var(--accent,currentColor)}
 @media (max-width:400px){.top-r{gap:6px}.top-r .icon-b{width:40px;height:40px}.brand-txt{min-width:0;overflow:hidden}.brand-t,.brand-s{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}}
+@media (max-width:350px){.hs{gap:6px}.hs-i{padding:9px 8px}.hs-i b{font-size:20px}.hs-i small{letter-spacing:.04em}.brand-t{font-size:22px}.brand-s{display:none}.tb{font-size:10.5px}.cls-btn small{display:none}}

@@ -57,8 +57,8 @@ function subjClean(s){
     p = p.replace(/РП\/УП(?:-[А-Я])?/g, 'РП').replace(/ДП\/ЧЕ/g, 'ДП').replace(/ПП\/(?:зад|изб)\.?\s*модул/g, 'ПП').replace(/ООП-\d*[А-Я]?/g, 'ООП')
          .replace(new RegExp('-?ЗУЧ' + E, 'g'), ' ООП').replace(/^(.*\S)-(ИУЧ|ФУЧ|ООП)$/, '$1 $2');
     // peel tags off the end: "X - ФУЧ - ДП" -> X + [ФУЧ, ДП]
-    while ((m = /^(.*\S)\s*(?:[-–—,]\s*|\(\s*|\s)(ООП|ПП|РП|ДП|ИУЧ|ФУЧ|ПрП|ОбП)\s*\)?\s*$/.exec(p))){ tags.unshift(m[2]); p = m[1].replace(/\s*[-–—,]\s*$/, ''); }
-    p = p.replace(/\s*[-–—,]\s*$/, '').trim();
+    while ((m = /^(.*\S)\s*(?:[-–—,·]\s*|\(\s*|\s)(ООП|ПП|РП|ДП|ИУЧ|ФУЧ|ПрП|ОбП)\s*\)?\s*$/.exec(p))){ tags.unshift(m[2]); p = m[1].replace(/\s*[-–—,·]\s*$/, ''); }
+    p = p.replace(/\s*[-–—,·]\s*$/, '').trim();
     tags = tags.filter(function(t){ return t !== 'ООП'; });
     return tags.length ? p + ' · ' + tags[0] : p;
   }).join(' / ');
