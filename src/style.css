@@ -640,3 +640,5 @@ textarea:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 3px var(-
 #net{position:fixed;left:50%;top:calc(env(safe-area-inset-top,0px) + 8px);transform:translate(-50%,-160%);z-index:60;max-width:calc(100% - 32px);padding:7px 14px;border-radius:999px;background:var(--ink);color:var(--surface);font-family:var(--f-ui);font-size:13px;font-weight:600;box-shadow:var(--shadow);transition:transform .3s var(--ez-out);pointer-events:none;text-align:center}
 #net.on{transform:translate(-50%,0)}
 @media (prefers-reduced-motion:reduce){#net{transition:none}}
+.code-in{font-family:var(--f-display);font-size:26px!important;letter-spacing:.3em;text-align:center;font-variant-numeric:tabular-nums}
+.ac-links{display:flex;justify-content:center;gap:18px;flex-wrap:wrap;margin-top:6px}

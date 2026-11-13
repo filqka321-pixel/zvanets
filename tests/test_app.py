@@ -85,3 +85,48 @@ def test_every_tab_opens_without_errors(app):
         pg.click('.tb:has-text("%s")' % name)
         pg.wait_for_timeout(500)
     assert app.errors == [], app.errors
+
+
+def _sheet(app):
+    pg = pick_class(app)
+    pg.evaluate("""() => { const b = document.createElement('button'); b.dataset.act = 'acct-open'; b.dataset.r = 'student'; b.id = 'x-acct'; document.getElementById('app').appendChild(b); }""")
+    pg.click('#x-acct')
+    pg.wait_for_selector('.sheet')
+    return pg
+
+
+def test_signup_uses_a_code_instead_of_a_link(app):
+    pg = _sheet(app)
+    pg.click('[data-act="ac-mode"][data-m="up"]')
+    pg.fill('[data-f="ac"][data-k="name"]', 'Иван Петров')
+    if pg.locator('select[data-k="cls"]').count():
+        pg.select_option('select[data-k="cls"]', '10е')
+    pg.fill('[data-f="ac"][data-k="email"]', 'ivan@example.com')
+    pg.fill('[data-f="ac"][data-k="password"]', 'secret12')
+    pg.click('[data-act="ac-up"]')
+    pg.wait_for_selector('.code-in')
+    assert 'ivan@example.com' in pg.inner_text('.sheet')
+    pg.fill('.code-in', '111111'); pg.click('[data-act="ac-verify"]')
+    pg.wait_for_selector('text=Кодът е грешен или е изтекъл')
+    pg.fill('.code-in', '123456'); pg.click('[data-act="ac-verify"]')
+    pg.wait_for_selector('.code-in', state='detached')
+    ver = [json.loads(r['body']) for r in app.requests if r['path'].endswith('/auth/v1/verify')]
+    assert ver[-1] == {'type': 'email', 'email': 'ivan@example.com', 'token': '123456'}
+    reg = [json.loads(r['body']) for r in app.requests if r['path'].endswith('/rpc/member_register')]
+    assert reg and reg[-1]['p_name'] == 'Иван Петров' and reg[-1]['p_class'] == '10е', reg
+    assert [e for e in app.errors if 'status of 403' not in e] == [], app.errors
+
+
+def test_forgotten_password_with_a_code(app):
+    pg = _sheet(app)
+    pg.click('[data-act="ac-forgot"]')
+    pg.fill('[data-f="ac"][data-k="email"]', 'ivan@example.com')
+    pg.click('[data-act="ac-reset-send"]')
+    pg.wait_for_selector('.code-in')
+    pg.fill('.code-in', '123456'); pg.fill('[data-f="ac"][data-k="password"]', 'newpass1')
+    pg.click('[data-act="ac-reset-save"]')
+    pg.wait_for_selector('.code-in', state='detached')
+    put = [r for r in app.requests if r['path'].endswith('/auth/v1/user') and r['method'] == 'PUT']
+    assert put and json.loads(put[0]['body']) == {'password': 'newpass1'}
+    assert any(r['path'].endswith('/auth/v1/recover') for r in app.requests)
+    assert app.errors == [], app.errors

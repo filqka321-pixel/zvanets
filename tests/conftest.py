@@ -68,11 +68,30 @@ class App:
         if self.down:
             return route.abort('internetdisconnected')
         name = u.path.rsplit('/', 1)[-1]
+        if '/auth/v1/' in u.path:
+            return self._auth(route, name, req)
         if '/rest/v1/rpc/' in u.path:
+            if name == 'member_register':
+                b = json.loads(req.post_data or '{}')
+                return route.fulfill(content_type='application/json', body=json.dumps({'role': b.get('p_role'), 'name': b.get('p_name'), 'class_name': b.get('p_class'), 'status': 'active', 'teacher_name': ''}))
             return route.fulfill(content_type='application/json', body='true' if name in ('send_report', 'log_visit') else 'null')
         if req.method == 'GET' and name in self.data:
             return route.fulfill(content_type='application/json', body=json.dumps(self.data[name]))
         return route.fulfill(content_type='application/json', body='[]')
+
+    def _auth(self, route, name, req):
+        body = json.loads(req.post_data or '{}')
+        user = {'id': '00000000-0000-0000-0000-000000000001', 'email': body.get('email', 'a@b.bg'), 'identities': [{}]}
+        session = {'access_token': 'tok', 'refresh_token': 'ref', 'expires_in': 3600, 'user': user}
+        if name == 'verify':
+            if body.get('token') != '123456':
+                return route.fulfill(status=403, content_type='application/json', body=json.dumps({'code': 403, 'error_code': 'otp_expired', 'msg': 'Token has expired or is invalid'}))
+            return route.fulfill(content_type='application/json', body=json.dumps(session))
+        if name == 'signup':
+            return route.fulfill(content_type='application/json', body=json.dumps(user))  # email confirmation on: no session yet
+        if name == 'user':
+            return route.fulfill(content_type='application/json', body=json.dumps(user))
+        return route.fulfill(content_type='application/json', body='{}')  # resend, recover
 
     def open(self, cls='10е'):
         self.page.goto(self.server)

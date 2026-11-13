@@ -1630,7 +1630,8 @@ function meRefresh(){
 }
 function acReset(role){
   var m = M();
-  acForm = { mode: acForm.mode === 'up' && !sess ? 'up' : 'in', role: role || (m && m.role) || (isT() ? 'teacher' : 'student'), name: (m && m.name) || '', email:'', password:'',
+  var pend = !sess && jparse(sGet('localStorage', 'zv-reg'));
+  acForm = { mode: pend && pend.pending ? 'code' : acForm.mode === 'up' && !sess ? 'up' : 'in', code:'', role: role || (m && m.role) || (isT() ? 'teacher' : 'student'), name: (m && m.name) || '', email: pend && pend.pending ? pend.email : '', password:'',
     cls: (m && m.class_name) || MINE || '', teacher: m && m.teacher_name ? tKey(m.teacher_name) : (isT() ? TKEY : '') };
   acErr = ''; acInfo = ''; acEdit = false;
 }
@@ -1667,7 +1668,22 @@ function acStatusHTML(m){
 function acctSheetHTML(){
   var m = M(), body, title, foot = '';
   var err = acErr ? '<p class="err" role="alert">' + esc(acErr) + '</p>' : '';
-  if (!sess){
+  if (!sess && (acForm.mode === 'code' || acForm.mode === 'reset' || acForm.mode === 'reset-code')){
+    var md = acForm.mode;
+    title = md === 'code' ? 'Потвърди имейла' : 'Нова парола';
+    var codeIn = '<label class="field"><span>Код от писмото</span><input data-f="ac" data-k="code" value="' + esc(acForm.code || '') + '" inputmode="numeric" autocomplete="one-time-code" maxlength="10" placeholder="123456" class="code-in"></label>';
+    if (md === 'code') body = '<div class="info">Пратихме код на <b>' + esc(acForm.email) + '</b>. Напиши го тук. Ако го няма, виж в „Спам“.</div>' + codeIn + err +
+      '<button class="btn primary wide" data-act="ac-verify"' + (acBusy ? ' disabled' : '') + '>' + (acBusy ? 'Момент…' : 'Потвърди') + '</button>' +
+      '<div class="ac-links"><button class="link-btn sm" data-act="ac-resend"' + (acBusy ? ' disabled' : '') + '>Прати нов код</button><button class="link-btn sm" data-act="ac-back">Друг имейл</button></div>';
+    else if (md === 'reset') body = '<p class="gh-p">Напиши имейла на профила си. Ще ти пратим код, с който да си сложиш нова парола.</p>' +
+      '<label class="field"><span>Имейл</span><input data-f="ac" data-k="email" type="email" value="' + esc(acForm.email) + '" autocapitalize="off" autocomplete="username" spellcheck="false"></label>' + err +
+      '<button class="btn primary wide" data-act="ac-reset-send"' + (acBusy ? ' disabled' : '') + '>' + (acBusy ? 'Момент…' : 'Прати код') + '</button>' +
+      '<div class="ac-links"><button class="link-btn sm" data-act="ac-back">Назад към вход</button></div>';
+    else body = '<div class="info">Ако има профил с <b>' + esc(acForm.email) + '</b>, пратихме код там. Ако го няма, виж в „Спам“.</div>' + codeIn +
+      '<label class="field"><span>Нова парола</span><input data-f="ac" data-k="password" type="password" value="' + esc(acForm.password) + '" autocomplete="new-password" placeholder="поне 6 знака"></label>' + err +
+      '<button class="btn primary wide" data-act="ac-reset-save"' + (acBusy ? ' disabled' : '') + '>' + (acBusy ? 'Момент…' : 'Запази паролата') + '</button>' +
+      '<div class="ac-links"><button class="link-btn sm" data-act="ac-reset-send"' + (acBusy ? ' disabled' : '') + '>Прати нов код</button><button class="link-btn sm" data-act="ac-back">Назад към вход</button></div>';
+  } else if (!sess){
     var up = acForm.mode === 'up';
     title = up ? 'Нов профил' : 'Вход';
     body = (acInfo ? '<div class="info">' + esc(acInfo) + '</div>' : acNext ? '<div class="info">За да добавиш домашно, влез или си направи профил.</div>' : '') +
@@ -1677,7 +1693,7 @@ function acctSheetHTML(){
       '<label class="field"><span>' + (up ? 'Нова парола' : 'Парола') + '</span><input data-f="ac" data-k="password" type="password" value="' + esc(acForm.password) + '" autocomplete="' + (up ? 'new-password' : 'current-password') + '"' + (up ? ' placeholder="поне 6 знака"' : '') + '></label>' +
       err + '<button class="btn primary wide" data-act="' + (up ? 'ac-up' : 'ac-in') + '"' + (acBusy ? ' disabled' : '') + '>' + (acBusy ? 'Момент…' : up ? 'Направи профил' : 'Влез') + '</button>' +
       (up ? '<p class="hint">' + (acForm.role === 'teacher' ? 'Администраторът ще потвърди, че си ти. После добавяш тестове и домашни за класовете, в които преподаваш.' : 'Ще можеш да добавяш домашни за класа си. Съучениците ги виждат с твоето име.') + ' Измисли нова парола само за Звънец.</p>'
-          : '<p class="hint">Забравена парола? Пиши на администратора на Звънец в училище.</p>');
+          : '<div class="ac-links"><button class="link-btn sm" data-act="ac-forgot">Забравена парола?</button></div>');
   } else {
     foot = '<div class="sh-foot"><span>' + esc(sess.email || '') + '</span>' + armBtn('ac-out', 'link-btn sm', 'ac-out', 'Изход', 'Сигурен ли си?') + '</div>';
     if (schoolOff){
@@ -1752,7 +1768,60 @@ function acSignIn(){
   }).then(function(){
     var m = M(); acDone();
     flash(isAdmin() ? 'Влезе като администратор.' : m ? 'Здравей, ' + m.name.split(' ')[0] + '!' : 'Влезе. Довърши профила си.');
-  }, function(e){ acBusy = false; acErr = acErrMsg(e); render(); });
+  }, function(e){
+    acBusy = false;
+    if (/not.*confirm|confirm.*email/i.test(String(e && e.message || '')) || (e && e.code === 'email_not_confirmed')){ acForm.mode = 'code'; acForm.code = ''; acErr = ''; render(); acResend(); return; }
+    acErr = acErrMsg(e); render();
+  });
+}
+function focusCode(){ setTimeout(function(){ var i = document.querySelector('.code-in'); if (i) i.focus(); }, 60); }
+function acCode(){ return String(acForm.code || '').replace(/\D/g, ''); }
+function acAfterLogin(j){
+  setSession(j);
+  return Promise.all([loadPerms().catch(function(){ return []; }), loadMe().catch(function(){ return null; })]).then(function(){
+    var reg = jparse(sGet('localStorage', 'zv-reg'));
+    if (!M() && !schoolOff && reg && reg.email === sess.email.toLowerCase()) return memberRegister(reg).catch(function(){ return null; });
+  });
+}
+function acVerify(){
+  var code = acCode(), email = String(acForm.email || '').trim().toLowerCase();
+  if (code.length < 6){ acErr = 'Напиши кода от писмото.'; render(); return; }
+  acBusy = true; acErr = ''; render();
+  authPost('verify', { type:'email', email:email, token:code }).then(acAfterLogin).then(function(){
+    var m = M(); acDone();
+    flash(m && m.status === 'pending' ? 'Имейлът е потвърден. Профилът чака одобрение от администратора.' : 'Имейлът е потвърден. Профилът е готов.');
+  }, function(e){ acBusy = false; acErr = acCodeErr(e); render(); });
+}
+function acResend(){
+  var email = String(acForm.email || '').trim().toLowerCase();
+  if (!email) return;
+  acBusy = true; render();
+  authPost('resend', { type:'signup', email:email }).then(function(){ acBusy = false; render(); flash('Пратихме нов код на ' + email + '.'); focusCode(); },
+    function(e){ acBusy = false; acErr = acErrMsg(e); render(); });
+}
+function acCodeErr(e){
+  var m = String(e && e.message || ''), c = String(e && e.code || '');
+  if (e && e.status === 0) return 'Няма интернет.';
+  if (c === 'otp_expired' || /expired|invalid|not found/i.test(m) || (e && (e.status === 403 || e.status === 401))) return 'Кодът е грешен или е изтекъл. Прати нов код.';
+  return acErrMsg(e);
+}
+function acResetSend(){
+  var email = String(acForm.email || '').trim().toLowerCase();
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){ acErr = 'Напиши валиден имейл.'; render(); return; }
+  acBusy = true; acErr = ''; render();
+  authPost('recover', { email:email }).then(function(){ acBusy = false; acForm.email = email; acForm.mode = 'reset-code'; acForm.code = ''; acForm.password = ''; render(); focusCode(); },
+    function(e){ acBusy = false; acErr = acErrMsg(e); render(); });
+}
+function acResetSave(){
+  var code = acCode(), email = String(acForm.email || '').trim().toLowerCase(), pw = String(acForm.password || '');
+  if (code.length < 6){ acErr = 'Напиши кода от писмото.'; render(); return; }
+  if (pw.length < 6){ acErr = 'Паролата трябва да е поне 6 знака.'; render(); return; }
+  acBusy = true; acErr = ''; render();
+  authPost('verify', { type:'recovery', email:email, token:code }).then(function(j){
+    return fetch(SB.url + '/auth/v1/user', { method:'PUT', headers:{ apikey:SB.key, Authorization:'Bearer ' + j.access_token, 'Content-Type':'application/json' }, body:JSON.stringify({ password:pw }) })
+      .then(function(r){ if (!r.ok) return r.text().then(function(t){ var x = jparse(t) || {}, er = new Error(x.msg || x.message || ('HTTP ' + r.status)); er.code = x.error_code; er.status = r.status; throw er; }); return j; });
+  }).then(acAfterLogin).then(function(){ acDone(); flash('Паролата е сменена. Влезе в профила си.'); },
+    function(e){ acBusy = false; acErr = acCodeErr(e); render(); });
 }
 function acSignUp(){
   var w = acWho(), email = String(acForm.email || '').trim().toLowerCase(), pw = String(acForm.password || '');
@@ -1765,8 +1834,8 @@ function acSignUp(){
     var u = j.user || j;
     if (!j.access_token){
       if (Array.isArray(u.identities) && !u.identities.length){ var e = new Error('already registered'); e.code = 'user_already_exists'; throw e; }
-      sSet('localStorage', 'zv-reg', JSON.stringify(w));
-      acBusy = false; acForm.mode = 'in'; acForm.password = ''; acInfo = 'Изпратихме писмо на ' + email + '. Отвори линка в него и после влез тук със същата парола.'; render();
+      w.pending = true; sSet('localStorage', 'zv-reg', JSON.stringify(w));
+      acBusy = false; acForm.mode = 'code'; acForm.code = ''; acForm.password = ''; acInfo = ''; render(); focusCode();
       return;
     }
     setSession(j);
@@ -2606,6 +2675,12 @@ APP.addEventListener('click', function(ev){
     case 'ac-mode': acForm.mode = btn.dataset.m === 'up' ? 'up' : 'in'; acErr = ''; acInfo = ''; render(); break;
     case 'ac-role': acForm.role = btn.dataset.r === 'teacher' ? 'teacher' : 'student'; acErr = ''; render(); break;
     case 'ac-in': acSignIn(); break;
+    case 'ac-verify': acVerify(); break;
+    case 'ac-resend': acResend(); break;
+    case 'ac-forgot': acForm.mode = 'reset'; acForm.password = ''; acErr = ''; acInfo = ''; render(); break;
+    case 'ac-reset-send': acResetSend(); break;
+    case 'ac-reset-save': acResetSave(); break;
+    case 'ac-back': acForm.mode = 'in'; acForm.code = ''; acErr = ''; var rg = jparse(sGet('localStorage', 'zv-reg')); if (rg && rg.pending){ rg.pending = false; sSet('localStorage', 'zv-reg', JSON.stringify(rg)); } render(); break;
     case 'ac-up': acSignUp(); break;
     case 'ac-reg': acRegister(); break;
     case 'ac-edit': acReset(); acEdit = true; render(); break;
