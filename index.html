@@ -24,7 +24,7 @@
 <meta name="apple-mobile-web-app-title" content="Звънец">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="format-detection" content="telephone=no">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-ZV+R8mTMahiyubIWPY5C7/wmL7Yg+OXG2qg3ESPTJcY=' 'sha256-io9GfJg4xDIKy0DEFY1lTMVMdAn7JDn2pH+B6bKYgCQ=' 'sha256-/WVFdSREZYcuOAY46upMW7YExstGz6zVs/exweV7ers='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://*.supabase.co wss://*.supabase.co; worker-src 'self'; manifest-src 'self'; base-uri 'self'; form-action 'self'; object-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-j+HEKOAG5I4p/6rxJFD3BdKuQ+z+lTcQoB2uc+c7iXg=' 'sha256-io9GfJg4xDIKy0DEFY1lTMVMdAn7JDn2pH+B6bKYgCQ=' 'sha256-/WVFdSREZYcuOAY46upMW7YExstGz6zVs/exweV7ers='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://*.supabase.co wss://*.supabase.co; worker-src 'self'; manifest-src 'self'; base-uri 'self'; form-action 'self'; object-src 'none'">
 <style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sofia+Sans:wght@400;500;600;700&family=Sofia+Sans+Extra+Condensed:wght@600;700;800&family=Sofia+Sans+Semi+Condensed:wght@500;600;700&display=swap">
 <style id="app-style">
@@ -2888,6 +2888,8 @@ function ascParse(text){
   all('class').forEach(function(x){ var raw = A(x, 'name') || A(x, 'short'); cls[A(x, 'id')] = { raw:raw, name:impClassName(raw) }; });
   all('group').forEach(function(x){ var n = A(x, 'name'), g = /(\d+)/.exec(n); grp[A(x, 'id')] = { cls:A(x, 'classid'), whole: A(x, 'entireclass') === '1' || /цял|цели|whole|entire/i.test(n), num: g ? g[1] : '', name:n }; });
   lsEl.forEach(function(x){ les[A(x, 'id')] = { cls:ids(A(x, 'classids')), subj:subj[A(x, 'subjectid')] || '', teach:ids(A(x, 'teacherids')).map(function(t){ return teach[t] || ''; }).filter(Boolean), rooms:ids(A(x, 'classroomids')), groups:ids(A(x, 'groupids')), dur:parseInt(A(x, 'durationperiods') || A(x, 'periodspercard') || '1', 10) || 1 }; });
+  var wkName = {};
+  all('weeksdef').forEach(function(x){ var w = A(x, 'weeks'), n = A(x, 'short') || A(x, 'name'); if (/^[01]*0[01]*$/.test(w) && n && n.length <= 12) wkName[w] = n; });
   var out = {}, warn = {}, dayZero = cards.some(function(c){ return A(c, 'day') === '0'; });
   function W(k){ warn[k] = (warn[k] || 0) + 1; }
   cards.forEach(function(c){
@@ -2895,8 +2897,12 @@ function ascParse(text){
     var days = [], dm = A(c, 'days');
     if (/^[01]+$/.test(dm)) dm.split('').forEach(function(b, i){ if (b === '1') days.push(i + 1); });
     else if (/^\d+$/.test(A(c, 'day'))) days.push(+A(c, 'day') + (dayZero ? 1 : 0));
-    if (/^[01]*0[01]*$/.test(A(c, 'weeks'))) W('weeks');
-    if (/^[01]*0[01]*$/.test(A(c, 'terms'))) W('terms');
+    // Lessons for one term only: keep the current term's, skip the other term's (they would clash in the same slot).
+    var tp = A(c, 'terms');
+    if (/^[01]*0[01]*$/.test(tp)){ var ci = impTerm(tp.length); if (ci >= 0 && tp.charAt(ci) !== '1'){ W('otherTerm'); return; } W('terms'); }
+    // Lessons every other week: label them, so "Музика / БЕЛ" reads "Музика (седм. А) / БЕЛ (седм. Б)".
+    var wp = A(c, 'weeks'), wl = '';
+    if (/^[01]*0[01]*$/.test(wp)){ W('weeks'); wl = wkName[wp] || ('седм. ' + ('АБВГ'.charAt(wp.indexOf('1')) || wp)); }
     var p0 = per[A(c, 'period')]; if (!p0){ W('period'); return; }
     var dur = parseInt(A(c, 'durationperiods'), 10) || L.dur, pi = perList.indexOf(p0), ps = perList.slice(pi, pi + Math.max(1, dur));
     var rooms = ids(A(c, 'classroomids')); if (!rooms.length) rooms = L.rooms;
@@ -2911,7 +2917,7 @@ function ascParse(text){
         ps.forEach(function(p){
           var s = o.slots[d + '|' + p.k] = o.slots[d + '|' + p.k] || { d:d, p:p, items:[] };
           ts.forEach(function(t, ti){
-            var it = { subj:L.subj, t:t, r: rn.length === ts.length && ts.length > 1 ? rn[ti] : rm, g: g && !g.whole ? g.num : '', gn: g && !g.whole ? g.name : '' };
+            var it = { subj: wl ? L.subj + ' (' + wl + ')' : L.subj, t:t, r: rn.length === ts.length && ts.length > 1 ? rn[ti] : rm, g: g && !g.whole ? g.num : '', gn: g && !g.whole ? g.name : '' };
             if (!s.items.some(function(y){ return y.subj === it.subj && y.t === it.t && y.r === it.r && y.g === it.g && y.gn === it.gn; })) s.items.push(it);
           });
         });
@@ -2953,6 +2959,8 @@ function impSame(a, b){
   a = k(a); b = k(b);
   return !!a && !!b && (a === b || a.indexOf(b) === 0 || b.indexOf(a) === 0 || a.split(' ')[0] === b.split(' ')[0]);
 }
+// Which term is now, for a 2-term school year: term 2 from February to the summer.
+function impTerm(n){ if (n !== 2) return -1; var m = new Date().getMonth(); return m >= 1 && m <= 7 ? 1 : 0; }
 function impBuild(){
   var L = [], info = {};
   Object.keys(imp.cls).forEach(function(n){
@@ -3013,8 +3021,8 @@ function impHTML(){
   var tKept = 0, tNo = 0; names.forEach(function(n){ tKept += b.info[n].kept; tNo += b.info[n].noRoom; });
   if (tKept) warns.push(tKept + ' часа нямат стая във файла. Запазваме стаите, които вече са в Звънец.');
   if (tNo) warns.push(tNo + ' часа нямат стая нито във файла, нито в Звънец. Те ще са без стая – провери дали в aSc стаите са разпределени.');
-  if (W.weeks) warns.push(W.weeks + ' часа са през седмица (А/Б). Звънец ги показва на едно място.');
-  if (W.terms) warns.push(W.terms + ' часа са само за единия срок. Провери ги след импорта.');
+  if (W.otherTerm) warns.push(W.otherTerm + ' часа са само за ' + (impTerm(2) === 0 ? 'втория' : 'първия') + ' срок и не се внасят сега. В началото на ' + (impTerm(2) === 0 ? 'втория' : 'новия') + ' срок внеси файла пак.');
+  if (W.weeks) warns.push(W.weeks + ' часа са през седмица (А/Б). В програмата пише коя седмица е всеки предмет.');
   if (W.weekend) warns.push('Часовете в събота и неделя са пропуснати.');
   if (W.period || W.lesson) warns.push(((W.period || 0) + (W.lesson || 0)) + ' непълни записа във файла са пропуснати.');
   var rows = names.map(function(n){ var o = imp.cls[n], i = b.info[n];

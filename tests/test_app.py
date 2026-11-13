@@ -275,3 +275,45 @@ def test_open_lists_stay_open_and_sheet_survives_text_selection(app):
     assert pg.locator('.sheet').count() == 1
     pg.mouse.click(5, 5)  # a real tap on the backdrop still closes it
     pg.wait_for_selector('.sheet', state='detached')
+
+
+TERMS_XML = """<?xml version="1.0" encoding="UTF-8"?>
+<timetable>
+ <periods><period period="1" starttime="8:00" endtime="8:40"/><period period="2" starttime="8:50" endtime="9:30"/></periods>
+ <weeksdefs><weeksdef id="W1" name="Седмица А" short="седм. А" weeks="10"/><weeksdef id="W2" name="Седмица Б" short="седм. Б" weeks="01"/></weeksdefs>
+ <subjects><subject id="S1" name="Музика"/><subject id="S2" name="Български език и литература"/><subject id="S3" name="Химия"/><subject id="S4" name="Физика"/></subjects>
+ <teachers><teacher id="T1" firstname="Мария" lastname="Кръстева"/></teachers>
+ <classrooms><classroom id="R1" name="Кабинет 300" short="300"/></classrooms>
+ <classes><class id="C1" name="10е"/></classes>
+ <groups><group id="G1" classid="C1" name="Цял клас" entireclass="1"/></groups>
+ <lessons>
+  <lesson id="L1" classids="C1" subjectid="S1" teacherids="T1" groupids="G1" periodspercard="1"/>
+  <lesson id="L2" classids="C1" subjectid="S2" teacherids="T1" groupids="G1" periodspercard="1"/>
+  <lesson id="L3" classids="C1" subjectid="S3" teacherids="T1" groupids="G1" periodspercard="1"/>
+  <lesson id="L4" classids="C1" subjectid="S4" teacherids="T1" groupids="G1" periodspercard="1"/>
+ </lessons>
+ <cards>
+  <card lessonid="L1" days="10000" period="1" classroomids="R1" terms="10" weeks="11"/>
+  <card lessonid="L2" days="10000" period="1" classroomids="R1" terms="01" weeks="11"/>
+  <card lessonid="L3" days="10000" period="2" classroomids="R1" terms="11" weeks="10"/>
+  <card lessonid="L4" days="10000" period="2" classroomids="R1" terms="11" weeks="01"/>
+ </cards>
+</timetable>"""
+
+
+def test_import_term_and_week_lessons(app, tmp_path):
+    import datetime as dt
+    app.perms = ['*']
+    app.data['editors'] = [{'email': 'boss@example.com', 'class_name': '*'}]
+    seen = {}
+    pg = _login(app)
+    pg.route('**/rpc/import_timetable', lambda r: (seen.update(json.loads(r.request.post_data)), r.fulfill(content_type='application/json', body='{"classes":1,"lessons":2}')))
+    pg.click('[data-act="to-teacher"]'); pg.click('.tab:has-text("Импорт")')
+    f = tmp_path / 't.xml'; f.write_text(TERMS_XML, encoding='utf-8')
+    pg.set_input_files('input[data-f="impfile"]', str(f))
+    pg.wait_for_selector('text=през седмица')
+    pg.click('[data-act="imp-go"]'); pg.click('[data-act="imp-go"]'); pg.wait_for_timeout(800)
+    subj = {l['idx']: l['subject'] for l in seen['p_lessons']}
+    term2 = 2 <= dt.date.today().month <= 8  # Feb..Aug
+    assert subj[0] == ('Български език и литература' if term2 else 'Музика'), subj
+    assert subj[1] == 'Химия (седм. А) / Физика (седм. Б)', subj
