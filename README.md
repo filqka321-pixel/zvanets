@@ -1,6 +1,6 @@
 # Звънец
 
-Timetable app for schools: [zvanets.app](https://zvanets.app). A static PWA on GitHub Pages with a Supabase backend.
+Timetable app for schools: [zvanets.app](https://zvanets.app). A static PWA on GitHub.
 
 ## Where things are
 
