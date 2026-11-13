@@ -24,7 +24,7 @@
 <meta name="apple-mobile-web-app-title" content="Звънец">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="format-detection" content="telephone=no">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-5+1OSsIeaZidgaDLo3HiucAuaN9X4b4OUxoXJwJnSFo=' 'sha256-wGiiMX8Tjq0vAP+LUd4oZnvmt0CYYGxjzxqtSrJQyTg=' 'sha256-/WVFdSREZYcuOAY46upMW7YExstGz6zVs/exweV7ers='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://*.supabase.co wss://*.supabase.co; worker-src 'self'; manifest-src 'self'; base-uri 'self'; form-action 'self'; object-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-aYIfQqY2T2SI6Lmx5b7nR+dNdYRX8F41t0Xv/bKsvmE=' 'sha256-wGiiMX8Tjq0vAP+LUd4oZnvmt0CYYGxjzxqtSrJQyTg=' 'sha256-/WVFdSREZYcuOAY46upMW7YExstGz6zVs/exweV7ers='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://*.supabase.co wss://*.supabase.co; worker-src 'self'; manifest-src 'self'; base-uri 'self'; form-action 'self'; object-src 'none'">
 <style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sofia+Sans:wght@400;500;600;700&family=Sofia+Sans+Extra+Condensed:wght@600;700;800&family=Sofia+Sans+Semi+Condensed:wght@500;600;700&display=swap">
 <style id="app-style">
@@ -672,6 +672,11 @@ textarea:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 3px var(-
 @media (prefers-reduced-motion:reduce){#net{transition:none}}
 .code-in{font-family:var(--f-display);font-size:26px!important;letter-spacing:.3em;text-align:center;font-variant-numeric:tabular-nums}
 .ac-links{display:flex;justify-content:center;gap:18px;flex-wrap:wrap;margin-top:6px}
+.pp-role{display:grid;gap:10px;padding:12px;margin:-2px 0 8px;border-radius:14px;background:var(--surface-2,rgba(127,127,127,.08))}
+.pp-role .chk{display:flex;gap:8px;align-items:flex-start;font-size:14px;line-height:1.35}
+.pp-role .chk input{margin-top:2px;width:18px;height:18px;flex:none}
+.icon-b.edit.on{color:var(--accent,currentColor)}
+@media (max-width:400px){.top-r{gap:6px}.top-r .icon-b{width:40px;height:40px}.brand-txt{min-width:0;overflow:hidden}.brand-t,.brand-s{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}}
 </style>
 </head>
 <body>
@@ -896,7 +901,7 @@ var armed = null, armTimer = 0, lastMin = -1, workTimer = 0;
 function defaultClass(){ return CLASS; }
 function todayIdx(){ var d = new Date().getDay(); return (d >= 1 && d <= 5) ? d : 1; }
 function blankEv(){ return { id:null, type:'entry', date:isoDate(nextWeekday(new Date())), p:'', cls: myClass ? [myClass] : [], subject:'', note:'', cancel:false, room:'', sub:'', sample:false }; }
-function teacherAllowed(){ return editUnlocked || location.hash === '#redakcia' || !!(sess && sess.access_token); }
+function teacherAllowed(){ return !!(sess && sess.access_token); }
 function isDirty(k){ return dirty.indexOf(k) >= 0; }
 function markDirty(k){ if (!isDirty(k)) dirty.push(k); persistWorkSoon(); updateSaveBar(); }
 function uiData(){ return { page:page, view:view, tTab:tTab, tSel:tSel, selDay:selDay, weekOffset:weekOffset, evForm:evForm, showPast:showPast }; }
@@ -979,7 +984,7 @@ function headerHTML(){
   else if (view === 'teacher' && list.length > 4) badge = '<select class="cls-sel" data-f="hcls" aria-label="Клас">' + list.map(function(n){ return '<option value="' + esc(n) + '"' + (n === CLASS ? ' selected' : '') + '>' + esc(n) + '</option>'; }).join('') + '</select>';
   if (view === 'stats') right = '<button class="btn primary sm" data-act="to-student">Готово</button>';
   else if (view === 'teacher') right = badge + '<button class="btn primary sm" data-act="to-student">Готово</button>';
-  else right = (isAdmin() ? '<button class="icon-b edit" data-act="to-stats" aria-label="Статистика" title="Статистика">' + CHART + '</button>' : '') + (adminEntry() ? '<button class="icon-b edit" data-act="to-teacher" aria-label="Редактирай" title="Редактирай">' + PENCIL + (inboxN() ? '<i class="dot"></i>' : '') + '</button>' : '') + (sess && !isAdmin() && !isT() ? '<button class="icon-b edit" data-act="acct-open" aria-label="Моят профил" title="Моят профил">' + PERSON + '</button>' : '') +
+  else right = (adminEntry() ? '<button class="icon-b edit" data-act="to-teacher" aria-label="Редактирай" title="Редактирай">' + PENCIL + (inboxN() ? '<i class="dot"></i>' : '') + '</button>' : '') + (!isT() ? '<button class="icon-b edit' + (sess ? ' on' : '') + '" data-act="acct-open" aria-label="' + (sess ? 'Моят профил' : 'Вход') + '" title="' + (sess ? 'Моят профил' : 'Вход') + '">' + PERSON + '</button>' : '') +
     (isT() && !(insFull && insNeeded()) ? tBtnHTML() : !MINE || (insFull && insNeeded()) ? '' : '<button class="cls-btn' + (CLASS !== MINE ? ' peek' : '') + '" data-act="cls-open" aria-label="Друг клас"><small>' + (CLASS !== MINE ? 'Гледаш' : 'Клас') + '</small>' + esc(CLASS) + CHEV + '</button>');
   return '<header class="top"><div class="brand" data-act="brand"><span class="mark">' + BELL + '</span><div class="brand-txt"><div class="brand-t">Звънец</div><div class="brand-s">Програма</div></div></div><div class="top-r">' + right + '</div></header>';
 }
@@ -1356,6 +1361,8 @@ function checkCalendar(){
 }
 function authHTML(){
   if (sess && sess.access_token) return '<div class="gh-ok"><span>Влязъл като <b>' + esc(sess.email || '') + '</b>' + (isAdmin() ? ' · администратор' : '') + '</span>' + armBtn('sb-out', 'link-btn sm', 'sb-out', 'Изход', 'Сигурен ли си?') + '</div>';
+  return '<div class="panel gh" id="login"><div class="form-h"><h3>Влез с профила си</h3></div><p class="gh-p">Администраторите влизат като всички останали – от бутона с човечето горе.</p>' +
+    '<div class="row-actions"><button class="btn primary" data-act="acct-open">Вход</button></div></div>';
   return '<div class="panel gh" id="login"><div class="form-h"><h3>Вход за администратора</h3></div>' +
     '<p class="gh-p">Тук администраторът променя програмата, класовете и звънеца. Учителите и учениците влизат от „Вход“ в приложението.</p>' +
     '<div class="f-grid"><label class="field"><span>Имейл</span><input data-f="au" data-k="email" type="email" value="' + esc(auForm.email) + '" autocapitalize="off" autocomplete="username" spellcheck="false"></label>' +
@@ -2251,7 +2258,7 @@ function myUid(){
 }
 function meActive(){ var m = M(); return !!m && m.status === 'active'; }
 function meRole(){ if (isAdmin()) return 'admin'; var m = M(); return m && m.status === 'active' ? m.role : ''; }
-function adminEntry(){ return isAdmin() || (!sess && (editUnlocked || location.hash === '#redakcia')); }
+function adminEntry(){ return isAdmin(); }
 function clsNamesTT(){ return state.classes.map(function(c){ return c.name; }).filter(hasTT).sort(collator.compare); }
 function postClasses(){
   var r = meRole(), m = M();
@@ -2381,17 +2388,25 @@ function acctSheetHTML(){
     if (schoolOff){
       title = 'Профил';
       body = '<div class="info">Профилите за учители и ученици още не са включени. Администраторът трябва да пусне school.sql в Supabase.</div>';
-    } else if (acEdit || (!m && !isAdmin())){
+    } else if (acForm.mode !== 'pw' && (acEdit || (!m && !isAdmin()))){
       title = m ? 'Промени профила' : 'Довърши профила';
       body = (m ? '' : '<p class="gh-p">Кажи кой си, за да добавяш тестове и домашни.</p>') + acRoleHTML() + acWhoHTML() + err +
         '<button class="btn primary wide" data-act="ac-reg"' + (acBusy ? ' disabled' : '') + '>' + (acBusy ? 'Запазване…' : 'Запази') + '</button>' +
         (acForm.role === 'teacher' ? '<p class="hint">Учителските профили се одобряват от администратора.</p>' : '') +
-        (m ? '<button class="link-btn" data-act="ac-edit-x">Откажи</button>' : '');
+        (m ? '<button class="link-btn" data-act="ac-edit-x">Откажи</button>' : '<div class="ac-links"><button class="link-btn sm" data-act="ac-pw">Смени паролата</button></div>');
     } else {
       title = 'Моят профил';
+      if (acForm.mode === 'pw'){
+        title = 'Смени паролата';
+        body = '<label class="field"><span>Нова парола</span><input data-f="ac" data-k="password" type="password" value="' + esc(acForm.password) + '" autocomplete="new-password" placeholder="поне 6 знака"></label>' +
+          '<label class="field"><span>Още веднъж</span><input data-f="ac" data-k="password2" type="password" value="' + esc(acForm.password2 || '') + '" autocomplete="new-password"></label>' + err +
+          '<button class="btn primary wide" data-act="ac-pw-save"' + (acBusy ? ' disabled' : '') + '>' + (acBusy ? 'Запазване…' : 'Запази паролата') + '</button>' +
+          '<div class="ac-links"><button class="link-btn sm" data-act="ac-pw-x">Откажи</button></div>';
+      } else
       body = '<div class="ac-card"><span class="ac-ic">' + PERSON + '</span><div><b>' + esc(m ? m.name : 'Администратор') + '</b><small>' +
         (m ? (m.role === 'teacher' ? 'Учител · ' + esc(m.teacher_name) : 'Ученик · ' + esc(m.class_name)) : esc(sess.email || '')) + (isAdmin() && m ? ' · админ' : '') + '</small></div>' +
-        (m ? '<button class="link-btn sm" data-act="ac-edit">Промени</button>' : '') + '</div>' + acStatusHTML(m || {});
+        (m ? '<button class="link-btn sm" data-act="ac-edit">Промени</button>' : '') + '</div>' + acStatusHTML(m || {}) +
+        '<div class="ac-links">' + (isAdmin() && view !== 'teacher' ? '<button class="link-btn sm" data-act="ac-to-admin">Администрация</button><button class="link-btn sm" data-act="ac-to-stats">Статистика</button>' : '') + '<button class="link-btn sm" data-act="ac-pw">Смени паролата</button></div>';
     }
   }
   return '<div class="sheet-wrap" data-act="sheet-x"><div class="sheet" data-act="noop" role="dialog" aria-modal="true" aria-label="' + title + '">' +
@@ -2504,6 +2519,22 @@ function acResetSave(){
       .then(function(r){ if (!r.ok) return r.text().then(function(t){ var x = jparse(t) || {}, er = new Error(x.msg || x.message || ('HTTP ' + r.status)); er.code = x.error_code; er.status = r.status; throw er; }); return j; });
   }).then(acAfterLogin).then(function(){ acDone(); flash('Паролата е сменена. Влезе в профила си.'); },
     function(e){ acBusy = false; acErr = acCodeErr(e); render(); });
+}
+function acPwSave(){
+  var pw = String(acForm.password || ''), pw2 = String(acForm.password2 || '');
+  if (pw.length < 6){ acErr = 'Паролата трябва да е поне 6 знака.'; render(); return; }
+  if (pw !== pw2){ acErr = 'Двете пароли не съвпадат.'; render(); return; }
+  acBusy = true; acErr = ''; render();
+  ensureSession().then(function(){
+    return fetch(SB.url + '/auth/v1/user', { method:'PUT', headers:{ apikey:SB.key, Authorization:'Bearer ' + sess.access_token, 'Content-Type':'application/json' }, body:JSON.stringify({ password:pw }) });
+  }).then(function(r){
+    if (!r.ok) return r.text().then(function(t){ var x = jparse(t) || {}, er = new Error(x.msg || x.message || ('HTTP ' + r.status)); er.code = x.error_code; er.status = r.status; throw er; });
+    acBusy = false; acForm.mode = 'in'; acForm.password = ''; acForm.password2 = ''; render(); flash('Паролата е сменена.');
+  }).catch(function(e){
+    acBusy = false;
+    acErr = e && e.code === 'same_password' ? 'Това е старата ти парола. Избери нова.' : e && e.code === 'reauthentication_needed' ? 'Supabase иска повторно потвърждение. Излез, влез отново и опитай пак.' : acErrMsg(e);
+    render();
+  });
 }
 function acSignUp(){
   var w = acWho(), email = String(acForm.email || '').trim().toLowerCase(), pw = String(acForm.password || '');
@@ -2714,11 +2745,62 @@ function admHTML(){
     '<div class="f-grid"><label class="field"><span>Имейл</span><input data-f="acc" data-k="email" type="email" value="' + esc(accForm.email) + '" autocapitalize="off" spellcheck="false" placeholder="ime@example.com"></label></div>' +
     '<div class="row-actions"><button class="btn primary" data-act="acc-add"' + (accBusy ? ' disabled' : '') + '>Направи администратор</button>' + (accErr ? '<span class="err">' + esc(accErr) + '</span>' : '') + '</div></div>';
 }
+// ---------- admin: change a registered account's role ----------
+var ppRole = null, ppRoleErr = '', ppRoleBusy = false;
+function adminEmails(){ var o = {}; (accRows || []).forEach(function(r){ if (r.class_name === '*') o[String(r.email).toLowerCase()] = 1; }); return o; }
+function ppRoleOpen(id){
+  var r = null; (ppl || []).forEach(function(x){ if (x.user_id === id) r = x; });
+  if (!r) return;
+  ppRole = { id:id, email:String(r.email || '').toLowerCase(), role:r.role, cls:r.class_name || '', teacher: r.teacher_name ? tKey(r.teacher_name) : '', admin: !!adminEmails()[String(r.email || '').toLowerCase()] };
+  ppRoleErr = ''; render();
+}
+function ppRoleHTML(){
+  var f = ppRole, h = '<div class="pp-role">';
+  h += '<div class="segm two" role="group">' + [['student', 'Ученик'], ['teacher', 'Учител']].map(function(o){ var on = f.role === o[0]; return '<button class="segm-b' + (on ? ' on' : '') + '" data-act="ppr-role" data-r="' + o[0] + '" aria-pressed="' + on + '">' + o[1] + '</button>'; }).join('') + '</div>';
+  if (f.role === 'teacher'){
+    var a = tAll();
+    h += '<label class="field"><span>В програмата като</span><select data-f="ppr" data-k="teacher">' + (a.some(function(t){ return t.key === f.teacher; }) ? '' : '<option value="" selected disabled>Избери учител</option>') +
+      a.map(function(t){ return '<option value="' + esc(t.key) + '"' + (f.teacher === t.key ? ' selected' : '') + '>' + esc(t.name) + '</option>'; }).join('') + '</select></label>';
+  } else {
+    var cl = clsNamesTT();
+    h += '<label class="field"><span>Клас</span><select data-f="ppr" data-k="cls">' + (cl.indexOf(f.cls) >= 0 ? '' : '<option value="" selected disabled>Избери клас</option>') +
+      cl.map(function(c){ return '<option value="' + esc(c) + '"' + (f.cls === c ? ' selected' : '') + '>' + esc(c) + '</option>'; }).join('') + '</select></label>';
+  }
+  var self = f.email === String(sess && sess.email || '').toLowerCase();
+  h += '<label class="chk"><input type="checkbox" data-f="ppr" data-k="admin"' + (f.admin ? ' checked' : '') + (self ? ' disabled' : '') + '> <span>Администратор' + (self ? ' (това си ти)' : '') + ' – променя програмата, класовете и хората</span></label>';
+  h += (ppRoleErr ? '<p class="err">' + esc(ppRoleErr) + '</p>' : '') + '<div class="row-actions"><button class="btn primary sm" data-act="ppr-save"' + (ppRoleBusy ? ' disabled' : '') + '>' + (ppRoleBusy ? 'Запазване…' : 'Запази') + '</button><button class="btn ghost sm" data-act="ppr-x">Откажи</button></div></div>';
+  return h;
+}
+function ppRoleSave(){
+  var f = ppRole, patch, tn = '';
+  if (f.role === 'teacher'){
+    tAll().forEach(function(t){ if (t.key === f.teacher) tn = t.name; });
+    if (!tn){ ppRoleErr = 'Избери учителя от програмата.'; render(); return; }
+    patch = { role:'teacher', teacher_name:tn, teacher_key:tKey(tn), class_name:'', status:'active', approved_at:new Date().toISOString() };
+  } else {
+    if (!classInfo(state, f.cls)){ ppRoleErr = 'Избери клас.'; render(); return; }
+    patch = { role:'student', class_name:f.cls, teacher_name:'', teacher_key:'', status:'active' };
+  }
+  var wasAdmin = !!adminEmails()[f.email];
+  ppRoleBusy = true; ppRoleErr = ''; render();
+  ensureSession().then(function(){ return sbw('PATCH', 'members?user_id=eq.' + enc(f.id), patch, 'return=representation'); }).then(function(r){
+    if (!r || !r.length) throw new Error('няма права');
+    ppl = (ppl || []).map(function(x){ return x.user_id === f.id ? r[0] : x; });
+    if (f.admin && !wasAdmin) return sbw('POST', 'editors?on_conflict=email,class_name', { email:f.email, class_name:'*' }, 'resolution=ignore-duplicates');
+    if (!f.admin && wasAdmin) return sbw('DELETE', 'editors?email=eq.' + enc(f.email) + '&class_name=eq.' + enc('*'));
+  }).then(function(){
+    ppRoleBusy = false; ppRole = null; flash('Ролята е променена.'); return accLoad().then(function(){ render(); });
+  }, function(e){ ppRoleBusy = false; ppRoleErr = 'Не успя (' + e.message + ').'; render(); });
+}
 function pplHTML(){
   if (ppl === null && !pplBusy) pplLoad();
+  if (accRows === null && !accBusy) accLoad();
+  var adm = adminEmails();
+  function roleBtn(r){ return ppRole && ppRole.id === r.user_id ? '' : '<button class="link-btn sm" data-act="ppr-open" data-id="' + esc(r.user_id) + '">Роля</button>'; }
+  function roleEd(r){ return ppRole && ppRole.id === r.user_id ? ppRoleHTML() : ''; }
   var pend = [], tch = [], stu = [], blk = [];
   (ppl || []).forEach(function(r){ (r.status === 'blocked' ? blk : r.status === 'pending' ? pend : r.role === 'teacher' ? tch : stu).push(r); });
-  function who(r, more){ return '<b>' + esc(r.name) + '</b><small>' + (r.role === 'teacher' ? 'Учител · в програмата: ' + esc(r.teacher_name) : 'Ученик · ' + esc(r.class_name)) + '<br>' + esc(r.email) + (more ? '<br>' + more : '') + '</small>'; }
+  function who(r, more){ return '<b>' + esc(r.name) + (adm[String(r.email || '').toLowerCase()] ? ' <span class="you">админ</span>' : '') + '</b><small>' + (r.role === 'teacher' ? 'Учител · в програмата: ' + esc(r.teacher_name) : 'Ученик · ' + esc(r.class_name)) + '<br>' + esc(r.email) + (more ? '<br>' + more : '') + '</small>'; }
   function tcl(r){ var c = tClassesOf(r.teacher_key); return c.length ? 'Класове: ' + esc(c.join(', ')) : '<span class="err">Няма часове в програмата</span>'; }
   function ex(r){ return ' data-id="' + esc(r.user_id) + '"'; }
   var h = '<div class="panel"><div class="form-h"><h3>Чакат одобрение</h3><button class="link-btn sm" data-act="pp-reload">Обнови</button></div>' +
@@ -2728,12 +2810,12 @@ function pplHTML(){
             armBtn('ppno:' + r.user_id, 'btn ghost sm danger', 'pp-no', 'Откажи', 'Потвърди', ex(r)) + '</div></div>'; }).join('') + '</div><p class="hint">Одобрявай само учители, които познаваш. Провери, че името и имейлът са на човека.</p>'
       : '<div class="empty">Няма нови учители. Учителите се регистрират от приложението: „Вход“ → „Нов профил“ → „Учител“.</div>') + '</div>';
   h += '<div class="panel"><div class="form-h"><h3>Учители</h3><span class="aside">' + tch.length + '</span></div>' + (tch.length ? '<div class="acc-list">' + tch.map(function(r){
-      return '<div class="acc-row"><div>' + who(r, tcl(r)) + '</div>' + armBtn('ppb:' + r.user_id, 'btn ghost sm danger', 'pp-block', 'Спри', 'Потвърди', ex(r)) + '</div>'; }).join('') + '</div>'
+      return '<div class="acc-row"><div>' + who(r, tcl(r)) + '</div><div class="acc-b">' + roleBtn(r) + armBtn('ppb:' + r.user_id, 'btn ghost sm danger', 'pp-block', 'Спри', 'Потвърди', ex(r)) + '</div></div>' + roleEd(r); }).join('') + '</div>'
     : '<div class="empty">Още няма одобрени учители.</div>') + '</div>';
   var byC = {}; stu.forEach(function(r){ (byC[r.class_name] = byC[r.class_name] || []).push(r); });
   h += '<div class="panel"><div class="form-h"><h3>Ученици</h3><span class="aside">' + stu.length + '</span></div>' + (stu.length ? Object.keys(byC).sort(collator.compare).map(function(c){
-      return '<details class="pp-c"><summary>' + esc(c) + ' · ' + byC[c].length + '</summary><div class="acc-list">' + byC[c].map(function(r){
-        return '<div class="acc-row"><div><b>' + esc(r.name) + '</b><small>' + esc(r.email) + '</small></div>' + armBtn('ppb:' + r.user_id, 'btn ghost sm danger', 'pp-block', 'Спри', 'Потвърди', ex(r)) + '</div>'; }).join('') + '</div></details>'; }).join('')
+      return '<details class="pp-c"' + (ppRole && byC[c].some(function(r){ return r.user_id === ppRole.id; }) ? ' open' : '') + '><summary>' + esc(c) + ' · ' + byC[c].length + '</summary><div class="acc-list">' + byC[c].map(function(r){
+        return '<div class="acc-row"><div><b>' + esc(r.name) + (adm[String(r.email || '').toLowerCase()] ? ' <span class="you">админ</span>' : '') + '</b><small>' + esc(r.email) + '</small></div><div class="acc-b">' + roleBtn(r) + armBtn('ppb:' + r.user_id, 'btn ghost sm danger', 'pp-block', 'Спри', 'Потвърди', ex(r)) + '</div></div>' + roleEd(r); }).join('') + '</div></details>'; }).join('')
     : '<div class="empty">Още няма ученици с профил.</div>') +
     '<p class="hint">Учениците добавят домашни само за своя клас. Ако някой пише глупости, спри профила му и изтрий записите му от „Домашни“.</p></div>';
   if (blk.length) h += '<div class="panel"><div class="form-h"><h3>Спрени</h3><span class="aside">' + blk.length + '</span></div><div class="acc-list">' + blk.map(function(r){
@@ -3292,8 +3374,7 @@ APP.addEventListener('click', function(ev){
     case 'bell-del': list = draft.bells[btn.dataset.s] || []; list.pop(); markDirty('bells'); render(); break;
     case 'discard': draft = clone(state); clearWork(); banner = null; evForm = blankEv(); render(); flash('Промените са отхвърлени.'); break;
     case 'save': save(); break;
-    case 'brand': var tn = Date.now(); if (tn - tapT > 2500) taps = 0; tapT = tn;
-      if (++taps >= 5){ taps = 0; editUnlocked = true; sSet('sessionStorage', 'zv-edit', '1'); if (view !== 'teacher'){ view = 'teacher'; tSel.cls = myClass; window.scrollTo(0, 0); render(); permsThenRender(); } } break;
+    case 'brand': break;
     case 'sb-in': signIn(); break;
     case 'au-mode': auMode = btn.dataset.m === 'req' ? 'req' : 'in'; rqErr = ''; auErr = ''; render(); break;
     case 'rq-go': rqSubmit(); break;
@@ -3358,6 +3439,11 @@ APP.addEventListener('click', function(ev){
     case 'ac-role': acForm.role = btn.dataset.r === 'teacher' ? 'teacher' : 'student'; acErr = ''; render(); break;
     case 'ac-in': acSignIn(); break;
     case 'ac-verify': acVerify(); break;
+    case 'ac-pw': acForm.mode = 'pw'; acForm.password = ''; acForm.password2 = ''; acErr = ''; render(); break;
+    case 'ac-pw-x': acForm.mode = 'in'; acForm.password = ''; acForm.password2 = ''; acErr = ''; render(); break;
+    case 'ac-pw-save': acPwSave(); break;
+    case 'ac-to-stats': sheetOpen = false; render(); var sb = document.createElement('button'); sb.dataset.act = 'to-stats'; sb.hidden = true; APP.appendChild(sb); sb.click(); sb.remove(); break;
+    case 'ac-to-admin': sheetOpen = false; view = 'teacher'; ppl = null; window.scrollTo(0, 0); render(); permsThenRender(); break;
     case 'ac-resend': acResend(); break;
     case 'ac-forgot': acForm.mode = 'reset'; acForm.password = ''; acErr = ''; acInfo = ''; render(); break;
     case 'ac-reset-send': acResetSend(); break;
@@ -3376,6 +3462,10 @@ APP.addEventListener('click', function(ev){
     case 'pp-reload': ppl = null; render(); break;
     case 'pp-ok': pplSet(btn.dataset.id, { status:'active', approved_at:new Date().toISOString() }, 'Одобрено. Вече може да добавя тестове и домашни.'); break;
     case 'pp-no': pplDel(btn.dataset.id, 'Заявката е отказана.'); break;
+    case 'ppr-open': ppRoleOpen(btn.dataset.id); break;
+    case 'ppr-x': ppRole = null; ppRoleErr = ''; render(); break;
+    case 'ppr-role': if (ppRole){ ppRole.role = btn.dataset.r === 'teacher' ? 'teacher' : 'student'; ppRoleErr = ''; render(); } break;
+    case 'ppr-save': ppRoleSave(); break;
     case 'pp-block': pplSet(btn.dataset.id, { status:'blocked' }, 'Профилът е спрян.'); break;
     case 'pp-unblock': pplSet(btn.dataset.id, { status:'active', approved_at:new Date().toISOString() }, 'Профилът работи отново.'); break;
     case 'pp-del': pplDel(btn.dataset.id, 'Профилът е изтрит.'); break;
@@ -3402,6 +3492,7 @@ function onField(ev){
     case 'rq': rqForm[el.dataset.k] = el.value; if (rqErr){ rqErr = ''; dropErr(); } break;
     case 'rp': rpText = el.value; if (rpErr){ rpErr = ''; dropErr(); } break;
     case 'ac': acForm[el.dataset.k] = el.value; if (acErr){ acErr = ''; dropErr(); } break;
+    case 'ppr': if (ppRole){ ppRole[el.dataset.k] = el.type === 'checkbox' ? el.checked : el.value; } break;
     case 'po':
       if (!poForm) break;
       poForm[el.dataset.k] = el.value;

@@ -642,3 +642,8 @@ textarea:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 3px var(-
 @media (prefers-reduced-motion:reduce){#net{transition:none}}
 .code-in{font-family:var(--f-display);font-size:26px!important;letter-spacing:.3em;text-align:center;font-variant-numeric:tabular-nums}
 .ac-links{display:flex;justify-content:center;gap:18px;flex-wrap:wrap;margin-top:6px}
+.pp-role{display:grid;gap:10px;padding:12px;margin:-2px 0 8px;border-radius:14px;background:var(--surface-2,rgba(127,127,127,.08))}
+.pp-role .chk{display:flex;gap:8px;align-items:flex-start;font-size:14px;line-height:1.35}
+.pp-role .chk input{margin-top:2px;width:18px;height:18px;flex:none}
+.icon-b.edit.on{color:var(--accent,currentColor)}
+@media (max-width:400px){.top-r{gap:6px}.top-r .icon-b{width:40px;height:40px}.brand-txt{min-width:0;overflow:hidden}.brand-t,.brand-s{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}}

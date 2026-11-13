@@ -50,7 +50,7 @@ class App:
     """A page with the fake backend. .requests records every Supabase call, .errors any console error or CSP violation."""
     def __init__(self, browser, server, **ctx):
         self.data = fixture_data()
-        self.requests, self.errors, self.down = [], [], False
+        self.requests, self.errors, self.down, self.perms = [], [], False, []
         self.ctx = browser.new_context(service_workers='block', **ctx)
         self.page = self.ctx.new_page()
         self.page.on('console', lambda m: m.type == 'error' and self.errors.append(m.text))
@@ -71,10 +71,26 @@ class App:
         if '/auth/v1/' in u.path:
             return self._auth(route, name, req)
         if '/rest/v1/rpc/' in u.path:
+            if name == 'my_permissions':
+                return route.fulfill(content_type='application/json', body=json.dumps(self.perms))
             if name == 'member_register':
                 b = json.loads(req.post_data or '{}')
                 return route.fulfill(content_type='application/json', body=json.dumps({'role': b.get('p_role'), 'name': b.get('p_name'), 'class_name': b.get('p_class'), 'status': 'active', 'teacher_name': ''}))
             return route.fulfill(content_type='application/json', body='true' if name in ('send_report', 'log_visit') else 'null')
+        if req.method == 'PATCH' and name in self.data:
+            patch = json.loads(req.post_data or '{}')
+            q = urllib.parse.parse_qs(u.query)
+            uid = q.get('user_id', [''])[0].replace('eq.', '')
+            rows = [r for r in self.data[name] if r.get('user_id') == uid]
+            for r in rows: r.update(patch)
+            return route.fulfill(content_type='application/json', body=json.dumps(rows))
+        if req.method == 'POST' and name == 'editors':
+            self.data.setdefault('editors', []).append(json.loads(req.post_data))
+            return route.fulfill(status=201, content_type='application/json', body='')
+        if req.method == 'DELETE' and name == 'editors':
+            q = urllib.parse.parse_qs(u.query); em = q.get('email', [''])[0].replace('eq.', '')
+            self.data['editors'] = [r for r in self.data.get('editors', []) if r['email'] != em]
+            return route.fulfill(status=204, body='')
         if req.method == 'GET' and name in self.data:
             return route.fulfill(content_type='application/json', body=json.dumps(self.data[name]))
         return route.fulfill(content_type='application/json', body='[]')

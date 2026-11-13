@@ -130,3 +130,65 @@ def test_forgotten_password_with_a_code(app):
     assert put and json.loads(put[0]['body']) == {'password': 'newpass1'}
     assert any(r['path'].endswith('/auth/v1/recover') for r in app.requests)
     assert app.errors == [], app.errors
+
+
+def _login(app, email='boss@example.com'):
+    pg = pick_class(app)
+    pg.click('[data-act="acct-open"]')
+    pg.fill('[data-f="ac"][data-k="email"]', email)
+    pg.fill('[data-f="ac"][data-k="password"]', 'secret12')
+    pg.route('**/auth/v1/token**', lambda r: r.fulfill(content_type='application/json', body=json.dumps(
+        {'access_token': 'tok', 'refresh_token': 'ref', 'expires_in': 3600, 'user': {'id': 'u-boss', 'email': email}})))
+    pg.click('[data-act="ac-in"]')
+    pg.wait_for_selector('.sheet:not([aria-label="Вход"])')
+    pg.keyboard.press('Escape')
+    pg.wait_for_selector('.sheet', state='detached')
+    return pg
+
+
+def test_no_hidden_admin_entry(app):
+    pg = pick_class(app)
+    for _ in range(6):
+        pg.click('.brand')
+    pg.wait_for_timeout(300)
+    assert pg.locator('.teacher').count() == 0
+    pg.goto(app.server + '#redakcia'); pg.wait_for_selector('.hl-r, .ls')
+    assert pg.locator('.teacher').count() == 0
+    assert pg.locator('[data-act="acct-open"]').count() == 1  # login button in the header
+
+
+def test_admin_logs_in_like_everyone_and_changes_roles(app):
+    app.perms = ['*']
+    app.data['members'] = [
+        {'user_id': 'u1', 'email': 'ivan@example.com', 'role': 'student', 'name': 'Иван Петров', 'class_name': '10е', 'teacher_name': '', 'teacher_key': '', 'status': 'active', 'created_at': '2026-11-01T10:00:00Z'},
+    ]
+    app.data['editors'] = [{'email': 'boss@example.com', 'class_name': '*'}]
+    pg = _login(app)
+    pg.click('[data-act="to-teacher"]')
+    pg.click('.tab:has-text("Хора")')
+    pg.click('summary:has-text("10е")')
+    pg.click('[data-act="ppr-open"][data-id="u1"]')
+    pg.click('[data-act="ppr-role"][data-r="teacher"]')
+    pg.select_option('select[data-f="ppr"][data-k="teacher"]', index=1)
+    pg.check('input[data-f="ppr"][data-k="admin"]')
+    pg.click('[data-act="ppr-save"]')
+    pg.wait_for_selector('.pp-role', state='detached')
+    m = app.data['members'][0]
+    assert m['role'] == 'teacher' and m['teacher_name'] and m['class_name'] == '', m
+    assert {'email': 'ivan@example.com', 'class_name': '*'} in app.data['editors']
+    assert app.errors == [], app.errors
+
+
+def test_change_password_when_logged_in(app):
+    pg = _login(app, 'ivan@example.com')
+    pg.click('[data-act="acct-open"]')
+    pg.click('[data-act="ac-pw"]')
+    pg.fill('[data-f="ac"][data-k="password"]', 'newpass1')
+    pg.fill('[data-f="ac"][data-k="password2"]', 'newpass2')
+    pg.click('[data-act="ac-pw-save"]')
+    pg.wait_for_selector('text=не съвпадат')
+    pg.fill('[data-f="ac"][data-k="password2"]', 'newpass1')
+    pg.click('[data-act="ac-pw-save"]')
+    pg.wait_for_selector('[data-act="ac-pw-save"]', state='detached')
+    put = [r for r in app.requests if r['path'].endswith('/auth/v1/user') and r['method'] == 'PUT']
+    assert put and json.loads(put[-1]['body']) == {'password': 'newpass1'}
