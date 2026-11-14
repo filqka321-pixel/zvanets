@@ -122,7 +122,9 @@ function startApp(state){
   s.text = document.getElementById('app-js').textContent;
   document.body.appendChild(s);
 }
-window.ZvSB = { url: URL0, key: KEY, load: load, fresh: false };
+// Tiny check: the database changes this stamp on every timetable, test or homework change.
+function rev(){ return get('settings', 'select=rev&id=eq.1').then(function(r){ return r && r[0] ? r[0].rev : null; }); }
+window.ZvSB = { url: URL0, key: KEY, load: load, rev: rev, fresh: false };
 var cached = null;
 try { cached = JSON.parse(localStorage.getItem('zv-data')); } catch (e) {}
 if (cached && cached.tt) startApp(cached);

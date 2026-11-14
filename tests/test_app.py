@@ -377,3 +377,15 @@ def test_people_list_loads_more_than_1000(app):
     pg.click('[data-act="to-teacher"]'); pg.click('.tab:has-text("Хора")')
     pg.wait_for_selector('text=Ученици')
     assert '1500' in pg.inner_text('.panel:has-text("Ученици") .aside')
+
+
+def test_refresh_downloads_only_when_something_changed(app):
+    pg = pick_class(app)  # first open: full download
+    def lessons_calls(): return len([r for r in app.requests if r['path'].endswith('/rest/v1/lessons')])
+    pg.wait_for_timeout(500); before = lessons_calls()
+    pg.evaluate("window.dispatchEvent(new Event('online'))"); pg.wait_for_timeout(600)
+    assert lessons_calls() == before, 'nothing changed, but the timetable was downloaded again'
+    app.data['settings'][0]['rev'] = 'r2'; app.data['lessons'][0]['room'] = '999'
+    pg.evaluate("window.dispatchEvent(new Event('online'))"); pg.wait_for_timeout(800)
+    assert lessons_calls() == before + 1
+    assert '999' in pg.inner_text('.hero')

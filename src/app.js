@@ -675,10 +675,23 @@ function setNet(ok){
   el.textContent = ok ? '' : 'Няма връзка · програмата е запазена ' + (when || 'по-рано');
   el.className = ok ? '' : 'on';
 }
-function refreshData(){
+// Bump DATA_V when the app starts reading the data differently, so every phone downloads everything once.
+var DATA_V = 2;
+function fullInfo(){ var f = jparse(sGet('localStorage', 'zv-full')); return f && f.v === DATA_V ? f.t || 0 : 0; }
+function refreshData(force){
   if (refreshing || !SB) return;
   refreshing = true;
-  SB.load().then(function(net){
+  // Ask for the version stamp first (a few bytes); download the whole school only when something changed,
+  // or every 6 hours so old events drop off.
+  var full = force === true || !SB.rev || Date.now() - fullInfo() > 6 * 3600e3;
+  (full ? Promise.resolve(null) : SB.rev().catch(function(){ return null; })).then(function(r){
+    if (r && state && r === state.rev){ refreshing = false; lastRefresh = Date.now(); setNet(true); return; }
+    return fullRefresh();
+  });
+}
+function fullRefresh(){
+  return SB.load().then(function(net){
+    sSet('localStorage', 'zv-full', JSON.stringify({ t:Date.now(), v:DATA_V }));
     refreshing = false; lastRefresh = Date.now(); setNet(true);
     net = normalize(net);
     if (JSON.stringify(net) === JSON.stringify(state)) return;
@@ -2982,7 +2995,7 @@ function start(hot){
   setInterval(function(){ if (!document.hidden) refreshData(); }, 10 * 60e3);
   window.addEventListener('beforeinstallprompt', function(e){ e.preventDefault(); installEvt = e; if (view === 'student' && (page === 'now' || insFull)) render(); });
   window.addEventListener('appinstalled', function(){ installEvt = null; insFull = false; sSet('localStorage', 'zv-ins-later', '1'); render(); flash('Инсталирано. Отвори Звънец от началния екран.'); });
-  if (SB && SB.fresh){ lastRefresh = Date.now(); setNet(true); } else refreshData();
+  if (SB && SB.fresh){ lastRefresh = Date.now(); setNet(true); sSet('localStorage', 'zv-full', JSON.stringify({ t:Date.now(), v:DATA_V })); } else refreshData();
   window.addEventListener('offline', function(){ setNet(false); });
   window.addEventListener('online', function(){ refreshData(); });
   setInterval(function(){ if (!document.hidden && document.getElementById('net') && document.getElementById('net').className === 'on') refreshData(); }, 30e3);
